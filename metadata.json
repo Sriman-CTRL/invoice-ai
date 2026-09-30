@@ -1,0 +1,5 @@
+{
+  "name": "Ledgerlane Receivables",
+  "description": "AI-powered receivables management, invoice tracking, customer conversation triage, and automated collections.",
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

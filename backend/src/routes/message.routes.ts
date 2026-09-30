@@ -12,7 +12,7 @@ const router = Router();
 // Create a message
 router.post("/", async (req, res) => {
     try {
-        const {
+        let {
             organization_id,
             conversation_id,
             direction,
@@ -23,6 +23,19 @@ router.post("/", async (req, res) => {
             body,
             external_message_id,
         } = req.body;
+
+        if (!organization_id && (req as any).user?.organization_id) {
+            organization_id = (req as any).user.organization_id;
+        }
+
+        if (!organization_id && conversation_id) {
+            const conv = await prisma.conversations.findUnique({
+                where: { id: conversation_id },
+            });
+            if (conv) {
+                organization_id = conv.organization_id;
+            }
+        }
 
         if (
             !organization_id ||
@@ -128,7 +141,20 @@ router.get("/conversation/:conversation_id", async (req, res) => {
 router.post("/:message_id/classify", async (req, res) => {
     try {
         const { message_id } = req.params;
-        const { organization_id } = req.body;
+        let { organization_id } = req.body;
+
+        if (!organization_id && (req as any).user?.organization_id) {
+            organization_id = (req as any).user.organization_id;
+        }
+
+        if (!organization_id) {
+            const existing = await prisma.messages.findUnique({
+                where: { id: message_id },
+            });
+            if (existing) {
+                organization_id = existing.organization_id;
+            }
+        }
 
         if (!organization_id) {
             return res.status(400).json({
@@ -192,7 +218,9 @@ router.post("/:message_id/classify", async (req, res) => {
         const context = contextMessages.reverse().map((m) => ({
             direction: m.direction as "INBOUND" | "OUTBOUND",
             body: m.body ?? "",
-            created_at: m.created_at.toISOString(),
+            created_at: m.created_at instanceof Date
+                ? m.created_at.toISOString()
+                : (m.created_at ? new Date(m.created_at).toISOString() : new Date().toISOString()),
         }));
 
         // 5. Classify via AI service
