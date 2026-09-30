@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model collection_actions {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String         @db.Uuid
+  customer_id     String?        @db.Uuid
+  invoice_id      String?        @db.Uuid
+  conversation_id String?        @db.Uuid
+  action_type     String         @db.VarChar(50)
+  status          String         @default("PENDING") @db.VarChar(30)
+  scheduled_at    DateTime?      @db.Timestamptz(6)
+  executed_at     DateTime?      @db.Timestamptz(6)
+  metadata        Json           @default("{}")
+  created_at      DateTime       @default(now()) @db.Timestamptz(6)
+  conversations   conversations? @relation(fields: [conversation_id], references: [id], onUpdate: NoAction)
+  customers       customers?     @relation(fields: [customer_id], references: [id], onUpdate: NoAction)
+  invoices        invoices?      @relation(fields: [invoice_id], references: [id], onUpdate: NoAction)
+  organizations   organizations  @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model conversations {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id    String               @db.Uuid
+  customer_id        String               @db.Uuid
+  invoice_id         String?              @db.Uuid
+  channel            String               @db.VarChar(30)
+  external_thread_id String?              @db.VarChar(255)
+  status             String               @default("OPEN") @db.VarChar(30)
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  collection_actions collection_actions[]
+  customers          customers            @relation(fields: [customer_id], references: [id], onUpdate: NoAction)
+  invoices           invoices?            @relation(fields: [invoice_id], references: [id], onUpdate: NoAction)
+  organizations      organizations        @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  messages           messages[]
+}
+
+model customers {
+  id                   String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id      String               @db.Uuid
+  name                 String               @db.VarChar(255)
+  email                String               @db.VarChar(320)
+  company_name         String?              @db.VarChar(255)
+  phone                String?              @db.VarChar(50)
+  external_customer_id String?              @db.VarChar(255)
+  created_at           DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime             @default(now()) @db.Timestamptz(6)
+  collection_actions   collection_actions[]
+  conversations        conversations[]
+  organizations        organizations        @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  invoices             invoices[]
+
+  @@unique([organization_id, email])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model invoices {
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id     String               @db.Uuid
+  customer_id         String               @db.Uuid
+  invoice_number      String               @db.VarChar(100)
+  external_invoice_id String?              @db.VarChar(255)
+  amount              Decimal              @db.Decimal(14, 2)
+  currency            String               @default("INR") @db.VarChar(3)
+  issued_at           DateTime?            @db.Timestamptz(6)
+  due_at              DateTime?            @db.Timestamptz(6)
+  status              String               @default("OPEN") @db.VarChar(30)
+  created_at          DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime             @default(now()) @db.Timestamptz(6)
+  collection_actions  collection_actions[]
+  conversations       conversations[]
+  customers           customers            @relation(fields: [customer_id], references: [id], onUpdate: NoAction)
+  organizations       organizations        @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  payments            payments[]
+
+  @@unique([organization_id, invoice_number])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model messages {
+  id                  String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id     String        @db.Uuid
+  conversation_id     String        @db.Uuid
+  direction           String        @db.VarChar(10)
+  channel             String        @db.VarChar(30)
+  sender              String?       @db.VarChar(320)
+  recipient           String?       @db.VarChar(320)
+  subject             String?
+  body                String?
+  external_message_id String?       @db.VarChar(255)
+  ai_intent           String?       @db.VarChar(50)
+  ai_confidence       Decimal?      @db.Decimal(5, 4)
+  created_at          DateTime      @default(now()) @db.Timestamptz(6)
+  conversations       conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organizations       organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model organizations {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String               @db.VarChar(255)
+  slug               String               @unique @db.VarChar(100)
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  collection_actions collection_actions[]
+  conversations      conversations[]
+  customers          customers[]
+  invoices           invoices[]
+  messages           messages[]
+  payments           payments[]
+  users              users[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model payments {
+  id                  String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id     String        @db.Uuid
+  invoice_id          String        @db.Uuid
+  external_payment_id String?       @db.VarChar(255)
+  amount              Decimal       @db.Decimal(14, 2)
+  currency            String        @default("INR") @db.VarChar(3)
+  status              String        @default("PENDING") @db.VarChar(30)
+  paid_at             DateTime?     @db.Timestamptz(6)
+  created_at          DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime      @default(now()) @db.Timestamptz(6)
+  invoices            invoices      @relation(fields: [invoice_id], references: [id], onUpdate: NoAction)
+  organizations       organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model users {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String        @db.Uuid
+  email           String        @db.VarChar(320)
+  password_hash   String?       @db.VarChar(255)
+  name            String?       @db.VarChar(255)
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime      @default(now()) @db.Timestamptz(6)
+  organizations   organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([organization_id, email])
+}

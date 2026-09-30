@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { @apply border-line; }
+  body { @apply m-0 bg-canvas font-sans text-ink antialiased; }
+  button, input, select { font: inherit; }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { @apply outline-none ring-2 ring-brand-500 ring-offset-2; }
+}
+@layer components {
+  .panel { @apply rounded-lg border bg-white shadow-soft; }
+  .input { @apply h-10 w-full rounded-md border border-line bg-white px-3 text-sm text-ink placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/15; }
+  .label { @apply mb-1.5 block text-sm font-medium text-slate-700; }
+  .btn { @apply inline-flex h-10 items-center justify-center gap-2 rounded-md px-3.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700; }
+  .btn-secondary { @apply btn border border-line bg-white text-slate-700 hover:bg-slate-50; }
+  .table-head { @apply whitespace-nowrap px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500; }
+  .table-cell { @apply px-5 py-4 text-sm text-slate-700; }
+}

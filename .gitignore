@@ -1,0 +1,15 @@
+﻿node_modules/
+.env
+.env.*
+!.env.example
+
+dist/
+build/
+coverage/
+
+.prisma/
+src/generated/
+
+*.log
+.DS_Store
+.vscode/
