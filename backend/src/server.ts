@@ -56,7 +56,7 @@ app.use((_req, res, next) => {
 
 // LAYER 2: Production-grade CORS
 // In production, never reflect origin: true with credentials: true.
-const rawCorsOrigin = process.env.CORS_ORIGIN || "http://localhost:5173";
+const rawCorsOrigin = process.env.CORS_ORIGIN || "https://invoice-ai-nine-beta.vercel.app,http://localhost:5173";
 const allowedOrigins = rawCorsOrigin.split(",").map((o) => o.trim()).filter(Boolean);
 
 app.use(
@@ -64,7 +64,12 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (e.g. mobile apps, curl, server-to-server, n8n)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".vercel.app") ||
+        origin.startsWith("http://localhost:") ||
+        origin.startsWith("http://127.0.0.1:")
+      ) {
         return callback(null, true);
       }
       return callback(new Error(`CORS blocked for origin: ${origin}`));
