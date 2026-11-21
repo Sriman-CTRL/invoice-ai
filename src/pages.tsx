@@ -3265,7 +3265,11 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
 
         {/* Footer Guarantee */}
         <div className="flex items-center justify-between text-[11px] text-slate-500 border-t border-white/10 pt-4 z-10">
-          <span>Row-Level Lock PostgreSQL Safety</span>
+          <div className="flex items-center gap-3">
+            <Link to="/privacy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
+            <span>•</span>
+            <Link to="/terms" className="hover:text-slate-300 transition-colors">Terms of Service</Link>
+          </div>
           <span>Reg F & CAN-SPAM Suppressed</span>
         </div>
       </section>
@@ -3422,6 +3426,19 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
                 )}
               </button>
             </form>
+          </div>
+
+          {/* Legal Compliance Footer Links */}
+          <div className="mt-6 flex items-center justify-center gap-4 text-[11px] text-slate-500">
+            <Link to="/privacy" className="hover:text-slate-300 transition-colors">
+              Privacy Policy
+            </Link>
+            <span>•</span>
+            <Link to="/terms" className="hover:text-slate-300 transition-colors">
+              Terms & Escrow
+            </Link>
+            <span>•</span>
+            <span>DPDP & FDCPA Certified</span>
           </div>
         </div>
       </section>

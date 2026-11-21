@@ -4,6 +4,7 @@ import { Shell } from "./components";
 import { ActionsPage, AuthPage, ConversationDetailPage, ConversationsPage, CustomerDetailPage, CustomersPage, DashboardPage, InvoiceDetailPage, InvoicesPage } from "./pages";
 import { PlaygroundPage } from "./playground";
 import { PublicPayPage } from "./PublicPayPage";
+import { PrivacyPolicyPage, TermsOfServicePage } from "./LegalPages";
 
 function Protected({ children }: { children: React.ReactNode }) { const { user } = useAuth(); return user ? <Shell>{children}</Shell> : <Navigate to="/login" replace/>; }
 
@@ -13,6 +14,8 @@ export function App() {
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/register" element={<AuthPage mode="register" />} />
       <Route path="/pay/:invoiceNumber" element={<PublicPayPage />} />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsOfServicePage />} />
       <Route path="/dashboard" element={<Protected><DashboardPage /></Protected>} />
       <Route path="/invoices" element={<Protected><InvoicesPage /></Protected>} />
       <Route path="/invoices/:id" element={<Protected><InvoiceDetailPage /></Protected>} />

@@ -582,6 +582,22 @@ export function PublicPayPage() {
           </div>
         </div>
       </main>
+
+      {/* Compliance & Escrow Footer */}
+      <footer className="mt-16 border-t border-white/5 py-8 text-center text-xs text-slate-500">
+        <div className="flex flex-wrap items-center justify-center gap-6">
+          <Link to="/privacy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
+          <span className="text-slate-700">•</span>
+          <Link to="/terms" className="hover:text-slate-300 transition-colors">Terms of Service & Escrow</Link>
+          <span className="text-slate-700">•</span>
+          <span>Peer-to-Peer Direct Bank Settlement</span>
+          <span className="text-slate-700">•</span>
+          <span>Neon Postgres Tenant RLS</span>
+        </div>
+        <p className="mt-3 text-[11px] text-slate-600">
+          Invoice AI facilitates peer-to-peer settlement verification and deliverable vault protection. We do not store banking credentials or hold customer funds.
+        </p>
+      </footer>
     </div>
   );
 }
