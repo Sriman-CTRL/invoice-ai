@@ -79,3 +79,13 @@ export type payments = Prisma.paymentsModel
  * 
  */
 export type users = Prisma.usersModel
+/**
+ * Model suppressions
+ * 
+ */
+export type suppressions = Prisma.suppressionsModel
+/**
+ * Model credit_notes
+ * 
+ */
+export type credit_notes = Prisma.credit_notesModel

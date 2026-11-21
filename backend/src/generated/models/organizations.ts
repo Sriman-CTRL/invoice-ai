@@ -188,6 +188,8 @@ export type organizationsWhereInput = {
   invoices?: Prisma.InvoicesListRelationFilter
   messages?: Prisma.MessagesListRelationFilter
   payments?: Prisma.PaymentsListRelationFilter
+  suppressions?: Prisma.SuppressionsListRelationFilter
+  credit_notes?: Prisma.Credit_notesListRelationFilter
   users?: Prisma.UsersListRelationFilter
 }
 
@@ -203,6 +205,8 @@ export type organizationsOrderByWithRelationInput = {
   invoices?: Prisma.invoicesOrderByRelationAggregateInput
   messages?: Prisma.messagesOrderByRelationAggregateInput
   payments?: Prisma.paymentsOrderByRelationAggregateInput
+  suppressions?: Prisma.suppressionsOrderByRelationAggregateInput
+  credit_notes?: Prisma.credit_notesOrderByRelationAggregateInput
   users?: Prisma.usersOrderByRelationAggregateInput
 }
 
@@ -221,6 +225,8 @@ export type organizationsWhereUniqueInput = Prisma.AtLeast<{
   invoices?: Prisma.InvoicesListRelationFilter
   messages?: Prisma.MessagesListRelationFilter
   payments?: Prisma.PaymentsListRelationFilter
+  suppressions?: Prisma.SuppressionsListRelationFilter
+  credit_notes?: Prisma.Credit_notesListRelationFilter
   users?: Prisma.UsersListRelationFilter
 }, "id" | "slug">
 
@@ -258,6 +264,8 @@ export type organizationsCreateInput = {
   invoices?: Prisma.invoicesCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -273,6 +281,8 @@ export type organizationsUncheckedCreateInput = {
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesUncheckedCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsUncheckedCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersUncheckedCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -288,6 +298,8 @@ export type organizationsUpdateInput = {
   invoices?: Prisma.invoicesUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -303,6 +315,8 @@ export type organizationsUncheckedUpdateInput = {
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUncheckedUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUncheckedUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -457,6 +471,34 @@ export type organizationsUpdateOneRequiredWithoutUsersNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.organizationsUpdateToOneWithWhereWithoutUsersInput, Prisma.organizationsUpdateWithoutUsersInput>, Prisma.organizationsUncheckedUpdateWithoutUsersInput>
 }
 
+export type organizationsCreateNestedOneWithoutSuppressionsInput = {
+  create?: Prisma.XOR<Prisma.organizationsCreateWithoutSuppressionsInput, Prisma.organizationsUncheckedCreateWithoutSuppressionsInput>
+  connectOrCreate?: Prisma.organizationsCreateOrConnectWithoutSuppressionsInput
+  connect?: Prisma.organizationsWhereUniqueInput
+}
+
+export type organizationsUpdateOneRequiredWithoutSuppressionsNestedInput = {
+  create?: Prisma.XOR<Prisma.organizationsCreateWithoutSuppressionsInput, Prisma.organizationsUncheckedCreateWithoutSuppressionsInput>
+  connectOrCreate?: Prisma.organizationsCreateOrConnectWithoutSuppressionsInput
+  upsert?: Prisma.organizationsUpsertWithoutSuppressionsInput
+  connect?: Prisma.organizationsWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.organizationsUpdateToOneWithWhereWithoutSuppressionsInput, Prisma.organizationsUpdateWithoutSuppressionsInput>, Prisma.organizationsUncheckedUpdateWithoutSuppressionsInput>
+}
+
+export type organizationsCreateNestedOneWithoutCredit_notesInput = {
+  create?: Prisma.XOR<Prisma.organizationsCreateWithoutCredit_notesInput, Prisma.organizationsUncheckedCreateWithoutCredit_notesInput>
+  connectOrCreate?: Prisma.organizationsCreateOrConnectWithoutCredit_notesInput
+  connect?: Prisma.organizationsWhereUniqueInput
+}
+
+export type organizationsUpdateOneRequiredWithoutCredit_notesNestedInput = {
+  create?: Prisma.XOR<Prisma.organizationsCreateWithoutCredit_notesInput, Prisma.organizationsUncheckedCreateWithoutCredit_notesInput>
+  connectOrCreate?: Prisma.organizationsCreateOrConnectWithoutCredit_notesInput
+  upsert?: Prisma.organizationsUpsertWithoutCredit_notesInput
+  connect?: Prisma.organizationsWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.organizationsUpdateToOneWithWhereWithoutCredit_notesInput, Prisma.organizationsUpdateWithoutCredit_notesInput>, Prisma.organizationsUncheckedUpdateWithoutCredit_notesInput>
+}
+
 export type organizationsCreateWithoutCollection_actionsInput = {
   id?: string
   name: string
@@ -468,6 +510,8 @@ export type organizationsCreateWithoutCollection_actionsInput = {
   invoices?: Prisma.invoicesCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -482,6 +526,8 @@ export type organizationsUncheckedCreateWithoutCollection_actionsInput = {
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesUncheckedCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsUncheckedCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersUncheckedCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -512,6 +558,8 @@ export type organizationsUpdateWithoutCollection_actionsInput = {
   invoices?: Prisma.invoicesUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -526,6 +574,8 @@ export type organizationsUncheckedUpdateWithoutCollection_actionsInput = {
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUncheckedUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUncheckedUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -540,6 +590,8 @@ export type organizationsCreateWithoutConversationsInput = {
   invoices?: Prisma.invoicesCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -554,6 +606,8 @@ export type organizationsUncheckedCreateWithoutConversationsInput = {
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesUncheckedCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsUncheckedCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersUncheckedCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -584,6 +638,8 @@ export type organizationsUpdateWithoutConversationsInput = {
   invoices?: Prisma.invoicesUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -598,6 +654,8 @@ export type organizationsUncheckedUpdateWithoutConversationsInput = {
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUncheckedUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUncheckedUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -612,6 +670,8 @@ export type organizationsCreateWithoutCustomersInput = {
   invoices?: Prisma.invoicesCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -626,6 +686,8 @@ export type organizationsUncheckedCreateWithoutCustomersInput = {
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesUncheckedCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsUncheckedCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersUncheckedCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -656,6 +718,8 @@ export type organizationsUpdateWithoutCustomersInput = {
   invoices?: Prisma.invoicesUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -670,6 +734,8 @@ export type organizationsUncheckedUpdateWithoutCustomersInput = {
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUncheckedUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUncheckedUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -684,6 +750,8 @@ export type organizationsCreateWithoutInvoicesInput = {
   customers?: Prisma.customersCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -698,6 +766,8 @@ export type organizationsUncheckedCreateWithoutInvoicesInput = {
   customers?: Prisma.customersUncheckedCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesUncheckedCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsUncheckedCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersUncheckedCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -728,6 +798,8 @@ export type organizationsUpdateWithoutInvoicesInput = {
   customers?: Prisma.customersUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -742,6 +814,8 @@ export type organizationsUncheckedUpdateWithoutInvoicesInput = {
   customers?: Prisma.customersUncheckedUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUncheckedUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUncheckedUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -756,6 +830,8 @@ export type organizationsCreateWithoutMessagesInput = {
   customers?: Prisma.customersCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -770,6 +846,8 @@ export type organizationsUncheckedCreateWithoutMessagesInput = {
   customers?: Prisma.customersUncheckedCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsUncheckedCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersUncheckedCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -800,6 +878,8 @@ export type organizationsUpdateWithoutMessagesInput = {
   customers?: Prisma.customersUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -814,6 +894,8 @@ export type organizationsUncheckedUpdateWithoutMessagesInput = {
   customers?: Prisma.customersUncheckedUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUncheckedUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -828,6 +910,8 @@ export type organizationsCreateWithoutPaymentsInput = {
   customers?: Prisma.customersCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -842,6 +926,8 @@ export type organizationsUncheckedCreateWithoutPaymentsInput = {
   customers?: Prisma.customersUncheckedCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesUncheckedCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersUncheckedCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -872,6 +958,8 @@ export type organizationsUpdateWithoutPaymentsInput = {
   customers?: Prisma.customersUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -886,6 +974,8 @@ export type organizationsUncheckedUpdateWithoutPaymentsInput = {
   customers?: Prisma.customersUncheckedUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUncheckedUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUncheckedUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -901,6 +991,8 @@ export type organizationsCreateWithoutUsersInput = {
   invoices?: Prisma.invoicesCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
 }
 
 export type organizationsUncheckedCreateWithoutUsersInput = {
@@ -915,6 +1007,8 @@ export type organizationsUncheckedCreateWithoutUsersInput = {
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesUncheckedCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsUncheckedCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
 }
 
 export type organizationsCreateOrConnectWithoutUsersInput = {
@@ -945,6 +1039,8 @@ export type organizationsUpdateWithoutUsersInput = {
   invoices?: Prisma.invoicesUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
 }
 
 export type organizationsUncheckedUpdateWithoutUsersInput = {
@@ -959,6 +1055,168 @@ export type organizationsUncheckedUpdateWithoutUsersInput = {
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUncheckedUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
+}
+
+export type organizationsCreateWithoutSuppressionsInput = {
+  id?: string
+  name: string
+  slug: string
+  created_at?: Date | string
+  updated_at?: Date | string
+  collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
+  conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
+  customers?: Prisma.customersCreateNestedManyWithoutOrganizationsInput
+  invoices?: Prisma.invoicesCreateNestedManyWithoutOrganizationsInput
+  messages?: Prisma.messagesCreateNestedManyWithoutOrganizationsInput
+  payments?: Prisma.paymentsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
+  users?: Prisma.usersCreateNestedManyWithoutOrganizationsInput
+}
+
+export type organizationsUncheckedCreateWithoutSuppressionsInput = {
+  id?: string
+  name: string
+  slug: string
+  created_at?: Date | string
+  updated_at?: Date | string
+  collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
+  conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
+  customers?: Prisma.customersUncheckedCreateNestedManyWithoutOrganizationsInput
+  invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutOrganizationsInput
+  messages?: Prisma.messagesUncheckedCreateNestedManyWithoutOrganizationsInput
+  payments?: Prisma.paymentsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
+  users?: Prisma.usersUncheckedCreateNestedManyWithoutOrganizationsInput
+}
+
+export type organizationsCreateOrConnectWithoutSuppressionsInput = {
+  where: Prisma.organizationsWhereUniqueInput
+  create: Prisma.XOR<Prisma.organizationsCreateWithoutSuppressionsInput, Prisma.organizationsUncheckedCreateWithoutSuppressionsInput>
+}
+
+export type organizationsUpsertWithoutSuppressionsInput = {
+  update: Prisma.XOR<Prisma.organizationsUpdateWithoutSuppressionsInput, Prisma.organizationsUncheckedUpdateWithoutSuppressionsInput>
+  create: Prisma.XOR<Prisma.organizationsCreateWithoutSuppressionsInput, Prisma.organizationsUncheckedCreateWithoutSuppressionsInput>
+  where?: Prisma.organizationsWhereInput
+}
+
+export type organizationsUpdateToOneWithWhereWithoutSuppressionsInput = {
+  where?: Prisma.organizationsWhereInput
+  data: Prisma.XOR<Prisma.organizationsUpdateWithoutSuppressionsInput, Prisma.organizationsUncheckedUpdateWithoutSuppressionsInput>
+}
+
+export type organizationsUpdateWithoutSuppressionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
+  conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
+  customers?: Prisma.customersUpdateManyWithoutOrganizationsNestedInput
+  invoices?: Prisma.invoicesUpdateManyWithoutOrganizationsNestedInput
+  messages?: Prisma.messagesUpdateManyWithoutOrganizationsNestedInput
+  payments?: Prisma.paymentsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
+  users?: Prisma.usersUpdateManyWithoutOrganizationsNestedInput
+}
+
+export type organizationsUncheckedUpdateWithoutSuppressionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  customers?: Prisma.customersUncheckedUpdateManyWithoutOrganizationsNestedInput
+  invoices?: Prisma.invoicesUncheckedUpdateManyWithoutOrganizationsNestedInput
+  messages?: Prisma.messagesUncheckedUpdateManyWithoutOrganizationsNestedInput
+  payments?: Prisma.paymentsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
+  users?: Prisma.usersUncheckedUpdateManyWithoutOrganizationsNestedInput
+}
+
+export type organizationsCreateWithoutCredit_notesInput = {
+  id?: string
+  name: string
+  slug: string
+  created_at?: Date | string
+  updated_at?: Date | string
+  collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
+  conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
+  customers?: Prisma.customersCreateNestedManyWithoutOrganizationsInput
+  invoices?: Prisma.invoicesCreateNestedManyWithoutOrganizationsInput
+  messages?: Prisma.messagesCreateNestedManyWithoutOrganizationsInput
+  payments?: Prisma.paymentsCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsCreateNestedManyWithoutOrganizationsInput
+  users?: Prisma.usersCreateNestedManyWithoutOrganizationsInput
+}
+
+export type organizationsUncheckedCreateWithoutCredit_notesInput = {
+  id?: string
+  name: string
+  slug: string
+  created_at?: Date | string
+  updated_at?: Date | string
+  collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
+  conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
+  customers?: Prisma.customersUncheckedCreateNestedManyWithoutOrganizationsInput
+  invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutOrganizationsInput
+  messages?: Prisma.messagesUncheckedCreateNestedManyWithoutOrganizationsInput
+  payments?: Prisma.paymentsUncheckedCreateNestedManyWithoutOrganizationsInput
+  suppressions?: Prisma.suppressionsUncheckedCreateNestedManyWithoutOrganizationsInput
+  users?: Prisma.usersUncheckedCreateNestedManyWithoutOrganizationsInput
+}
+
+export type organizationsCreateOrConnectWithoutCredit_notesInput = {
+  where: Prisma.organizationsWhereUniqueInput
+  create: Prisma.XOR<Prisma.organizationsCreateWithoutCredit_notesInput, Prisma.organizationsUncheckedCreateWithoutCredit_notesInput>
+}
+
+export type organizationsUpsertWithoutCredit_notesInput = {
+  update: Prisma.XOR<Prisma.organizationsUpdateWithoutCredit_notesInput, Prisma.organizationsUncheckedUpdateWithoutCredit_notesInput>
+  create: Prisma.XOR<Prisma.organizationsCreateWithoutCredit_notesInput, Prisma.organizationsUncheckedCreateWithoutCredit_notesInput>
+  where?: Prisma.organizationsWhereInput
+}
+
+export type organizationsUpdateToOneWithWhereWithoutCredit_notesInput = {
+  where?: Prisma.organizationsWhereInput
+  data: Prisma.XOR<Prisma.organizationsUpdateWithoutCredit_notesInput, Prisma.organizationsUncheckedUpdateWithoutCredit_notesInput>
+}
+
+export type organizationsUpdateWithoutCredit_notesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
+  conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
+  customers?: Prisma.customersUpdateManyWithoutOrganizationsNestedInput
+  invoices?: Prisma.invoicesUpdateManyWithoutOrganizationsNestedInput
+  messages?: Prisma.messagesUpdateManyWithoutOrganizationsNestedInput
+  payments?: Prisma.paymentsUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUpdateManyWithoutOrganizationsNestedInput
+  users?: Prisma.usersUpdateManyWithoutOrganizationsNestedInput
+}
+
+export type organizationsUncheckedUpdateWithoutCredit_notesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  customers?: Prisma.customersUncheckedUpdateManyWithoutOrganizationsNestedInput
+  invoices?: Prisma.invoicesUncheckedUpdateManyWithoutOrganizationsNestedInput
+  messages?: Prisma.messagesUncheckedUpdateManyWithoutOrganizationsNestedInput
+  payments?: Prisma.paymentsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  suppressions?: Prisma.suppressionsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  users?: Prisma.usersUncheckedUpdateManyWithoutOrganizationsNestedInput
 }
 
 
@@ -973,6 +1231,8 @@ export type OrganizationsCountOutputType = {
   invoices: number
   messages: number
   payments: number
+  suppressions: number
+  credit_notes: number
   users: number
 }
 
@@ -983,6 +1243,8 @@ export type OrganizationsCountOutputTypeSelect<ExtArgs extends runtime.Types.Ext
   invoices?: boolean | OrganizationsCountOutputTypeCountInvoicesArgs
   messages?: boolean | OrganizationsCountOutputTypeCountMessagesArgs
   payments?: boolean | OrganizationsCountOutputTypeCountPaymentsArgs
+  suppressions?: boolean | OrganizationsCountOutputTypeCountSuppressionsArgs
+  credit_notes?: boolean | OrganizationsCountOutputTypeCountCredit_notesArgs
   users?: boolean | OrganizationsCountOutputTypeCountUsersArgs
 }
 
@@ -1041,6 +1303,20 @@ export type OrganizationsCountOutputTypeCountPaymentsArgs<ExtArgs extends runtim
 /**
  * OrganizationsCountOutputType without action
  */
+export type OrganizationsCountOutputTypeCountSuppressionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.suppressionsWhereInput
+}
+
+/**
+ * OrganizationsCountOutputType without action
+ */
+export type OrganizationsCountOutputTypeCountCredit_notesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.credit_notesWhereInput
+}
+
+/**
+ * OrganizationsCountOutputType without action
+ */
 export type OrganizationsCountOutputTypeCountUsersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.usersWhereInput
 }
@@ -1058,6 +1334,8 @@ export type organizationsSelect<ExtArgs extends runtime.Types.Extensions.Interna
   invoices?: boolean | Prisma.organizations$invoicesArgs<ExtArgs>
   messages?: boolean | Prisma.organizations$messagesArgs<ExtArgs>
   payments?: boolean | Prisma.organizations$paymentsArgs<ExtArgs>
+  suppressions?: boolean | Prisma.organizations$suppressionsArgs<ExtArgs>
+  credit_notes?: boolean | Prisma.organizations$credit_notesArgs<ExtArgs>
   users?: boolean | Prisma.organizations$usersArgs<ExtArgs>
   _count?: boolean | Prisma.OrganizationsCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["organizations"]>
@@ -1094,6 +1372,8 @@ export type organizationsInclude<ExtArgs extends runtime.Types.Extensions.Intern
   invoices?: boolean | Prisma.organizations$invoicesArgs<ExtArgs>
   messages?: boolean | Prisma.organizations$messagesArgs<ExtArgs>
   payments?: boolean | Prisma.organizations$paymentsArgs<ExtArgs>
+  suppressions?: boolean | Prisma.organizations$suppressionsArgs<ExtArgs>
+  credit_notes?: boolean | Prisma.organizations$credit_notesArgs<ExtArgs>
   users?: boolean | Prisma.organizations$usersArgs<ExtArgs>
   _count?: boolean | Prisma.OrganizationsCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -1109,6 +1389,8 @@ export type $organizationsPayload<ExtArgs extends runtime.Types.Extensions.Inter
     invoices: Prisma.$invoicesPayload<ExtArgs>[]
     messages: Prisma.$messagesPayload<ExtArgs>[]
     payments: Prisma.$paymentsPayload<ExtArgs>[]
+    suppressions: Prisma.$suppressionsPayload<ExtArgs>[]
+    credit_notes: Prisma.$credit_notesPayload<ExtArgs>[]
     users: Prisma.$usersPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1517,6 +1799,8 @@ export interface Prisma__organizationsClient<T, Null = never, ExtArgs extends ru
   invoices<T extends Prisma.organizations$invoicesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizations$invoicesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$invoicesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   messages<T extends Prisma.organizations$messagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizations$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$messagesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   payments<T extends Prisma.organizations$paymentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizations$paymentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$paymentsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  suppressions<T extends Prisma.organizations$suppressionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizations$suppressionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$suppressionsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  credit_notes<T extends Prisma.organizations$credit_notesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizations$credit_notesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$credit_notesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   users<T extends Prisma.organizations$usersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizations$usersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$usersPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2086,6 +2370,54 @@ export type organizations$paymentsArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.PaymentsScalarFieldEnum | Prisma.PaymentsScalarFieldEnum[]
+}
+
+/**
+ * organizations.suppressions
+ */
+export type organizations$suppressionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the suppressions
+   */
+  select?: Prisma.suppressionsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the suppressions
+   */
+  omit?: Prisma.suppressionsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.suppressionsInclude<ExtArgs> | null
+  where?: Prisma.suppressionsWhereInput
+  orderBy?: Prisma.suppressionsOrderByWithRelationInput | Prisma.suppressionsOrderByWithRelationInput[]
+  cursor?: Prisma.suppressionsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SuppressionsScalarFieldEnum | Prisma.SuppressionsScalarFieldEnum[]
+}
+
+/**
+ * organizations.credit_notes
+ */
+export type organizations$credit_notesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the credit_notes
+   */
+  select?: Prisma.credit_notesSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the credit_notes
+   */
+  omit?: Prisma.credit_notesOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.credit_notesInclude<ExtArgs> | null
+  where?: Prisma.credit_notesWhereInput
+  orderBy?: Prisma.credit_notesOrderByWithRelationInput | Prisma.credit_notesOrderByWithRelationInput[]
+  cursor?: Prisma.credit_notesWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Credit_notesScalarFieldEnum | Prisma.Credit_notesScalarFieldEnum[]
 }
 
 /**

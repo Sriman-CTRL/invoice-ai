@@ -1,6 +1,7 @@
 import "dotenv/config";
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
+import helmet from "helmet";
 import prisma from "./lib/prisma";
 import customerRoutes from "./routes/customer.routes";
 import organizationRoutes from "./routes/organization.routes";
@@ -12,39 +13,148 @@ import collectionActionRoutes from "./routes/collection-action.routes";
 import overdueInvoicesRoutes from "./routes/overdue-invoices.routes";
 import dashboardRoutes from "./routes/dashboard.routes";
 import authRoutes from "./routes/auth.routes";
+import inboundRoutes from "./routes/inbound.routes";
+import complianceRoutes from "./routes/compliance.routes";
+import creditNoteRoutes from "./routes/credit-note.routes";
 import { authMiddleware } from "./middleware/auth.middleware";
+import { rateLimit } from "./middleware/rateLimit";
+
 const app = express();
 
-app.use(cors());
-app.use(express.json());
-app.use("/api/auth", authRoutes);
+// Trust reverse proxy (Cloudflare/Nginx/Docker) so req.ip and rate-limits are accurate
+app.set("trust proxy", 1);
 
+app.disable("x-powered-by");
+
+// LAYER 2: Comprehensive Security Headers via Helmet
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        baseUri: ["'none'"],
+      },
+    },
+    frameguard: { action: "deny" },
+    hsts: {
+      maxAge: 63072000, // 2 years
+      includeSubDomains: true,
+      preload: true,
+    },
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    noSniff: true,
+    dnsPrefetchControl: { allow: false },
+  }),
+);
+
+// Explicit permissions policy header (disable camera, mic, geolocation)
+app.use((_req, res, next) => {
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+  next();
+});
+
+// LAYER 2: Production-grade CORS
+// In production, never reflect origin: true with credentials: true.
+const rawCorsOrigin = process.env.CORS_ORIGIN || "http://localhost:5173";
+const allowedOrigins = rawCorsOrigin.split(",").map((o) => o.trim()).filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server, n8n)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-inbound-key", "Accept"],
+    maxAge: 86400, // Preflight cache 24h
+  }),
+);
+
+app.use(express.json({ limit: "1mb" }));
+
+// LAYER 5: Multi-Tier Rate Limiting
+// 1. Auth routes (login/register) - brute force defense
+app.use("/api/auth", rateLimit({ windowMs: 60_000, max: 60, message: "Too many authentication attempts. Please wait 1 minute." }), authRoutes);
+
+// 2. Inbound webhook endpoint
+app.use("/api/inbound", inboundRoutes);
+
+// 3. Authenticated routes with fine-grained rate limits
 app.use("/api/invoices", authMiddleware, invoiceRoutes);
-app.use("/api/payments", authMiddleware, paymentRoutes);
+
+// Rate-limit payment creation to prevent transaction spamming (30/min per tenant)
+app.use(
+  "/api/payments",
+  authMiddleware,
+  rateLimit({
+    windowMs: 60_000,
+    max: 30,
+    keyFn: (req) => `${req.user?.organization_id || req.ip}_payments`,
+    message: "Payment transaction rate limit exceeded. Please wait a moment.",
+  }),
+  paymentRoutes,
+);
+
 app.use("/api/customers", authMiddleware, customerRoutes);
-app.use("/api/organizations", authMiddleware, organizationRoutes); // Note: Could restrict some of this, but following instruction
-app.use("/api/messages", authMiddleware, messageRoutes);
+app.use("/api/organizations", authMiddleware, organizationRoutes);
+
+// Reprocess & ingest rate limits on messages
+app.use(
+  "/api/messages",
+  authMiddleware,
+  rateLimit({
+    windowMs: 60_000,
+    max: 60,
+    keyFn: (req) => `${req.user?.organization_id || req.ip}_messages`,
+  }),
+  messageRoutes,
+);
+
 app.use("/api/conversations", authMiddleware, conversationRoutes);
 app.use("/api/collection-actions", authMiddleware, collectionActionRoutes);
-app.use("/api/overdue-invoices", authMiddleware, overdueInvoicesRoutes);
+
+// Rate-limit heavy background scan queries (5 per minute per tenant)
+app.use(
+  "/api/overdue-invoices",
+  authMiddleware,
+  rateLimit({
+    windowMs: 60_000,
+    max: 10,
+    keyFn: (req) => `${req.user?.organization_id || req.ip}_overdue`,
+    message: "Overdue scan rate limit exceeded. Only 10 scans per minute allowed.",
+  }),
+  overdueInvoicesRoutes,
+);
+
 app.use("/api/dashboard", authMiddleware, dashboardRoutes);
+app.use("/api/compliance", authMiddleware, complianceRoutes);
+app.use("/api/credit-notes", authMiddleware, creditNoteRoutes);
 
 app.get("/health", async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
-
-    res.json({
-      status: "ok",
-      database: "connected",
-    });
+    res.json({ status: "ok", database: "connected" });
   } catch (error) {
     console.error(error);
-
-    res.status(500).json({
-      status: "error",
-      database: "disconnected",
-    });
+    res.status(500).json({ status: "error", database: "disconnected" });
   }
+});
+
+// JSON 404 for unknown API routes
+app.use((_req, res) => {
+  res.status(404).json({ error: "Not found" });
+});
+
+// Last-resort error handler: never leak stack traces to clients.
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  console.error("Unhandled error:", err);
+  res.status(500).json({ error: "Internal server error" });
 });
 
 const PORT = process.env.PORT || 5000;

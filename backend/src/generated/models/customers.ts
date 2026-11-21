@@ -32,6 +32,7 @@ export type CustomersMinAggregateOutputType = {
   company_name: string | null
   phone: string | null
   external_customer_id: string | null
+  processing_restricted: boolean | null
   created_at: Date | null
   updated_at: Date | null
 }
@@ -44,6 +45,7 @@ export type CustomersMaxAggregateOutputType = {
   company_name: string | null
   phone: string | null
   external_customer_id: string | null
+  processing_restricted: boolean | null
   created_at: Date | null
   updated_at: Date | null
 }
@@ -56,6 +58,7 @@ export type CustomersCountAggregateOutputType = {
   company_name: number
   phone: number
   external_customer_id: number
+  processing_restricted: number
   created_at: number
   updated_at: number
   _all: number
@@ -70,6 +73,7 @@ export type CustomersMinAggregateInputType = {
   company_name?: true
   phone?: true
   external_customer_id?: true
+  processing_restricted?: true
   created_at?: true
   updated_at?: true
 }
@@ -82,6 +86,7 @@ export type CustomersMaxAggregateInputType = {
   company_name?: true
   phone?: true
   external_customer_id?: true
+  processing_restricted?: true
   created_at?: true
   updated_at?: true
 }
@@ -94,6 +99,7 @@ export type CustomersCountAggregateInputType = {
   company_name?: true
   phone?: true
   external_customer_id?: true
+  processing_restricted?: true
   created_at?: true
   updated_at?: true
   _all?: true
@@ -179,6 +185,7 @@ export type CustomersGroupByOutputType = {
   company_name: string | null
   phone: string | null
   external_customer_id: string | null
+  processing_restricted: boolean
   created_at: Date
   updated_at: Date
   _count: CustomersCountAggregateOutputType | null
@@ -212,12 +219,14 @@ export type customersWhereInput = {
   company_name?: Prisma.StringNullableFilter<"customers"> | string | null
   phone?: Prisma.StringNullableFilter<"customers"> | string | null
   external_customer_id?: Prisma.StringNullableFilter<"customers"> | string | null
+  processing_restricted?: Prisma.BoolFilter<"customers"> | boolean
   created_at?: Prisma.DateTimeFilter<"customers"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"customers"> | Date | string
   collection_actions?: Prisma.Collection_actionsListRelationFilter
   conversations?: Prisma.ConversationsListRelationFilter
   organizations?: Prisma.XOR<Prisma.OrganizationsScalarRelationFilter, Prisma.organizationsWhereInput>
   invoices?: Prisma.InvoicesListRelationFilter
+  credit_notes?: Prisma.Credit_notesListRelationFilter
 }
 
 export type customersOrderByWithRelationInput = {
@@ -228,12 +237,14 @@ export type customersOrderByWithRelationInput = {
   company_name?: Prisma.SortOrderInput | Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   external_customer_id?: Prisma.SortOrderInput | Prisma.SortOrder
+  processing_restricted?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   collection_actions?: Prisma.collection_actionsOrderByRelationAggregateInput
   conversations?: Prisma.conversationsOrderByRelationAggregateInput
   organizations?: Prisma.organizationsOrderByWithRelationInput
   invoices?: Prisma.invoicesOrderByRelationAggregateInput
+  credit_notes?: Prisma.credit_notesOrderByRelationAggregateInput
 }
 
 export type customersWhereUniqueInput = Prisma.AtLeast<{
@@ -248,12 +259,14 @@ export type customersWhereUniqueInput = Prisma.AtLeast<{
   company_name?: Prisma.StringNullableFilter<"customers"> | string | null
   phone?: Prisma.StringNullableFilter<"customers"> | string | null
   external_customer_id?: Prisma.StringNullableFilter<"customers"> | string | null
+  processing_restricted?: Prisma.BoolFilter<"customers"> | boolean
   created_at?: Prisma.DateTimeFilter<"customers"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"customers"> | Date | string
   collection_actions?: Prisma.Collection_actionsListRelationFilter
   conversations?: Prisma.ConversationsListRelationFilter
   organizations?: Prisma.XOR<Prisma.OrganizationsScalarRelationFilter, Prisma.organizationsWhereInput>
   invoices?: Prisma.InvoicesListRelationFilter
+  credit_notes?: Prisma.Credit_notesListRelationFilter
 }, "id" | "organization_id_email">
 
 export type customersOrderByWithAggregationInput = {
@@ -264,6 +277,7 @@ export type customersOrderByWithAggregationInput = {
   company_name?: Prisma.SortOrderInput | Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   external_customer_id?: Prisma.SortOrderInput | Prisma.SortOrder
+  processing_restricted?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   _count?: Prisma.customersCountOrderByAggregateInput
@@ -282,6 +296,7 @@ export type customersScalarWhereWithAggregatesInput = {
   company_name?: Prisma.StringNullableWithAggregatesFilter<"customers"> | string | null
   phone?: Prisma.StringNullableWithAggregatesFilter<"customers"> | string | null
   external_customer_id?: Prisma.StringNullableWithAggregatesFilter<"customers"> | string | null
+  processing_restricted?: Prisma.BoolWithAggregatesFilter<"customers"> | boolean
   created_at?: Prisma.DateTimeWithAggregatesFilter<"customers"> | Date | string
   updated_at?: Prisma.DateTimeWithAggregatesFilter<"customers"> | Date | string
 }
@@ -293,12 +308,14 @@ export type customersCreateInput = {
   company_name?: string | null
   phone?: string | null
   external_customer_id?: string | null
+  processing_restricted?: boolean
   created_at?: Date | string
   updated_at?: Date | string
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutCustomersInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutCustomersInput
   organizations: Prisma.organizationsCreateNestedOneWithoutCustomersInput
   invoices?: Prisma.invoicesCreateNestedManyWithoutCustomersInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutCustomersInput
 }
 
 export type customersUncheckedCreateInput = {
@@ -309,11 +326,13 @@ export type customersUncheckedCreateInput = {
   company_name?: string | null
   phone?: string | null
   external_customer_id?: string | null
+  processing_restricted?: boolean
   created_at?: Date | string
   updated_at?: Date | string
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutCustomersInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutCustomersInput
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutCustomersInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutCustomersInput
 }
 
 export type customersUpdateInput = {
@@ -323,12 +342,14 @@ export type customersUpdateInput = {
   company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   external_customer_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  processing_restricted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutCustomersNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutCustomersNestedInput
   organizations?: Prisma.organizationsUpdateOneRequiredWithoutCustomersNestedInput
   invoices?: Prisma.invoicesUpdateManyWithoutCustomersNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutCustomersNestedInput
 }
 
 export type customersUncheckedUpdateInput = {
@@ -339,11 +360,13 @@ export type customersUncheckedUpdateInput = {
   company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   external_customer_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  processing_restricted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutCustomersNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutCustomersNestedInput
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutCustomersNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutCustomersNestedInput
 }
 
 export type customersCreateManyInput = {
@@ -354,6 +377,7 @@ export type customersCreateManyInput = {
   company_name?: string | null
   phone?: string | null
   external_customer_id?: string | null
+  processing_restricted?: boolean
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -365,6 +389,7 @@ export type customersUpdateManyMutationInput = {
   company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   external_customer_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  processing_restricted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -377,6 +402,7 @@ export type customersUncheckedUpdateManyInput = {
   company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   external_customer_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  processing_restricted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -404,6 +430,7 @@ export type customersCountOrderByAggregateInput = {
   company_name?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   external_customer_id?: Prisma.SortOrder
+  processing_restricted?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
@@ -416,6 +443,7 @@ export type customersMaxOrderByAggregateInput = {
   company_name?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   external_customer_id?: Prisma.SortOrder
+  processing_restricted?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
@@ -428,6 +456,7 @@ export type customersMinOrderByAggregateInput = {
   company_name?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   external_customer_id?: Prisma.SortOrder
+  processing_restricted?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
@@ -470,6 +499,10 @@ export type customersUpdateOneRequiredWithoutConversationsNestedInput = {
   upsert?: Prisma.customersUpsertWithoutConversationsInput
   connect?: Prisma.customersWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.customersUpdateToOneWithWhereWithoutConversationsInput, Prisma.customersUpdateWithoutConversationsInput>, Prisma.customersUncheckedUpdateWithoutConversationsInput>
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
 }
 
 export type customersCreateNestedOneWithoutInvoicesInput = {
@@ -528,6 +561,20 @@ export type customersUncheckedUpdateManyWithoutOrganizationsNestedInput = {
   deleteMany?: Prisma.customersScalarWhereInput | Prisma.customersScalarWhereInput[]
 }
 
+export type customersCreateNestedOneWithoutCredit_notesInput = {
+  create?: Prisma.XOR<Prisma.customersCreateWithoutCredit_notesInput, Prisma.customersUncheckedCreateWithoutCredit_notesInput>
+  connectOrCreate?: Prisma.customersCreateOrConnectWithoutCredit_notesInput
+  connect?: Prisma.customersWhereUniqueInput
+}
+
+export type customersUpdateOneRequiredWithoutCredit_notesNestedInput = {
+  create?: Prisma.XOR<Prisma.customersCreateWithoutCredit_notesInput, Prisma.customersUncheckedCreateWithoutCredit_notesInput>
+  connectOrCreate?: Prisma.customersCreateOrConnectWithoutCredit_notesInput
+  upsert?: Prisma.customersUpsertWithoutCredit_notesInput
+  connect?: Prisma.customersWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.customersUpdateToOneWithWhereWithoutCredit_notesInput, Prisma.customersUpdateWithoutCredit_notesInput>, Prisma.customersUncheckedUpdateWithoutCredit_notesInput>
+}
+
 export type customersCreateWithoutCollection_actionsInput = {
   id?: string
   name: string
@@ -535,11 +582,13 @@ export type customersCreateWithoutCollection_actionsInput = {
   company_name?: string | null
   phone?: string | null
   external_customer_id?: string | null
+  processing_restricted?: boolean
   created_at?: Date | string
   updated_at?: Date | string
   conversations?: Prisma.conversationsCreateNestedManyWithoutCustomersInput
   organizations: Prisma.organizationsCreateNestedOneWithoutCustomersInput
   invoices?: Prisma.invoicesCreateNestedManyWithoutCustomersInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutCustomersInput
 }
 
 export type customersUncheckedCreateWithoutCollection_actionsInput = {
@@ -550,10 +599,12 @@ export type customersUncheckedCreateWithoutCollection_actionsInput = {
   company_name?: string | null
   phone?: string | null
   external_customer_id?: string | null
+  processing_restricted?: boolean
   created_at?: Date | string
   updated_at?: Date | string
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutCustomersInput
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutCustomersInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutCustomersInput
 }
 
 export type customersCreateOrConnectWithoutCollection_actionsInput = {
@@ -579,11 +630,13 @@ export type customersUpdateWithoutCollection_actionsInput = {
   company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   external_customer_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  processing_restricted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   conversations?: Prisma.conversationsUpdateManyWithoutCustomersNestedInput
   organizations?: Prisma.organizationsUpdateOneRequiredWithoutCustomersNestedInput
   invoices?: Prisma.invoicesUpdateManyWithoutCustomersNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutCustomersNestedInput
 }
 
 export type customersUncheckedUpdateWithoutCollection_actionsInput = {
@@ -594,10 +647,12 @@ export type customersUncheckedUpdateWithoutCollection_actionsInput = {
   company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   external_customer_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  processing_restricted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutCustomersNestedInput
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutCustomersNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutCustomersNestedInput
 }
 
 export type customersCreateWithoutConversationsInput = {
@@ -607,11 +662,13 @@ export type customersCreateWithoutConversationsInput = {
   company_name?: string | null
   phone?: string | null
   external_customer_id?: string | null
+  processing_restricted?: boolean
   created_at?: Date | string
   updated_at?: Date | string
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutCustomersInput
   organizations: Prisma.organizationsCreateNestedOneWithoutCustomersInput
   invoices?: Prisma.invoicesCreateNestedManyWithoutCustomersInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutCustomersInput
 }
 
 export type customersUncheckedCreateWithoutConversationsInput = {
@@ -622,10 +679,12 @@ export type customersUncheckedCreateWithoutConversationsInput = {
   company_name?: string | null
   phone?: string | null
   external_customer_id?: string | null
+  processing_restricted?: boolean
   created_at?: Date | string
   updated_at?: Date | string
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutCustomersInput
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutCustomersInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutCustomersInput
 }
 
 export type customersCreateOrConnectWithoutConversationsInput = {
@@ -651,11 +710,13 @@ export type customersUpdateWithoutConversationsInput = {
   company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   external_customer_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  processing_restricted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutCustomersNestedInput
   organizations?: Prisma.organizationsUpdateOneRequiredWithoutCustomersNestedInput
   invoices?: Prisma.invoicesUpdateManyWithoutCustomersNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutCustomersNestedInput
 }
 
 export type customersUncheckedUpdateWithoutConversationsInput = {
@@ -666,10 +727,12 @@ export type customersUncheckedUpdateWithoutConversationsInput = {
   company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   external_customer_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  processing_restricted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutCustomersNestedInput
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutCustomersNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutCustomersNestedInput
 }
 
 export type customersCreateWithoutInvoicesInput = {
@@ -679,11 +742,13 @@ export type customersCreateWithoutInvoicesInput = {
   company_name?: string | null
   phone?: string | null
   external_customer_id?: string | null
+  processing_restricted?: boolean
   created_at?: Date | string
   updated_at?: Date | string
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutCustomersInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutCustomersInput
   organizations: Prisma.organizationsCreateNestedOneWithoutCustomersInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutCustomersInput
 }
 
 export type customersUncheckedCreateWithoutInvoicesInput = {
@@ -694,10 +759,12 @@ export type customersUncheckedCreateWithoutInvoicesInput = {
   company_name?: string | null
   phone?: string | null
   external_customer_id?: string | null
+  processing_restricted?: boolean
   created_at?: Date | string
   updated_at?: Date | string
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutCustomersInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutCustomersInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutCustomersInput
 }
 
 export type customersCreateOrConnectWithoutInvoicesInput = {
@@ -723,11 +790,13 @@ export type customersUpdateWithoutInvoicesInput = {
   company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   external_customer_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  processing_restricted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutCustomersNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutCustomersNestedInput
   organizations?: Prisma.organizationsUpdateOneRequiredWithoutCustomersNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutCustomersNestedInput
 }
 
 export type customersUncheckedUpdateWithoutInvoicesInput = {
@@ -738,10 +807,12 @@ export type customersUncheckedUpdateWithoutInvoicesInput = {
   company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   external_customer_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  processing_restricted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutCustomersNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutCustomersNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutCustomersNestedInput
 }
 
 export type customersCreateWithoutOrganizationsInput = {
@@ -751,11 +822,13 @@ export type customersCreateWithoutOrganizationsInput = {
   company_name?: string | null
   phone?: string | null
   external_customer_id?: string | null
+  processing_restricted?: boolean
   created_at?: Date | string
   updated_at?: Date | string
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutCustomersInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutCustomersInput
   invoices?: Prisma.invoicesCreateNestedManyWithoutCustomersInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutCustomersInput
 }
 
 export type customersUncheckedCreateWithoutOrganizationsInput = {
@@ -765,11 +838,13 @@ export type customersUncheckedCreateWithoutOrganizationsInput = {
   company_name?: string | null
   phone?: string | null
   external_customer_id?: string | null
+  processing_restricted?: boolean
   created_at?: Date | string
   updated_at?: Date | string
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutCustomersInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutCustomersInput
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutCustomersInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutCustomersInput
 }
 
 export type customersCreateOrConnectWithoutOrganizationsInput = {
@@ -809,8 +884,89 @@ export type customersScalarWhereInput = {
   company_name?: Prisma.StringNullableFilter<"customers"> | string | null
   phone?: Prisma.StringNullableFilter<"customers"> | string | null
   external_customer_id?: Prisma.StringNullableFilter<"customers"> | string | null
+  processing_restricted?: Prisma.BoolFilter<"customers"> | boolean
   created_at?: Prisma.DateTimeFilter<"customers"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"customers"> | Date | string
+}
+
+export type customersCreateWithoutCredit_notesInput = {
+  id?: string
+  name: string
+  email: string
+  company_name?: string | null
+  phone?: string | null
+  external_customer_id?: string | null
+  processing_restricted?: boolean
+  created_at?: Date | string
+  updated_at?: Date | string
+  collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutCustomersInput
+  conversations?: Prisma.conversationsCreateNestedManyWithoutCustomersInput
+  organizations: Prisma.organizationsCreateNestedOneWithoutCustomersInput
+  invoices?: Prisma.invoicesCreateNestedManyWithoutCustomersInput
+}
+
+export type customersUncheckedCreateWithoutCredit_notesInput = {
+  id?: string
+  organization_id: string
+  name: string
+  email: string
+  company_name?: string | null
+  phone?: string | null
+  external_customer_id?: string | null
+  processing_restricted?: boolean
+  created_at?: Date | string
+  updated_at?: Date | string
+  collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutCustomersInput
+  conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutCustomersInput
+  invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutCustomersInput
+}
+
+export type customersCreateOrConnectWithoutCredit_notesInput = {
+  where: Prisma.customersWhereUniqueInput
+  create: Prisma.XOR<Prisma.customersCreateWithoutCredit_notesInput, Prisma.customersUncheckedCreateWithoutCredit_notesInput>
+}
+
+export type customersUpsertWithoutCredit_notesInput = {
+  update: Prisma.XOR<Prisma.customersUpdateWithoutCredit_notesInput, Prisma.customersUncheckedUpdateWithoutCredit_notesInput>
+  create: Prisma.XOR<Prisma.customersCreateWithoutCredit_notesInput, Prisma.customersUncheckedCreateWithoutCredit_notesInput>
+  where?: Prisma.customersWhereInput
+}
+
+export type customersUpdateToOneWithWhereWithoutCredit_notesInput = {
+  where?: Prisma.customersWhereInput
+  data: Prisma.XOR<Prisma.customersUpdateWithoutCredit_notesInput, Prisma.customersUncheckedUpdateWithoutCredit_notesInput>
+}
+
+export type customersUpdateWithoutCredit_notesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  external_customer_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  processing_restricted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  collection_actions?: Prisma.collection_actionsUpdateManyWithoutCustomersNestedInput
+  conversations?: Prisma.conversationsUpdateManyWithoutCustomersNestedInput
+  organizations?: Prisma.organizationsUpdateOneRequiredWithoutCustomersNestedInput
+  invoices?: Prisma.invoicesUpdateManyWithoutCustomersNestedInput
+}
+
+export type customersUncheckedUpdateWithoutCredit_notesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  organization_id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  external_customer_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  processing_restricted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutCustomersNestedInput
+  conversations?: Prisma.conversationsUncheckedUpdateManyWithoutCustomersNestedInput
+  invoices?: Prisma.invoicesUncheckedUpdateManyWithoutCustomersNestedInput
 }
 
 export type customersCreateManyOrganizationsInput = {
@@ -820,6 +976,7 @@ export type customersCreateManyOrganizationsInput = {
   company_name?: string | null
   phone?: string | null
   external_customer_id?: string | null
+  processing_restricted?: boolean
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -831,11 +988,13 @@ export type customersUpdateWithoutOrganizationsInput = {
   company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   external_customer_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  processing_restricted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutCustomersNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutCustomersNestedInput
   invoices?: Prisma.invoicesUpdateManyWithoutCustomersNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutCustomersNestedInput
 }
 
 export type customersUncheckedUpdateWithoutOrganizationsInput = {
@@ -845,11 +1004,13 @@ export type customersUncheckedUpdateWithoutOrganizationsInput = {
   company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   external_customer_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  processing_restricted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutCustomersNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutCustomersNestedInput
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutCustomersNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutCustomersNestedInput
 }
 
 export type customersUncheckedUpdateManyWithoutOrganizationsInput = {
@@ -859,6 +1020,7 @@ export type customersUncheckedUpdateManyWithoutOrganizationsInput = {
   company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   external_customer_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  processing_restricted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -872,12 +1034,14 @@ export type CustomersCountOutputType = {
   collection_actions: number
   conversations: number
   invoices: number
+  credit_notes: number
 }
 
 export type CustomersCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   collection_actions?: boolean | CustomersCountOutputTypeCountCollection_actionsArgs
   conversations?: boolean | CustomersCountOutputTypeCountConversationsArgs
   invoices?: boolean | CustomersCountOutputTypeCountInvoicesArgs
+  credit_notes?: boolean | CustomersCountOutputTypeCountCredit_notesArgs
 }
 
 /**
@@ -911,6 +1075,13 @@ export type CustomersCountOutputTypeCountInvoicesArgs<ExtArgs extends runtime.Ty
   where?: Prisma.invoicesWhereInput
 }
 
+/**
+ * CustomersCountOutputType without action
+ */
+export type CustomersCountOutputTypeCountCredit_notesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.credit_notesWhereInput
+}
+
 
 export type customersSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -920,12 +1091,14 @@ export type customersSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   company_name?: boolean
   phone?: boolean
   external_customer_id?: boolean
+  processing_restricted?: boolean
   created_at?: boolean
   updated_at?: boolean
   collection_actions?: boolean | Prisma.customers$collection_actionsArgs<ExtArgs>
   conversations?: boolean | Prisma.customers$conversationsArgs<ExtArgs>
   organizations?: boolean | Prisma.organizationsDefaultArgs<ExtArgs>
   invoices?: boolean | Prisma.customers$invoicesArgs<ExtArgs>
+  credit_notes?: boolean | Prisma.customers$credit_notesArgs<ExtArgs>
   _count?: boolean | Prisma.CustomersCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["customers"]>
 
@@ -937,6 +1110,7 @@ export type customersSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   company_name?: boolean
   phone?: boolean
   external_customer_id?: boolean
+  processing_restricted?: boolean
   created_at?: boolean
   updated_at?: boolean
   organizations?: boolean | Prisma.organizationsDefaultArgs<ExtArgs>
@@ -950,6 +1124,7 @@ export type customersSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   company_name?: boolean
   phone?: boolean
   external_customer_id?: boolean
+  processing_restricted?: boolean
   created_at?: boolean
   updated_at?: boolean
   organizations?: boolean | Prisma.organizationsDefaultArgs<ExtArgs>
@@ -963,16 +1138,18 @@ export type customersSelectScalar = {
   company_name?: boolean
   phone?: boolean
   external_customer_id?: boolean
+  processing_restricted?: boolean
   created_at?: boolean
   updated_at?: boolean
 }
 
-export type customersOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "organization_id" | "name" | "email" | "company_name" | "phone" | "external_customer_id" | "created_at" | "updated_at", ExtArgs["result"]["customers"]>
+export type customersOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "organization_id" | "name" | "email" | "company_name" | "phone" | "external_customer_id" | "processing_restricted" | "created_at" | "updated_at", ExtArgs["result"]["customers"]>
 export type customersInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   collection_actions?: boolean | Prisma.customers$collection_actionsArgs<ExtArgs>
   conversations?: boolean | Prisma.customers$conversationsArgs<ExtArgs>
   organizations?: boolean | Prisma.organizationsDefaultArgs<ExtArgs>
   invoices?: boolean | Prisma.customers$invoicesArgs<ExtArgs>
+  credit_notes?: boolean | Prisma.customers$credit_notesArgs<ExtArgs>
   _count?: boolean | Prisma.CustomersCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type customersIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -989,6 +1166,7 @@ export type $customersPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     conversations: Prisma.$conversationsPayload<ExtArgs>[]
     organizations: Prisma.$organizationsPayload<ExtArgs>
     invoices: Prisma.$invoicesPayload<ExtArgs>[]
+    credit_notes: Prisma.$credit_notesPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -998,6 +1176,7 @@ export type $customersPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     company_name: string | null
     phone: string | null
     external_customer_id: string | null
+    processing_restricted: boolean
     created_at: Date
     updated_at: Date
   }, ExtArgs["result"]["customers"]>
@@ -1398,6 +1577,7 @@ export interface Prisma__customersClient<T, Null = never, ExtArgs extends runtim
   conversations<T extends Prisma.customers$conversationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.customers$conversationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$conversationsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   organizations<T extends Prisma.organizationsDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizationsDefaultArgs<ExtArgs>>): Prisma.Prisma__organizationsClient<runtime.Types.Result.GetResult<Prisma.$organizationsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   invoices<T extends Prisma.customers$invoicesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.customers$invoicesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$invoicesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  credit_notes<T extends Prisma.customers$credit_notesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.customers$credit_notesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$credit_notesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1434,6 +1614,7 @@ export interface customersFieldRefs {
   readonly company_name: Prisma.FieldRef<"customers", 'String'>
   readonly phone: Prisma.FieldRef<"customers", 'String'>
   readonly external_customer_id: Prisma.FieldRef<"customers", 'String'>
+  readonly processing_restricted: Prisma.FieldRef<"customers", 'Boolean'>
   readonly created_at: Prisma.FieldRef<"customers", 'DateTime'>
   readonly updated_at: Prisma.FieldRef<"customers", 'DateTime'>
 }
@@ -1906,6 +2087,30 @@ export type customers$invoicesArgs<ExtArgs extends runtime.Types.Extensions.Inte
   take?: number
   skip?: number
   distinct?: Prisma.InvoicesScalarFieldEnum | Prisma.InvoicesScalarFieldEnum[]
+}
+
+/**
+ * customers.credit_notes
+ */
+export type customers$credit_notesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the credit_notes
+   */
+  select?: Prisma.credit_notesSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the credit_notes
+   */
+  omit?: Prisma.credit_notesOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.credit_notesInclude<ExtArgs> | null
+  where?: Prisma.credit_notesWhereInput
+  orderBy?: Prisma.credit_notesOrderByWithRelationInput | Prisma.credit_notesOrderByWithRelationInput[]
+  cursor?: Prisma.credit_notesWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Credit_notesScalarFieldEnum | Prisma.Credit_notesScalarFieldEnum[]
 }
 
 /**

@@ -1,0 +1,66 @@
+name: FinTech Security & Compliance CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  audit-and-test:
+    name: Security, Compliance & Unit Verification
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: invoice_admin
+          POSTGRES_PASSWORD: invoice_dev_password
+          POSTGRES_DB: invoice_ai
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-cmd-interval 5s
+          --health-cmd-timeout 5s
+          --health-cmd-retries 5
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Sync Database Schema & Generate Prisma Client
+        working-directory: ./backend
+        env:
+          DATABASE_URL: "postgresql://invoice_admin:invoice_dev_password@localhost:5432/invoice_ai"
+        run: |
+          npx prisma db push --skip-generate
+          npx prisma generate
+
+      - name: Run Backend Unit, Security & Compliance Test Suite
+        working-directory: ./backend
+        env:
+          DATABASE_URL: "postgresql://invoice_admin:invoice_dev_password@localhost:5432/invoice_ai"
+          JWT_SECRET: "test_secret_for_ci_pipeline_verification_32chars"
+        run: npm test
+
+      - name: Verify Backend TypeScript Build
+        working-directory: ./backend
+        run: npm run build
+
+      - name: Verify Frontend Production Build
+        run: npm run build

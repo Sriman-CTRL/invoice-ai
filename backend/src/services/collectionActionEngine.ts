@@ -1,4 +1,5 @@
 import prisma from "../lib/prisma";
+import { AI_CONFIDENCE_THRESHOLD } from "../lib/config";
 import type { ClassificationResult, MessageIntent } from "./ai/types";
 
 /**
@@ -57,12 +58,16 @@ export async function runCollectionActionEngine(
     const { organization_id, customer_id, invoice_id, conversation_id, classification } = input;
     const { intent } = classification;
 
+    // Low-confidence classifications route to a human instead of auto-acting.
+    const lowConfidence = classification.confidence < AI_CONFIDENCE_THRESHOLD;
+
     // Metadata to store in the action for auditability
     // Cast to 'object' satisfies Prisma's InputJsonValue constraint
     const metadata = {
         message_id: input.message_id,
         ai_intent: classification.intent,
         ai_confidence: classification.confidence,
+        low_confidence: lowConfidence,
         promised_date: classification.promised_date,
         promised_amount: classification.promised_amount,
         reason: classification.reason,
@@ -92,7 +97,7 @@ export async function runCollectionActionEngine(
         OTHER: "MANUAL_REVIEW",
     };
 
-    const action_type = actionTypeMap[intent];
+    const action_type = lowConfidence ? "MANUAL_REVIEW" : actionTypeMap[intent];
     if (!action_type) {
         return {
             action_created: false,

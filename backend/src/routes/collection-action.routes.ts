@@ -6,55 +6,183 @@ const router = Router();
 const VALID_STATUSES = ["PENDING", "PROCESSING", "COMPLETED", "FAILED", "CANCELLED"];
 
 /**
+ * POST /api/collection-actions/claim-due  (alias: /claim)
+ *
+ * Contract used by the n8n "Claim Due Follow-ups" node:
+ *   body:     { action_type?: "FOLLOW_UP_SCHEDULED", limit?: 20 }
+ *   response: { claimed: [ { action_id, action_type, status, scheduled_at,
+ *                            customer_name, customer_email,
+ *                            invoice_number, invoice_amount,
+ *                            promised_date, reply_to_message_id } ], Count }
+ *
+ * Atomically moves due PENDING actions to PROCESSING (SELECT ... FOR UPDATE
+ * SKIP LOCKED) so two workers can never claim the same action. Returns flat
+ * fields so n8n's "Build Reminder" / Gmail nodes can use them directly.
+ */
+router.post(["/claim", "/claim-due"], async (req: Request, res: Response): Promise<void> => {
+  try {
+    const organization_id = req.body?.organization_id || req.user?.organization_id;
+    if (!organization_id || typeof organization_id !== "string") {
+      res.status(400).json({ error: "organization_id is required" });
+      return;
+    }
+
+    const limit = Math.min(50, Math.max(1, Number(req.body?.limit) || 20));
+    const action_type =
+      typeof req.body?.action_type === "string" && req.body.action_type
+        ? req.body.action_type
+        : null;
+    const include_future = Boolean(req.body?.include_future);
+
+    const claimed = await prisma.$transaction(async (tx) => {
+      const rows = await tx.$queryRaw<Array<{ id: string }>>`
+        UPDATE collection_actions AS ca
+        SET status = 'PROCESSING'
+        FROM (
+          SELECT id FROM collection_actions ca_sub
+          WHERE ca_sub.organization_id = ${organization_id}::uuid
+            AND ca_sub.status = 'PENDING'
+            AND (${include_future}::boolean = true OR ca_sub.scheduled_at IS NULL OR ca_sub.scheduled_at <= now())
+            AND (${action_type}::text IS NULL OR ca_sub.action_type = ${action_type})
+            AND NOT EXISTS (
+              SELECT 1 FROM suppressions s
+              JOIN customers c ON c.email = s.address AND c.organization_id = s.organization_id
+              WHERE c.id = ca_sub.customer_id AND s.organization_id = ca_sub.organization_id
+            )
+            AND NOT EXISTS (
+              SELECT 1 FROM collection_actions ca_disp
+              WHERE ca_disp.invoice_id = ca_sub.invoice_id
+                AND ca_disp.organization_id = ca_sub.organization_id
+                AND ca_disp.action_type = 'ESCALATE_DISPUTE'
+                AND ca_disp.status IN ('PENDING', 'PROCESSING')
+            )
+          ORDER BY ca_sub.scheduled_at ASC NULLS LAST, ca_sub.created_at ASC
+          LIMIT ${limit}
+          FOR UPDATE SKIP LOCKED
+        ) AS sub
+        WHERE ca.id = sub.id
+        RETURNING ca.id
+      `;
+
+      const ids = rows.map((r) => r.id);
+      if (ids.length === 0) return [];
+
+      return tx.collection_actions.findMany({
+        where: { id: { in: ids } },
+        include: { customers: true, invoices: true },
+      });
+    });
+
+    // Resolve each action's source message -> Gmail message id, so n8n can
+    // "reply" to the customer's original email.
+    const sourceMessageIds = claimed
+      .map((a) => (a.metadata as Record<string, unknown> | null)?.message_id)
+      .filter((x): x is string => typeof x === "string");
+    const sourceMessages = sourceMessageIds.length
+      ? await prisma.messages.findMany({
+          where: { id: { in: sourceMessageIds }, organization_id },
+          select: { id: true, external_message_id: true },
+        })
+      : [];
+    const externalById = new Map(sourceMessages.map((m) => [m.id, m.external_message_id]));
+
+    // Fallback: If message_id wasn't in metadata or didn't have external_message_id,
+    // find the latest inbound message for the conversation.
+    const missingConvIds = claimed
+      .filter((a) => {
+        const meta = (a.metadata ?? {}) as Record<string, unknown>;
+        const msgId = typeof meta.message_id === "string" ? meta.message_id : null;
+        return (!msgId || !externalById.get(msgId)) && a.conversation_id;
+      })
+      .map((a) => a.conversation_id as string);
+
+    const convMessages = missingConvIds.length
+      ? await prisma.messages.findMany({
+          where: {
+            conversation_id: { in: missingConvIds },
+            organization_id,
+            direction: "INBOUND",
+            external_message_id: { not: null },
+          },
+          orderBy: { created_at: "desc" },
+          select: { conversation_id: true, external_message_id: true },
+        })
+      : [];
+    const externalByConv = new Map(convMessages.map((m) => [m.conversation_id, m.external_message_id]));
+
+    const value = claimed.map((a) => {
+      const meta = (a.metadata ?? {}) as Record<string, unknown>;
+      const directMsgId = typeof meta.message_id === "string" ? externalById.get(meta.message_id) : null;
+      const convMsgId = a.conversation_id ? externalByConv.get(a.conversation_id) : null;
+      const reply_to_message_id = directMsgId || convMsgId || null;
+
+      return {
+        action_id: a.id,
+        action_type: a.action_type,
+        status: a.status,
+        scheduled_at: a.scheduled_at,
+        customer_name: a.customers?.name ?? null,
+        customer_email: a.customers?.email ?? null,
+        invoice_number: a.invoices?.invoice_number ?? null,
+        invoice_amount: a.invoices?.amount ?? null,
+        promised_date: typeof meta.promised_date === "string" ? meta.promised_date : null,
+        reply_to_message_id,
+        ai_disclosure_footer: "This reminder was drafted by an automated assistant on behalf of the creditor. Reply directly to this message to reach a representative.",
+        compliance_authorized: true,
+      };
+    });
+
+    res.json({ claimed: value, count: value.length, Count: value.length });
+  } catch (error) {
+    console.error("Error claiming collection actions:", error);
+    res.status(500).json({ error: "Failed to claim collection actions" });
+  }
+});
+
+/**
  * GET /api/collection-actions
  * List collection actions with optional filtering
  */
 router.get("/", async (req: Request, res: Response): Promise<void> => {
-    try {
-        const {
-            organization_id,
-            status,
-            action_type,
-            customer_id,
-            invoice_id,
-        } = req.query;
+  try {
+    const { organization_id, status, action_type, customer_id, invoice_id } = req.query;
 
-        if (!organization_id || typeof organization_id !== "string") {
-            res.status(400).json({ error: "organization_id is required" });
-            return;
-        }
-
-        const filters: any = { organization_id };
-
-        if (status && typeof status === "string") {
-            filters.status = status;
-        }
-        if (action_type && typeof action_type === "string") {
-            filters.action_type = action_type;
-        }
-        if (customer_id && typeof customer_id === "string") {
-            filters.customer_id = customer_id;
-        }
-        if (invoice_id && typeof invoice_id === "string") {
-            filters.invoice_id = invoice_id;
-        }
-
-        const actions = await prisma.collection_actions.findMany({
-            where: filters,
-            orderBy: [
-                { scheduled_at: "asc" },
-                { created_at: "desc" },
-            ],
-        });
-
-        res.json({
-            value: actions,
-            Count: actions.length,
-        });
-    } catch (error) {
-        console.error("Error fetching collection actions:", error);
-        res.status(500).json({ error: "Internal server error" });
+    if (!organization_id || typeof organization_id !== "string") {
+      res.status(400).json({ error: "organization_id is required" });
+      return;
     }
+
+    const filters: any = { organization_id };
+
+    if (status && typeof status === "string") {
+      filters.status = status;
+    }
+    if (action_type && typeof action_type === "string") {
+      filters.action_type = action_type;
+    }
+    if (customer_id && typeof customer_id === "string") {
+      filters.customer_id = customer_id;
+    }
+    if (invoice_id && typeof invoice_id === "string") {
+      filters.invoice_id = invoice_id;
+    }
+
+    const actions = await prisma.collection_actions.findMany({
+      where: filters,
+      orderBy: [
+        { scheduled_at: "asc" },
+        { created_at: "desc" },
+      ],
+    });
+
+    res.json({
+      value: actions,
+      Count: actions.length,
+    });
+  } catch (error) {
+    console.error("Error fetching collection actions:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 /**
@@ -62,37 +190,37 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
  * Retrieve a specific collection action by ID
  */
 router.get("/:id", async (req: Request, res: Response): Promise<void> => {
-    try {
-        const { id } = req.params;
-        const { organization_id } = req.query;
+  try {
+    const { id } = req.params;
+    const { organization_id } = req.query;
 
-        if (!organization_id || typeof organization_id !== "string") {
-            res.status(400).json({ error: "organization_id is required" });
-            return;
-        }
-
-        const action = await prisma.collection_actions.findFirst({
-            where: {
-                id: id as string,
-                organization_id: organization_id as string,
-            },
-            include: {
-                customers: true,
-                invoices: true,
-                conversations: true,
-            },
-        });
-
-        if (!action) {
-            res.status(404).json({ error: "Collection action not found" });
-            return;
-        }
-
-        res.json(action);
-    } catch (error) {
-        console.error("Error fetching collection action:", error);
-        res.status(500).json({ error: "Internal server error" });
+    if (!organization_id || typeof organization_id !== "string") {
+      res.status(400).json({ error: "organization_id is required" });
+      return;
     }
+
+    const action = await prisma.collection_actions.findFirst({
+      where: {
+        id: id as string,
+        organization_id: organization_id as string,
+      },
+      include: {
+        customers: true,
+        invoices: true,
+        conversations: true,
+      },
+    });
+
+    if (!action) {
+      res.status(404).json({ error: "Collection action not found" });
+      return;
+    }
+
+    res.json(action);
+  } catch (error) {
+    console.error("Error fetching collection action:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 /**
@@ -100,69 +228,77 @@ router.get("/:id", async (req: Request, res: Response): Promise<void> => {
  * Update the status of a collection action
  */
 router.patch("/:id/status", async (req: Request, res: Response): Promise<void> => {
-    try {
-        const { id } = req.params;
-        const { organization_id, status } = req.body;
+  try {
+    const { id } = req.params;
+    const organization_id = req.body?.organization_id || req.user?.organization_id;
+    const { status } = req.body ?? {};
 
-        if (!organization_id || typeof organization_id !== "string") {
-            res.status(400).json({ error: "organization_id is required in body" });
-            return;
-        }
-
-        if (!status || typeof status !== "string" || !VALID_STATUSES.includes(status)) {
-            res.status(400).json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` });
-            return;
-        }
-
-        const action = await prisma.collection_actions.findFirst({
-            where: {
-                id: id as string,
-                organization_id: organization_id as string,
-            },
-        });
-
-        if (!action) {
-            res.status(404).json({ error: "Collection action not found" });
-            return;
-        }
-
-        const currentStatus = action.status;
-
-        // Validate transitions
-        const validTransitions: Record<string, string[]> = {
-            "PENDING": ["PROCESSING", "CANCELLED"],
-            "PROCESSING": ["COMPLETED", "FAILED"],
-            "COMPLETED": [],
-            "FAILED": [],
-            "CANCELLED": []
-        };
-
-        if (!validTransitions[currentStatus]?.includes(status as string)) {
-            res.status(400).json({ error: `Invalid transition from ${currentStatus} to ${status}` });
-            return;
-        }
-
-        let executed_at = action.executed_at;
-
-        if (status === "COMPLETED" && !executed_at) {
-            executed_at = new Date();
-        }
-
-        const updatedAction = await prisma.collection_actions.update({
-            where: {
-                id: id as string,
-            },
-            data: {
-                status: status as string,
-                executed_at,
-            },
-        });
-
-        res.json(updatedAction);
-    } catch (error) {
-        console.error("Error updating collection action status:", error);
-        res.status(500).json({ error: "Internal server error" });
+    if (!organization_id || typeof organization_id !== "string") {
+      res.status(400).json({ error: "organization_id is required in body" });
+      return;
     }
+
+    if (!status || typeof status !== "string" || !VALID_STATUSES.includes(status)) {
+      res.status(400).json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` });
+      return;
+    }
+
+    const action = await prisma.collection_actions.findFirst({
+      where: {
+        id: id as string,
+        organization_id: organization_id as string,
+      },
+    });
+
+    if (!action) {
+      res.status(404).json({ error: "Collection action not found" });
+      return;
+    }
+
+    const currentStatus = action.status;
+
+    const validTransitions: Record<string, string[]> = {
+      "PENDING": ["PROCESSING", "CANCELLED"],
+      "PROCESSING": ["COMPLETED", "FAILED"],
+      "COMPLETED": [],
+      "FAILED": [],
+      "CANCELLED": []
+    };
+
+    if (!validTransitions[currentStatus]?.includes(status as string)) {
+      res.status(400).json({ error: `Invalid transition from ${currentStatus} to ${status}` });
+      return;
+    }
+
+    let executed_at = action.executed_at;
+
+    if (status === "COMPLETED" && !executed_at) {
+      executed_at = new Date();
+    }
+
+    const currentMeta = (action.metadata && typeof action.metadata === "object") ? (action.metadata as Record<string, unknown>) : {};
+    const updatedMeta: Record<string, unknown> = {
+      ...currentMeta,
+      ...(req.body.sent_message_id ? { sent_message_id: req.body.sent_message_id } : {}),
+      ...(req.body.error ? { error: req.body.error } : {}),
+    };
+
+    const updatedAction = await prisma.collection_actions.update({
+      where: {
+        id: id as string,
+      },
+      data: {
+        status: status as string,
+        executed_at,
+        metadata: updatedMeta as object,
+      },
+    });
+
+    res.json(updatedAction);
+  } catch (error) {
+    console.error("Error updating collection action status:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 export default router;

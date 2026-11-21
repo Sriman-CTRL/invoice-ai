@@ -24,6 +24,11 @@ model collection_actions {
   customers       customers?     @relation(fields: [customer_id], references: [id], onUpdate: NoAction)
   invoices        invoices?      @relation(fields: [invoice_id], references: [id], onUpdate: NoAction)
   organizations   organizations  @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([organization_id, status])
+  @@index([organization_id, customer_id])
+  @@index([invoice_id])
+  @@index([conversation_id])
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -42,6 +47,10 @@ model conversations {
   invoices           invoices?            @relation(fields: [invoice_id], references: [id], onUpdate: NoAction)
   organizations      organizations        @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   messages           messages[]
+
+  @@index([organization_id, customer_id])
+  @@index([invoice_id])
+  @@index([organization_id, status, updated_at])
 }
 
 model customers {
@@ -52,14 +61,17 @@ model customers {
   company_name         String?              @db.VarChar(255)
   phone                String?              @db.VarChar(50)
   external_customer_id String?              @db.VarChar(255)
+  processing_restricted Boolean             @default(false)
   created_at           DateTime             @default(now()) @db.Timestamptz(6)
   updated_at           DateTime             @default(now()) @db.Timestamptz(6)
   collection_actions   collection_actions[]
   conversations        conversations[]
   organizations        organizations        @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   invoices             invoices[]
+  credit_notes         credit_notes[]
 
   @@unique([organization_id, email])
+  @@index([organization_id, created_at])
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -81,8 +93,12 @@ model invoices {
   customers           customers            @relation(fields: [customer_id], references: [id], onUpdate: NoAction)
   organizations       organizations        @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   payments            payments[]
+  credit_notes        credit_notes[]
 
   @@unique([organization_id, invoice_number])
+  @@index([organization_id, status])
+  @@index([organization_id, due_at])
+  @@index([customer_id])
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -102,6 +118,9 @@ model messages {
   created_at          DateTime      @default(now()) @db.Timestamptz(6)
   conversations       conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   organizations       organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([conversation_id, created_at])
+  @@index([organization_id, ai_intent])
 }
 
 model organizations {
@@ -116,6 +135,8 @@ model organizations {
   invoices           invoices[]
   messages           messages[]
   payments           payments[]
+  suppressions       suppressions[]
+  credit_notes       credit_notes[]
   users              users[]
 }
 
@@ -133,6 +154,9 @@ model payments {
   updated_at          DateTime      @default(now()) @db.Timestamptz(6)
   invoices            invoices      @relation(fields: [invoice_id], references: [id], onUpdate: NoAction)
   organizations       organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([organization_id, invoice_id])
+  @@index([invoice_id, status])
 }
 
 model users {
@@ -146,4 +170,37 @@ model users {
   organizations   organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([organization_id, email])
+  @@index([email])
+}
+
+model suppressions {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String        @db.Uuid
+  channel         String        @default("EMAIL") @db.VarChar(30)
+  address         String        @db.VarChar(320)
+  reason          String        @db.VarChar(100)
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  organizations   organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([organization_id, address])
+  @@index([organization_id, address])
+}
+
+model credit_notes {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id    String        @db.Uuid
+  invoice_id         String        @db.Uuid
+  customer_id        String        @db.Uuid
+  credit_note_number String        @db.VarChar(100)
+  amount             Decimal       @db.Decimal(14, 2)
+  currency           String        @default("INR") @db.VarChar(3)
+  reason             String        @db.VarChar(255)
+  issued_at          DateTime      @default(now()) @db.Timestamptz(6)
+  created_at         DateTime      @default(now()) @db.Timestamptz(6)
+  invoices           invoices      @relation(fields: [invoice_id], references: [id], onUpdate: NoAction)
+  customers          customers     @relation(fields: [customer_id], references: [id], onUpdate: NoAction)
+  organizations      organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([organization_id, credit_note_number])
+  @@index([organization_id, invoice_id])
 }

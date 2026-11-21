@@ -58,7 +58,9 @@ export const ModelName = {
   messages: 'messages',
   organizations: 'organizations',
   payments: 'payments',
-  users: 'users'
+  users: 'users',
+  suppressions: 'suppressions',
+  credit_notes: 'credit_notes'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -117,6 +119,7 @@ export const CustomersScalarFieldEnum = {
   company_name: 'company_name',
   phone: 'phone',
   external_customer_id: 'external_customer_id',
+  processing_restricted: 'processing_restricted',
   created_at: 'created_at',
   updated_at: 'updated_at'
 } as const
@@ -199,6 +202,34 @@ export const UsersScalarFieldEnum = {
 } as const
 
 export type UsersScalarFieldEnum = (typeof UsersScalarFieldEnum)[keyof typeof UsersScalarFieldEnum]
+
+
+export const SuppressionsScalarFieldEnum = {
+  id: 'id',
+  organization_id: 'organization_id',
+  channel: 'channel',
+  address: 'address',
+  reason: 'reason',
+  created_at: 'created_at'
+} as const
+
+export type SuppressionsScalarFieldEnum = (typeof SuppressionsScalarFieldEnum)[keyof typeof SuppressionsScalarFieldEnum]
+
+
+export const Credit_notesScalarFieldEnum = {
+  id: 'id',
+  organization_id: 'organization_id',
+  invoice_id: 'invoice_id',
+  customer_id: 'customer_id',
+  credit_note_number: 'credit_note_number',
+  amount: 'amount',
+  currency: 'currency',
+  reason: 'reason',
+  issued_at: 'issued_at',
+  created_at: 'created_at'
+} as const
+
+export type Credit_notesScalarFieldEnum = (typeof Credit_notesScalarFieldEnum)[keyof typeof Credit_notesScalarFieldEnum]
 
 
 export const SortOrder = {

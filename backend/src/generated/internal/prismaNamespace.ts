@@ -404,7 +404,9 @@ export const ModelName = {
   messages: 'messages',
   organizations: 'organizations',
   payments: 'payments',
-  users: 'users'
+  users: 'users',
+  suppressions: 'suppressions',
+  credit_notes: 'credit_notes'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -420,7 +422,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "collection_actions" | "conversations" | "customers" | "invoices" | "messages" | "organizations" | "payments" | "users"
+    modelProps: "collection_actions" | "conversations" | "customers" | "invoices" | "messages" | "organizations" | "payments" | "users" | "suppressions" | "credit_notes"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1016,6 +1018,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    suppressions: {
+      payload: Prisma.$suppressionsPayload<ExtArgs>
+      fields: Prisma.suppressionsFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.suppressionsFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$suppressionsPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.suppressionsFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$suppressionsPayload>
+        }
+        findFirst: {
+          args: Prisma.suppressionsFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$suppressionsPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.suppressionsFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$suppressionsPayload>
+        }
+        findMany: {
+          args: Prisma.suppressionsFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$suppressionsPayload>[]
+        }
+        create: {
+          args: Prisma.suppressionsCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$suppressionsPayload>
+        }
+        createMany: {
+          args: Prisma.suppressionsCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.suppressionsCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$suppressionsPayload>[]
+        }
+        delete: {
+          args: Prisma.suppressionsDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$suppressionsPayload>
+        }
+        update: {
+          args: Prisma.suppressionsUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$suppressionsPayload>
+        }
+        deleteMany: {
+          args: Prisma.suppressionsDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.suppressionsUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.suppressionsUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$suppressionsPayload>[]
+        }
+        upsert: {
+          args: Prisma.suppressionsUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$suppressionsPayload>
+        }
+        aggregate: {
+          args: Prisma.SuppressionsAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSuppressions>
+        }
+        groupBy: {
+          args: Prisma.suppressionsGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SuppressionsGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.suppressionsCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SuppressionsCountAggregateOutputType> | number
+        }
+      }
+    }
+    credit_notes: {
+      payload: Prisma.$credit_notesPayload<ExtArgs>
+      fields: Prisma.credit_notesFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.credit_notesFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$credit_notesPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.credit_notesFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$credit_notesPayload>
+        }
+        findFirst: {
+          args: Prisma.credit_notesFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$credit_notesPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.credit_notesFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$credit_notesPayload>
+        }
+        findMany: {
+          args: Prisma.credit_notesFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$credit_notesPayload>[]
+        }
+        create: {
+          args: Prisma.credit_notesCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$credit_notesPayload>
+        }
+        createMany: {
+          args: Prisma.credit_notesCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.credit_notesCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$credit_notesPayload>[]
+        }
+        delete: {
+          args: Prisma.credit_notesDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$credit_notesPayload>
+        }
+        update: {
+          args: Prisma.credit_notesUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$credit_notesPayload>
+        }
+        deleteMany: {
+          args: Prisma.credit_notesDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.credit_notesUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.credit_notesUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$credit_notesPayload>[]
+        }
+        upsert: {
+          args: Prisma.credit_notesUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$credit_notesPayload>
+        }
+        aggregate: {
+          args: Prisma.Credit_notesAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCredit_notes>
+        }
+        groupBy: {
+          args: Prisma.credit_notesGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Credit_notesGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.credit_notesCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Credit_notesCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1095,6 +1245,7 @@ export const CustomersScalarFieldEnum = {
   company_name: 'company_name',
   phone: 'phone',
   external_customer_id: 'external_customer_id',
+  processing_restricted: 'processing_restricted',
   created_at: 'created_at',
   updated_at: 'updated_at'
 } as const
@@ -1177,6 +1328,34 @@ export const UsersScalarFieldEnum = {
 } as const
 
 export type UsersScalarFieldEnum = (typeof UsersScalarFieldEnum)[keyof typeof UsersScalarFieldEnum]
+
+
+export const SuppressionsScalarFieldEnum = {
+  id: 'id',
+  organization_id: 'organization_id',
+  channel: 'channel',
+  address: 'address',
+  reason: 'reason',
+  created_at: 'created_at'
+} as const
+
+export type SuppressionsScalarFieldEnum = (typeof SuppressionsScalarFieldEnum)[keyof typeof SuppressionsScalarFieldEnum]
+
+
+export const Credit_notesScalarFieldEnum = {
+  id: 'id',
+  organization_id: 'organization_id',
+  invoice_id: 'invoice_id',
+  customer_id: 'customer_id',
+  credit_note_number: 'credit_note_number',
+  amount: 'amount',
+  currency: 'currency',
+  reason: 'reason',
+  issued_at: 'issued_at',
+  created_at: 'created_at'
+} as const
+
+export type Credit_notesScalarFieldEnum = (typeof Credit_notesScalarFieldEnum)[keyof typeof Credit_notesScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1264,6 +1443,13 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'J
  * Reference to a field of type 'QueryMode'
  */
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -1453,6 +1639,8 @@ export type GlobalOmitConfig = {
   organizations?: Prisma.organizationsOmit
   payments?: Prisma.paymentsOmit
   users?: Prisma.usersOmit
+  suppressions?: Prisma.suppressionsOmit
+  credit_notes?: Prisma.credit_notesOmit
 }
 
 /* Types for Logging */

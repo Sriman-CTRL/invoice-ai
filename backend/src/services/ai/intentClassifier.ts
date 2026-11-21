@@ -106,7 +106,7 @@ export class MockIntentClassifier implements IIntentClassifier {
 
         // ── PAYMENT_PLAN_REQUEST ────────────────────────────────────────────
         if (
-            /\b(payment plan|installment|instalments|emi|split the payment|pay in parts|pay in installments|monthly payments|part payment)\b/.test(text)
+            /\b(payment plan|installments?|instalments?|emi|split the payment|pay in parts|pay in installments?|monthly payments?|part payment)\b/.test(text)
         ) {
             return validateClassificationResult({
                 intent: "PAYMENT_PLAN_REQUEST",

@@ -1,4 +1,27 @@
-import { AlertCircle, ArrowLeft, Bell, ChevronRight, CircleDollarSign, Clock3, LogOut, Menu, Search, X } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Bell,
+  CheckCircle2,
+  Clock,
+  ExternalLink,
+  HelpCircle,
+  Layers,
+  LayoutDashboard,
+  LogOut,
+  Mail,
+  Menu,
+  MessageSquareText,
+  Play,
+  Receipt,
+  RotateCw,
+  Search,
+  Sparkles,
+  Terminal,
+  Users,
+  X,
+  Zap,
+} from "lucide-react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "./auth";
@@ -6,21 +29,444 @@ import { initials, titleCase } from "./lib";
 
 export function Badge({ value, kind }: { value: string; kind?: "status" | "intent" }) {
   const normalized = value.toUpperCase();
-  const tones: Record<string, string> = { PAID: "bg-emerald-50 text-emerald-700 ring-emerald-600/20", SUCCEEDED: "bg-emerald-50 text-emerald-700 ring-emerald-600/20", COMPLETED: "bg-emerald-50 text-emerald-700 ring-emerald-600/20", OPEN: "bg-sky-50 text-sky-700 ring-sky-600/20", PROCESSING: "bg-sky-50 text-sky-700 ring-sky-600/20", PENDING: "bg-amber-50 text-amber-800 ring-amber-600/20", PARTIALLY_PAID: "bg-violet-50 text-violet-700 ring-violet-600/20", OVERDUE: "bg-rose-50 text-rose-700 ring-rose-600/20", FAILED: "bg-rose-50 text-rose-700 ring-rose-600/20", CANCELLED: "bg-slate-100 text-slate-600 ring-slate-500/20", DISPUTE: "bg-rose-50 text-rose-700 ring-rose-600/20", PAYMENT_CONFIRMED: "bg-brand-50 text-brand-700 ring-brand-600/20", PAYMENT_PROMISED: "bg-brand-50 text-brand-700 ring-brand-600/20" };
-  const tone = tones[normalized] || (kind === "intent" ? "bg-brand-50 text-brand-700 ring-brand-600/20" : "bg-slate-100 text-slate-700 ring-slate-500/20");
-  return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${tone}`}>{titleCase(value)}</span>;
+
+  // Premium status colors with subtle borders and dot indicators
+  const config: Record<string, { bg: string; text: string; ring: string; dot: string }> = {
+    PAID: {
+      bg: "bg-emerald-500/10",
+      text: "text-emerald-700",
+      ring: "ring-emerald-600/20",
+      dot: "bg-emerald-500",
+    },
+    SUCCEEDED: {
+      bg: "bg-emerald-500/10",
+      text: "text-emerald-700",
+      ring: "ring-emerald-600/20",
+      dot: "bg-emerald-500",
+    },
+    COMPLETED: {
+      bg: "bg-emerald-500/10",
+      text: "text-emerald-700",
+      ring: "ring-emerald-600/20",
+      dot: "bg-emerald-500",
+    },
+    OPEN: {
+      bg: "bg-sky-500/10",
+      text: "text-sky-700",
+      ring: "ring-sky-600/20",
+      dot: "bg-sky-500",
+    },
+    PROCESSING: {
+      bg: "bg-indigo-500/10",
+      text: "text-indigo-700",
+      ring: "ring-indigo-600/20",
+      dot: "bg-indigo-500 animate-pulse",
+    },
+    PENDING: {
+      bg: "bg-amber-500/10",
+      text: "text-amber-800",
+      ring: "ring-amber-600/20",
+      dot: "bg-amber-500",
+    },
+    PARTIALLY_PAID: {
+      bg: "bg-violet-500/10",
+      text: "text-violet-700",
+      ring: "ring-violet-600/20",
+      dot: "bg-violet-500",
+    },
+    OVERDUE: {
+      bg: "bg-rose-500/10",
+      text: "text-rose-700",
+      ring: "ring-rose-600/20",
+      dot: "bg-rose-500",
+    },
+    FAILED: {
+      bg: "bg-rose-500/10",
+      text: "text-rose-700",
+      ring: "ring-rose-600/20",
+      dot: "bg-rose-500",
+    },
+    CANCELLED: {
+      bg: "bg-slate-100",
+      text: "text-slate-600",
+      ring: "ring-slate-500/20",
+      dot: "bg-slate-400",
+    },
+    DISPUTE: {
+      bg: "bg-rose-500/10",
+      text: "text-rose-700",
+      ring: "ring-rose-600/25",
+      dot: "bg-rose-500",
+    },
+    PAYMENT_CONFIRMED: {
+      bg: "bg-emerald-500/10",
+      text: "text-emerald-800",
+      ring: "ring-emerald-600/25",
+      dot: "bg-emerald-500",
+    },
+    PAYMENT_PROMISED: {
+      bg: "bg-brand-500/10",
+      text: "text-brand-700",
+      ring: "ring-brand-600/25",
+      dot: "bg-brand-500",
+    },
+    PAYMENT_PLAN_REQUEST: {
+      bg: "bg-purple-500/10",
+      text: "text-purple-700",
+      ring: "ring-purple-600/25",
+      dot: "bg-purple-500",
+    },
+    REQUEST_EXTENSION: {
+      bg: "bg-amber-500/10",
+      text: "text-amber-800",
+      ring: "ring-amber-600/25",
+      dot: "bg-amber-500",
+    },
+  };
+
+  const current = config[normalized] || {
+    bg: kind === "intent" ? "bg-brand-500/10" : "bg-slate-100",
+    text: kind === "intent" ? "text-brand-700" : "text-slate-700",
+    ring: kind === "intent" ? "ring-brand-600/20" : "ring-slate-500/20",
+    dot: kind === "intent" ? "bg-brand-500" : "bg-slate-400",
+  };
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${current.bg} ${current.text} ${current.ring}`}
+    >
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${current.dot}`} />
+      <span>{titleCase(value.replace(/_/g, " "))}</span>
+    </span>
+  );
 }
 
-export function ErrorState({ message, retry }: { message: string; retry?: () => void }) { return <div className="panel flex min-h-56 flex-col items-center justify-center px-6 text-center"><AlertCircle className="mb-3 h-8 w-8 text-rose-600"/><h2 className="text-base font-semibold">Something needs attention</h2><p className="mt-1 max-w-md text-sm text-muted">{message}</p>{retry && <button className="btn-secondary mt-5" onClick={retry}>Try again</button>}</div>; }
-export function EmptyState({ title, detail, action }: { title: string; detail: string; action?: React.ReactNode }) { return <div className="panel flex min-h-56 flex-col items-center justify-center px-6 text-center"><CircleDollarSign className="mb-3 h-8 w-8 text-slate-300"/><h2 className="text-base font-semibold">{title}</h2><p className="mt-1 max-w-md text-sm text-muted">{detail}</p>{action && <div className="mt-5">{action}</div>}</div>; }
-export function TableSkeleton({ rows = 5 }: { rows?: number }) { return <div className="panel overflow-hidden"><div className="h-12 border-b bg-slate-50"/>{Array.from({ length: rows }).map((_, index) => <div className="flex gap-5 border-b px-5 py-4 last:border-0" key={index}><div className="h-4 w-1/4 animate-pulse rounded bg-slate-100"/><div className="h-4 w-1/3 animate-pulse rounded bg-slate-100"/><div className="h-4 w-1/5 animate-pulse rounded bg-slate-100"/></div>)}</div>; }
-export function PageHeader({ title, detail, back }: { title: string; detail?: string; back?: string }) { return <div className="mb-7 flex flex-wrap items-end justify-between gap-3"> <div>{back && <Link to={back} className="mb-2 inline-flex items-center gap-1 text-sm text-muted hover:text-ink"><ArrowLeft className="h-4 w-4"/>Back</Link>}<h1 className="text-2xl font-semibold tracking-tight text-ink">{title}</h1>{detail && <p className="mt-1 text-sm text-muted">{detail}</p>}</div></div>; }
+export function ErrorState({ message, retry }: { message: string; retry?: () => void }) {
+  return (
+    <div className="panel flex min-h-64 flex-col items-center justify-center p-8 text-center">
+      <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-rose-50 ring-8 ring-rose-50/50">
+        <AlertCircle className="h-7 w-7 text-rose-600" />
+      </div>
+      <h3 className="text-base font-bold text-slate-900">Something needs attention</h3>
+      <p className="mt-1.5 max-w-md text-sm text-slate-500 leading-relaxed">{message}</p>
+      {retry && (
+        <button className="btn-secondary mt-6" onClick={retry}>
+          <RotateCw className="h-4 w-4 text-slate-500" />
+          <span>Try again</span>
+        </button>
+      )}
+    </div>
+  );
+}
+
+export function EmptyState({
+  title,
+  detail,
+  action,
+}: {
+  title: string;
+  detail: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="panel flex min-h-64 flex-col items-center justify-center p-8 text-center">
+      <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand-50 to-indigo-100/80 ring-8 ring-slate-100">
+        <Receipt className="h-7 w-7 text-brand-600" />
+      </div>
+      <h3 className="text-base font-bold text-slate-900">{title}</h3>
+      <p className="mt-1.5 max-w-md text-sm text-slate-500 leading-relaxed">{detail}</p>
+      {action && <div className="mt-6">{action}</div>}
+    </div>
+  );
+}
+
+export function TableSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="panel overflow-hidden">
+      <div className="h-12 border-b border-slate-100 bg-slate-50/60" />
+      <div className="divide-y divide-slate-100">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div className="flex items-center gap-6 px-6 py-4.5" key={i}>
+            <div className="h-4 w-1/4 animate-pulse rounded-md bg-slate-200/70" />
+            <div className="h-4 w-1/3 animate-pulse rounded-md bg-slate-200/60" />
+            <div className="h-4 w-1/6 animate-pulse rounded-md bg-slate-200/70" />
+            <div className="ml-auto h-5 w-20 animate-pulse rounded-full bg-slate-200/60" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function PageHeader({
+  title,
+  detail,
+  back,
+  actions,
+}: {
+  title: string;
+  detail?: string;
+  back?: string;
+  actions?: React.ReactNode;
+}) {
+  return (
+    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        {back && (
+          <Link
+            to={back}
+            className="mb-2.5 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition-colors hover:text-brand-600"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Back</span>
+          </Link>
+        )}
+        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+          {title}
+        </h1>
+        {detail && <p className="mt-1 text-sm text-slate-500">{detail}</p>}
+      </div>
+      {actions && <div className="flex flex-wrap items-center gap-3">{actions}</div>}
+    </div>
+  );
+}
 
 const nav = [
-  { label: "Overview", items: [{ to: "/dashboard", label: "Dashboard", icon: CircleDollarSign }] },
-  { label: "Receivables", items: [{ to: "/invoices", label: "Invoices", icon: Clock3 }, { to: "/customers", label: "Customers", icon: ChevronRight }, { to: "/conversations", label: "Conversations", icon: Bell }] },
-  { label: "Collections", items: [{ to: "/collection-actions", label: "Collection actions", icon: AlertCircle }] },
+  {
+    label: "Main",
+    items: [
+      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/invoices", label: "Invoices", icon: Receipt },
+      { to: "/customers", label: "Customers", icon: Users },
+    ],
+  },
+  {
+    label: "AI Automation",
+    items: [
+      { to: "/conversations", label: "Inbox & Threads", icon: MessageSquareText },
+      { to: "/collection-actions", label: "Action Queue", icon: Zap },
+      { to: "/playground", label: "AI Simulator", icon: Terminal },
+    ],
+  },
 ];
-function SidebarContent({ close }: { close?: () => void }) { const { user, logout } = useAuth(); const navigate = useNavigate(); return <><div className="flex h-16 items-center justify-between border-b px-5"><Link to="/dashboard" className="flex items-center gap-2.5" onClick={close}><span className="grid h-8 w-8 place-items-center rounded-md bg-brand-600 text-sm font-bold text-white">L</span><span className="text-base font-semibold tracking-tight">Ledgerlane</span></Link>{close && <button className="btn h-8 w-8 px-0 lg:hidden" aria-label="Close navigation" onClick={close}><X className="h-5 w-5"/></button>}</div><nav className="flex-1 overflow-y-auto px-3 py-5">{nav.map((group) => <div className="mb-6" key={group.label}><p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{group.label}</p>{group.items.map(({ to, label, icon: Icon }) => <NavLink end to={to} onClick={close} className={({ isActive }) => `mb-1 flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${isActive ? "bg-brand-50 text-brand-700" : "text-slate-600 hover:bg-slate-50 hover:text-ink"}`} key={to}><Icon className="h-[18px] w-[18px]"/>{label}</NavLink>)}</div>)}</nav><div className="border-t p-3"><div className="mb-2 flex items-center gap-3 rounded-md px-2 py-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">{initials(user?.name || user?.email)}</span><span className="min-w-0"><span className="block truncate text-sm font-medium">{user?.name || "Account user"}</span><span className="block truncate text-xs text-muted">{user?.email}</span></span></div><button onClick={() => { logout(); navigate("/login"); }} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-ink"><LogOut className="h-[18px] w-[18px]"/>Sign out</button></div></>; }
-export function Shell({ children }: { children: React.ReactNode }) { const [open, setOpen] = useState(false); const location = useLocation(); return <div className="min-h-screen"><aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r bg-white lg:flex"><SidebarContent/></aside>{open && <div className="fixed inset-0 z-40 bg-slate-950/30 lg:hidden" onClick={() => setOpen(false)}><aside className="absolute inset-y-0 left-0 flex w-72 flex-col bg-white shadow-xl" onClick={(event) => event.stopPropagation()}><SidebarContent close={() => setOpen(false)}/></aside></div>}<main className="min-h-screen lg:pl-64"><header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b bg-white/95 px-4 backdrop-blur sm:px-7"><button aria-label="Open navigation" className="btn h-9 w-9 px-0 lg:hidden" onClick={() => setOpen(true)}><Menu className="h-5 w-5"/></button><div className="hidden text-sm text-muted sm:block">Operations <span className="mx-1 text-slate-300">/</span> <span className="font-medium text-slate-700">{location.pathname.split("/")[1].replace("-", " ") || "dashboard"}</span></div><div className="ml-auto flex items-center gap-3"><button aria-label="Notifications" className="btn h-9 w-9 px-0 text-slate-500 hover:bg-slate-50"><Bell className="h-[18px] w-[18px]"/></button><span className="hidden text-right text-xs text-muted sm:block">Collections<br/><span className="font-medium text-slate-700">Workspace</span></span></div></header><div className="mx-auto max-w-[1440px] px-4 py-7 sm:px-7">{children}</div></main></div>; }
-export function SearchInput({ value, onChange, placeholder = "Search" }: { value: string; onChange: (value: string) => void; placeholder?: string }) { return <label className="relative block"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"/><input className="input pl-9" value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} aria-label={placeholder}/></label>; }
+
+function BrandMark() {
+  return (
+    <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-violet-500 text-white shadow-md shadow-brand-500/30 ring-1 ring-white/20">
+      <Sparkles className="h-5 w-5" />
+    </div>
+  );
+}
+
+function SidebarContent({ close }: { close?: () => void }) {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  return (
+    <div className="flex h-full flex-col bg-midnight-950 text-slate-300">
+      {/* Brand Header */}
+      <div className="flex h-20 items-center justify-between border-b border-white/10 px-6">
+        <Link to="/dashboard" className="flex items-center gap-3" onClick={close}>
+          <BrandMark />
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-base font-extrabold tracking-tight text-white">
+                Ledgerlane
+              </span>
+              <span className="rounded-md bg-brand-500/20 px-1.5 py-0.5 text-[10px] font-bold text-brand-300 ring-1 ring-inset ring-brand-400/30">
+                AI
+              </span>
+            </div>
+            <p className="text-[11px] font-medium text-slate-400">Autonomous Collections</p>
+          </div>
+        </Link>
+        {close && (
+          <button
+            className="btn h-8 w-8 px-0 text-slate-400 hover:bg-white/10 hover:text-white lg:hidden"
+            aria-label="Close navigation"
+            onClick={close}
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+
+      {/* Nav Groups */}
+      <nav className="flex-1 space-y-7 overflow-y-auto px-4 py-6">
+        {nav.map((group) => (
+          <div key={group.label}>
+            <p className="mb-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              {group.label}
+            </p>
+            <div className="space-y-1">
+              {group.items.map(({ to, label, icon: Icon }) => (
+                <NavLink
+                  end
+                  to={to}
+                  onClick={close}
+                  className={({ isActive }) =>
+                    `group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-150 ${
+                      isActive
+                        ? "bg-gradient-to-r from-brand-600/30 to-brand-500/10 text-white shadow-sm ring-1 ring-brand-500/40"
+                        : "text-slate-400 hover:bg-white/5 hover:text-white"
+                    }`
+                  }
+                  key={to}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="h-4.5 w-4.5 shrink-0 transition-transform duration-150 group-hover:scale-110" />
+                    <span>{label}</span>
+                  </div>
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        ))}
+      </nav>
+
+      {/* Engine Status Card */}
+      <div className="px-4 pb-4">
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs backdrop-blur-sm">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-slate-300">Autonomous Engine</span>
+            <span className="inline-flex items-center gap-1.5 font-mono text-[10px] text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              ONLINE
+            </span>
+          </div>
+          <p className="mt-1 text-[11px] text-slate-400">n8n + AI intent engine active</p>
+        </div>
+      </div>
+
+      {/* User Footer */}
+      <div className="border-t border-white/10 p-4">
+        <div className="flex items-center gap-3 rounded-xl bg-white/[0.04] p-2.5 ring-1 ring-white/5">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-tr from-brand-500 to-indigo-600 text-xs font-bold text-white shadow-sm">
+            {initials(user?.name || user?.email)}
+          </span>
+          <div className="min-w-0 flex-1">
+            <span className="block truncate text-xs font-bold text-white">
+              {user?.name || "Workspace Owner"}
+            </span>
+            <span className="block truncate text-[11px] text-slate-400">
+              {user?.email}
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              logout();
+              navigate("/login");
+            }}
+            title="Sign out"
+            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function Shell({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+
+  const currentSection = location.pathname.split("/")[1] || "dashboard";
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans">
+      {/* Desktop Sidebar */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-800/20 bg-midnight-950 shadow-xl lg:flex">
+        <SidebarContent />
+      </aside>
+
+      {/* Mobile Drawer */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden transition-opacity"
+          onClick={() => setOpen(false)}
+        >
+          <aside
+            className="absolute inset-y-0 left-0 flex w-72 flex-col bg-midnight-950 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <SidebarContent close={() => setOpen(false)} />
+          </aside>
+        </div>
+      )}
+
+      {/* Main Content Pane */}
+      <div className="min-h-screen lg:pl-64">
+        <header className="sticky top-0 z-20 flex h-18 items-center justify-between border-b border-slate-200/80 bg-white/80 px-4 backdrop-blur-md sm:px-8">
+          <div className="flex items-center gap-3">
+            <button
+              aria-label="Open navigation"
+              className="btn-secondary h-9 w-9 px-0 lg:hidden"
+              onClick={() => setOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <div className="hidden items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 sm:flex">
+              <span>Ledger</span>
+              <span>/</span>
+              <span className="font-bold text-slate-800">
+                {currentSection.replace(/-/g, " ")}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3.5">
+            {/* Live Indicator Pill */}
+            <div className="hidden items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-50/80 px-3 py-1 text-xs font-semibold text-emerald-800 sm:flex shadow-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+              </span>
+              <span>Live Engine Connected</span>
+            </div>
+
+            <Link
+              to="/playground"
+              className="btn-secondary h-9 text-xs font-bold"
+              title="Test with AI simulator"
+            >
+              <Terminal className="h-3.5 w-3.5 text-brand-600" />
+              <span>Simulate</span>
+            </Link>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export function SearchInput({
+  value,
+  onChange,
+  placeholder = "Search...",
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <label className="relative block w-full">
+      <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      <input
+        className="input pl-10 pr-12 text-sm font-medium"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        aria-label={placeholder}
+      />
+      <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400">
+        ⌘K
+      </span>
+    </label>
+  );
+}
