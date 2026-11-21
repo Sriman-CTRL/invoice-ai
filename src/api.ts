@@ -1,6 +1,6 @@
 import type { CollectionAction, Conversation, ConversationDetail, Customer, CustomerDetail, Dashboard, Invoice, InvoiceDetail, Payment, User } from "./types";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+const BASE_URL = import.meta.env.PROD ? "/api" : (import.meta.env.VITE_API_BASE_URL || "/api");
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 
 let onUnauthorized: (() => void) | null = null;
