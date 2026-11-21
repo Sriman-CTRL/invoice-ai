@@ -9,3 +9,21 @@ export type Dashboard = { invoice_summary: Record<string, number>; financial_sum
 export type InvoiceDetail = { invoice: Invoice; customer: Customer; financial_summary: { invoice_amount: number; paid_amount: number; outstanding_amount: number; currency: string }; payments: Payment[]; conversation: Conversation | null; conversations: Conversation[]; collection_actions: CollectionAction[] };
 export type CustomerDetail = { customer: Customer; summary: { total_invoices: number; total_invoiced: number; total_paid: number; total_outstanding: number; overdue_amount: number }; invoices: Invoice[]; payments: Payment[]; conversations: Conversation[]; collection_actions: CollectionAction[] };
 export type ConversationDetail = { conversation: Conversation; customer: Customer; invoice: Invoice | null; messages: Message[]; collection_actions: CollectionAction[] };
+export type PublicInvoiceDetail = {
+  id: string;
+  invoice_number: string;
+  amount: number;
+  paid_amount: number;
+  outstanding_amount: number;
+  currency: string;
+  issued_at: string | null;
+  due_at: string | null;
+  status: string;
+  customer: { name: string; company_name: string | null; email: string; phone: string | null };
+  organization: { name: string; slug: string };
+  has_deliverable: boolean;
+  deliverable_url: string | null;
+  deliverable_locked: boolean;
+  pending_verification: boolean;
+  pending_utr: string | null;
+};

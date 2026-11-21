@@ -3305,6 +3305,187 @@ router13.get("/", async (req, res) => {
 });
 var credit_note_routes_default = router13;
 
+// backend/src/routes/public-invoice.routes.ts
+import { Router as Router14 } from "express";
+var router14 = Router14();
+router14.get("/:invoice_number", async (req, res) => {
+  try {
+    const { invoice_number } = req.params;
+    if (!invoice_number) {
+      res.status(400).json({ error: "Invoice number is required" });
+      return;
+    }
+    const invoice = await prisma_default.invoices.findFirst({
+      where: {
+        invoice_number: { equals: invoice_number, mode: "insensitive" }
+      },
+      include: {
+        customers: true,
+        organizations: true,
+        payments: {
+          where: { status: "SUCCEEDED" },
+          orderBy: { created_at: "desc" }
+        }
+      }
+    });
+    if (!invoice) {
+      res.status(404).json({ error: "Invoice not found or link has expired." });
+      return;
+    }
+    const paidAmount = invoice.payments.reduce((acc, p) => acc + Number(p.amount), 0);
+    const invoiceAmount = Number(invoice.amount);
+    const outstandingAmount = Math.max(0, invoiceAmount - paidAmount);
+    let deliverableUrl = null;
+    let hasDeliverable = false;
+    const external = invoice.external_invoice_id || "";
+    if (external.startsWith("http://") || external.startsWith("https://") || external.startsWith("vault:")) {
+      hasDeliverable = true;
+      if (invoice.status === "PAID" || outstandingAmount <= 0) {
+        deliverableUrl = external.replace(/^vault:/, "");
+      }
+    }
+    const pendingPayment = await prisma_default.payments.findFirst({
+      where: {
+        invoice_id: invoice.id,
+        status: "PENDING"
+      },
+      orderBy: { created_at: "desc" }
+    });
+    res.json({
+      id: invoice.id,
+      invoice_number: invoice.invoice_number,
+      amount: invoiceAmount,
+      paid_amount: paidAmount,
+      outstanding_amount: outstandingAmount,
+      currency: invoice.currency,
+      issued_at: invoice.issued_at,
+      due_at: invoice.due_at,
+      status: invoice.status,
+      customer: {
+        name: invoice.customers.name,
+        company_name: invoice.customers.company_name,
+        email: invoice.customers.email,
+        phone: invoice.customers.phone
+      },
+      organization: {
+        name: invoice.organizations.name,
+        slug: invoice.organizations.slug
+      },
+      has_deliverable: hasDeliverable,
+      deliverable_url: deliverableUrl,
+      deliverable_locked: hasDeliverable && !deliverableUrl,
+      pending_verification: Boolean(pendingPayment),
+      pending_utr: pendingPayment?.external_payment_id || null
+    });
+  } catch (error) {
+    console.error("Public invoice lookup error:", error);
+    res.status(500).json({ error: "Failed to load invoice." });
+  }
+});
+router14.post("/:invoice_number/submit-proof", async (req, res) => {
+  try {
+    const { invoice_number } = req.params;
+    const { utr, amount, notes, paid_at } = req.body ?? {};
+    if (!invoice_number || !utr || String(utr).trim().length === 0) {
+      res.status(400).json({ error: "Invoice number and UTR / Reference ID are required." });
+      return;
+    }
+    const invoice = await prisma_default.invoices.findFirst({
+      where: {
+        invoice_number: { equals: invoice_number, mode: "insensitive" }
+      },
+      include: {
+        customers: true,
+        organizations: true,
+        payments: { where: { status: "SUCCEEDED" } }
+      }
+    });
+    if (!invoice) {
+      res.status(404).json({ error: "Invoice not found." });
+      return;
+    }
+    const paidAmount = invoice.payments.reduce((acc, p) => acc + Number(p.amount), 0);
+    const outstandingAmount = Math.max(0, Number(invoice.amount) - paidAmount);
+    const reportedAmount = Number(amount) > 0 ? Number(amount) : outstandingAmount;
+    const cleanUtr = String(utr).trim();
+    const payment = await prisma_default.payments.create({
+      data: {
+        organization_id: invoice.organization_id,
+        invoice_id: invoice.id,
+        amount: reportedAmount,
+        currency: invoice.currency,
+        status: "PENDING",
+        external_payment_id: cleanUtr,
+        paid_at: paid_at ? new Date(paid_at) : /* @__PURE__ */ new Date()
+      }
+    });
+    let conversation = await prisma_default.conversations.findFirst({
+      where: {
+        organization_id: invoice.organization_id,
+        customer_id: invoice.customer_id,
+        invoice_id: invoice.id
+      }
+    });
+    if (!conversation) {
+      conversation = await prisma_default.conversations.create({
+        data: {
+          organization_id: invoice.organization_id,
+          customer_id: invoice.customer_id,
+          invoice_id: invoice.id,
+          channel: "PORTAL",
+          status: "OPEN"
+        }
+      });
+    }
+    await prisma_default.messages.create({
+      data: {
+        organization_id: invoice.organization_id,
+        conversation_id: conversation.id,
+        direction: "INBOUND",
+        channel: "PORTAL",
+        sender: invoice.customers.email,
+        recipient: `billing@${invoice.organizations.slug}.com`,
+        subject: `Payment Submitted: UTR ${cleanUtr}`,
+        body: `Customer submitted payment proof via checkout portal:
+- Amount: ${invoice.currency} ${reportedAmount}
+- UTR / Ref: ${cleanUtr}${notes ? `
+- Customer Notes: ${notes}` : ""}
+
+Please verify your bank statement to confirm settlement.`,
+        ai_intent: "PAYMENT_PROMISED",
+        ai_confidence: 1
+      }
+    });
+    const action = await prisma_default.collection_actions.create({
+      data: {
+        organization_id: invoice.organization_id,
+        customer_id: invoice.customer_id,
+        invoice_id: invoice.id,
+        conversation_id: conversation.id,
+        action_type: "VERIFY_PAYMENT_PROOF",
+        status: "PENDING",
+        scheduled_at: /* @__PURE__ */ new Date(),
+        metadata: {
+          payment_id: payment.id,
+          utr: cleanUtr,
+          amount: reportedAmount,
+          customer_notes: notes || null
+        }
+      }
+    });
+    res.status(200).json({
+      success: true,
+      message: "Payment reference submitted successfully. The billing team has been notified to verify and settle.",
+      payment_id: payment.id,
+      action_id: action.id
+    });
+  } catch (error) {
+    console.error("Submit payment proof error:", error);
+    res.status(500).json({ error: "Failed to submit payment confirmation." });
+  }
+});
+var public_invoice_routes_default = router14;
+
 // backend/src/middleware/auth.middleware.ts
 import jwt2 from "jsonwebtoken";
 function authMiddleware(req, res, next) {
@@ -3401,6 +3582,11 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 app.use("/api/auth", rateLimit({ windowMs: 6e4, max: 60, message: "Too many authentication attempts. Please wait 1 minute." }), auth_routes_default);
 app.use("/api/inbound", inbound_routes_default);
+app.use(
+  "/api/public/invoices",
+  rateLimit({ windowMs: 6e4, max: 60, message: "Too many requests. Please wait a moment." }),
+  public_invoice_routes_default
+);
 app.use("/api/invoices", authMiddleware, invoice_routes_default);
 app.use(
   "/api/payments",

@@ -16,6 +16,7 @@ import authRoutes from "./routes/auth.routes";
 import inboundRoutes from "./routes/inbound.routes";
 import complianceRoutes from "./routes/compliance.routes";
 import creditNoteRoutes from "./routes/credit-note.routes";
+import publicInvoiceRoutes from "./routes/public-invoice.routes";
 import { authMiddleware } from "./middleware/auth.middleware";
 import { rateLimit } from "./middleware/rateLimit";
 
@@ -89,6 +90,13 @@ app.use("/api/auth", rateLimit({ windowMs: 60_000, max: 60, message: "Too many a
 
 // 2. Inbound webhook endpoint
 app.use("/api/inbound", inboundRoutes);
+
+// Public customer invoice payment portal (no auth required)
+app.use(
+  "/api/public/invoices",
+  rateLimit({ windowMs: 60_000, max: 60, message: "Too many requests. Please wait a moment." }),
+  publicInvoiceRoutes,
+);
 
 // 3. Authenticated routes with fine-grained rate limits
 app.use("/api/invoices", authMiddleware, invoiceRoutes);

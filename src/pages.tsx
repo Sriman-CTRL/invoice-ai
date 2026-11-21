@@ -22,6 +22,7 @@ import {
   Phone,
   Play,
   Plus,
+  Printer,
   Receipt,
   RefreshCw,
   Search,
@@ -1424,6 +1425,10 @@ function SendReminderModal({
   };
 
   const mailtoUrl = `mailto:${encodeURIComponent(customer.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const cleanPhone = (customer.phone || "").replace(/[^0-9]/g, "");
+  const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+    `*Payment Reminder — Invoice ${invoice.invoice_number}*\n\n${body}\n\n👉 View & Pay Online: https://invoice-ai-nine-beta.vercel.app/pay/${invoice.invoice_number}`
+  )}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-fade-in">
@@ -1519,13 +1524,24 @@ function SendReminderModal({
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-            <a
-              href={mailtoUrl}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50"
-            >
-              <ArrowUpRight className="h-3.5 w-3.5" />
-              <span>Open in Email App</span>
-            </a>
+            <div className="flex items-center gap-2">
+              <a
+                href={mailtoUrl}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+              >
+                <ArrowUpRight className="h-3.5 w-3.5" />
+                <span>Email Client</span>
+              </a>
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-2 rounded-lg transition-colors"
+              >
+                <MessageSquare className="h-3.5 w-3.5 text-emerald-600" />
+                <span>WhatsApp</span>
+              </a>
+            </div>
 
             <div className="flex items-center gap-2">
               <button
@@ -1576,6 +1592,7 @@ function RecordPaymentModal({
   onSuccess: () => void;
 }) {
   const [amount, setAmount] = useState(String(outstandingAmount));
+  const [tdsPct, setTdsPct] = useState<number>(0);
   const [paidAt, setPaidAt] = useState(new Date().toISOString().slice(0, 10));
   const [externalPaymentId, setExternalPaymentId] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -1584,11 +1601,22 @@ function RecordPaymentModal({
   useEffect(() => {
     if (isOpen) {
       setAmount(String(outstandingAmount));
+      setTdsPct(0);
       setPaidAt(new Date().toISOString().slice(0, 10));
       setExternalPaymentId("");
       setError(null);
     }
   }, [isOpen, outstandingAmount]);
+
+  const applyTds = (pct: number) => {
+    setTdsPct(pct);
+    if (pct === 0) {
+      setAmount(String(outstandingAmount));
+    } else {
+      const net = Math.round(outstandingAmount * (1 - pct / 100) * 100) / 100;
+      setAmount(String(net));
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -1674,7 +1702,7 @@ function RecordPaymentModal({
             <div className="flex gap-2 mt-1.5">
               <button
                 type="button"
-                onClick={() => setAmount(String(outstandingAmount))}
+                onClick={() => applyTds(0)}
                 className="text-[11px] font-semibold text-brand-600 hover:underline"
               >
                 Full Balance ({currency} {outstandingAmount})
@@ -1682,11 +1710,47 @@ function RecordPaymentModal({
               {outstandingAmount > 100 && (
                 <button
                   type="button"
-                  onClick={() => setAmount(String(Math.round(outstandingAmount / 2 * 100) / 100))}
+                  onClick={() => {
+                    setTdsPct(0);
+                    setAmount(String(Math.round(outstandingAmount / 2 * 100) / 100));
+                  }}
                   className="text-[11px] font-semibold text-slate-500 hover:underline"
                 >
                   50% Partial
                 </button>
+              )}
+            </div>
+
+            {/* TDS / Withholding Quick Presets */}
+            <div className="mt-2.5 rounded-xl bg-slate-50 border border-slate-200/80 p-2.5">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                Client Deducted TDS at Source?
+              </span>
+              <div className="grid grid-cols-4 gap-1.5 text-center">
+                {[
+                  { pct: 0, label: "0% (Full)" },
+                  { pct: 1, label: "1% (194C)" },
+                  { pct: 2, label: "2% (194C)" },
+                  { pct: 10, label: "10% (194J)" },
+                ].map((t) => (
+                  <button
+                    key={t.pct}
+                    type="button"
+                    onClick={() => applyTds(t.pct)}
+                    className={`rounded-lg py-1 text-[11px] font-bold border transition-all ${
+                      tdsPct === t.pct
+                        ? "bg-brand-600 text-white border-brand-600 shadow-sm"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              {tdsPct > 0 && (
+                <p className="text-[10px] text-slate-600 mt-1.5 font-medium leading-tight">
+                  Applied {tdsPct}% TDS ({currency} {Math.round(outstandingAmount * (tdsPct / 100) * 100) / 100}). Net received in bank: <strong className="text-slate-900">{currency} {amount}</strong>
+                </p>
               )}
             </div>
           </div>
@@ -1962,6 +2026,37 @@ export function InvoiceDetailPage() {
                           <Copy className="h-3 w-3" /> Copy
                         </span>
                       )}
+                    </button>
+                    <a
+                      href={`/pay/${inv.invoice_number}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-secondary h-8 px-2.5 text-xs whitespace-nowrap inline-flex items-center gap-1 text-brand-600 hover:text-brand-700 font-bold"
+                      title="Open public payment portal"
+                    >
+                      <ArrowUpRight className="h-3.5 w-3.5" />
+                      <span>View</span>
+                    </a>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+                    <a
+                      href={`https://wa.me/${(data.customer.phone || "").replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
+                        `Hi ${data.customer.name}, here is your invoice ${inv.invoice_number} for ${fin.currency} ${fin.outstanding_amount}. You can view details, scan UPI, or pay here: https://invoice-ai-nine-beta.vercel.app/pay/${inv.invoice_number}`
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      <MessageSquare className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>Share on WhatsApp</span>
+                    </a>
+                    <button
+                      onClick={() => window.print()}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-800"
+                    >
+                      <Printer className="h-3.5 w-3.5" />
+                      <span>Print</span>
                     </button>
                   </div>
                 </section>
