@@ -1431,6 +1431,37 @@ export function PlaygroundPage() {
             {slugNotice.text}
           </div>
         )}
+
+        {/* Zero-Cost Cloudflare Custom Domain Integration */}
+        <div className="mt-6 rounded-xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/50 via-purple-50/20 to-white p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-600/10 text-indigo-600 shrink-0">
+                <Zap className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-slate-900">Zero-Cost Custom Email Domain (Cloudflare)</h4>
+                  <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold px-2 py-0.5 border border-emerald-300">
+                    $0 / MONTH
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-slate-500 max-w-xl">
+                  Want to use <code className="font-mono text-indigo-600 font-bold">billing@youragency.com</code> without paying Google Workspace $7/user? Use Cloudflare&apos;s free Email Worker to pipe replies straight into your Invoice AI dashboard.
+                </p>
+              </div>
+            </div>
+            <a
+              href="https://github.com/Sriman-CTRL/invoice-ai/tree/main/cloudflare-worker"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-white px-3 py-1.5 text-xs font-bold text-indigo-700 shadow-sm hover:bg-indigo-50 transition-colors shrink-0"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              <span>View Worker Code & Setup</span>
+            </a>
+          </div>
+        </div>
       </section>
     </div>
   );
