@@ -1,6 +1,6 @@
 export type User = { id: string; email: string; name: string | null; organization_id: string };
 export type Customer = { id: string; name: string; email: string; company_name: string | null; phone: string | null; created_at: string };
-export type Invoice = { id: string; customer_id: string; invoice_number: string; amount: number | string; currency: string; issued_at: string | null; due_at: string | null; status: string; created_at: string; customers?: Customer };
+export type Invoice = { id: string; customer_id: string; invoice_number: string; amount: number | string; currency: string; issued_at: string | null; due_at: string | null; status: string; created_at: string; external_invoice_id?: string | null; customers?: Customer };
 export type Payment = { id: string; invoice_id: string; amount: number | string; currency: string; status: string; paid_at: string | null; created_at: string };
 export type Conversation = { id: string; customer_id: string; invoice_id: string | null; channel: string; status: string; created_at: string; updated_at: string };
 export type Message = { id: string; direction: "INBOUND" | "OUTBOUND"; channel: string; sender: string | null; recipient: string | null; subject: string | null; body: string | null; ai_intent: string | null; ai_confidence: number | string | null; created_at: string };

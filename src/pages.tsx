@@ -17,6 +17,7 @@ import {
   Download,
   FileSpreadsheet,
   FileText,
+  Lock,
   Mail,
   MessageSquare,
   Phone,
@@ -110,33 +111,34 @@ function MetricCard({
   accentGradient,
 }: MetricCardProps) {
   const toneMap = {
-    emerald: "bg-emerald-500/10 text-emerald-700 ring-emerald-600/20",
-    brand: "bg-brand-500/10 text-brand-700 ring-brand-600/20",
-    amber: "bg-amber-500/10 text-amber-800 ring-amber-600/20",
-    rose: "bg-rose-500/10 text-rose-700 ring-rose-600/20",
+    emerald: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
+    brand: "bg-brand-500/10 text-brand-700 border-brand-500/20",
+    amber: "bg-amber-500/10 text-amber-800 border-amber-500/20",
+    rose: "bg-rose-500/10 text-rose-700 border-rose-500/20",
   };
 
   return (
-    <div className="panel group relative overflow-hidden p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
-      {/* Top accent line */}
+    <div className="group relative overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white via-white to-slate-50/70 p-6 shadow-card backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-500/40 hover:shadow-card-hover">
+      {/* Top Astryx Accent Glow */}
       <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${accentGradient}`} />
-      
+      <div className={`pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-gradient-to-br ${accentGradient} opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-20`} />
+
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{title}</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{title}</p>
           <p className="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl font-mono tabular-nums">
             {value}
           </p>
         </div>
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-slate-100/80 text-slate-700 transition-colors group-hover:bg-brand-50 group-hover:text-brand-600">
+        <div className="grid h-12 w-12 place-items-center rounded-2xl border border-slate-200/80 bg-slate-50/80 text-slate-700 shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:border-brand-300 group-hover:bg-brand-50 group-hover:text-brand-600">
           <Icon className="h-5 w-5" />
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+      <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
         <span className="text-slate-500 font-medium">{subValue}</span>
         {badgeText && (
-          <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-bold ring-1 ring-inset ${toneMap[badgeTone]}`}>
+          <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase ${toneMap[badgeTone]}`}>
             {badgeText}
           </span>
         )}
@@ -891,6 +893,7 @@ function CreateInvoiceModal({
   const defaultDue = new Date();
   defaultDue.setDate(defaultDue.getDate() + 30);
   const [dueAt, setDueAt] = useState(defaultDue.toISOString().split("T")[0]);
+  const [deliverableVaultUrl, setDeliverableVaultUrl] = useState("");
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -949,6 +952,7 @@ function CreateInvoiceModal({
         currency,
         issued_at: issuedAt,
         due_at: dueAt,
+        external_invoice_id: deliverableVaultUrl.trim() ? `vault:${deliverableVaultUrl.trim()}` : undefined,
       });
 
       onSuccess();
@@ -1130,6 +1134,29 @@ function CreateInvoiceModal({
             </div>
           </div>
 
+          {/* Deliverable Vault Escrow Lock (Fix My Itch: Freelancer Ghosting & SME Cashflow Shield) */}
+          <div className="rounded-xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/70 via-purple-50/40 to-white p-3.5 space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="grid h-6 w-6 place-items-center rounded-lg bg-indigo-600/10 text-indigo-600">
+                <Lock className="h-3.5 w-3.5" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-900">Zero-Cost Deliverable Vault (Escrow Lock)</p>
+                <p className="text-[10px] text-slate-500">Lock work deliverables until client completes settlement</p>
+              </div>
+            </div>
+            <input
+              type="url"
+              value={deliverableVaultUrl}
+              onChange={(e) => setDeliverableVaultUrl(e.target.value)}
+              placeholder="e.g. Figma file, Google Drive, GitHub repo, or Dropbox URL"
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-mono text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none"
+            />
+            <p className="text-[10px] text-slate-500 leading-relaxed">
+              When attached, client sees a locked vault card on their checkout page. Once payment is verified, the deliverables unlock instantly with zero gateway transaction fees.
+            </p>
+          </div>
+
           {/* Submit Buttons */}
           <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-6">
             <button
@@ -1279,12 +1306,27 @@ export function InvoicesPage() {
                     className="group transition-colors hover:bg-slate-50/70"
                   >
                     <td className="table-cell">
-                      <Link
-                        to={`/invoices/${inv.id}`}
-                        className="font-mono font-bold text-brand-600 hover:text-brand-700 hover:underline"
-                      >
-                        {inv.invoice_number}
-                      </Link>
+                      <div className="flex items-center gap-1.5">
+                        <Link
+                          to={`/invoices/${inv.id}`}
+                          className="font-mono font-bold text-brand-600 hover:text-brand-700 hover:underline"
+                        >
+                          {inv.invoice_number}
+                        </Link>
+                        {inv.external_invoice_id && (inv.external_invoice_id.startsWith("vault:") || inv.external_invoice_id.startsWith("http")) && (
+                          <span
+                            title={inv.status === "PAID" ? "Deliverable Vault Unlocked" : "Deliverable Held in Escrow Vault"}
+                            className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
+                              inv.status === "PAID"
+                                ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                                : "text-indigo-700 bg-indigo-50 border-indigo-200"
+                            }`}
+                          >
+                            <Lock className="h-2.5 w-2.5" />
+                            {inv.status === "PAID" ? "Vault Unlocked" : "Vault"}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="table-cell">
                       <div className="font-semibold text-slate-900">
@@ -1307,13 +1349,25 @@ export function InvoicesPage() {
                       <Badge value={inv.status} />
                     </td>
                     <td className="table-cell text-right">
-                      <Link
-                        to={`/invoices/${inv.id}`}
-                        className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 opacity-0 transition-opacity group-hover:opacity-100 hover:text-brand-600"
-                      >
-                        <span>Details</span>
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </Link>
+                      <div className="flex items-center justify-end gap-2.5">
+                        <a
+                          href={`/pay/${inv.invoice_number}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Open public payment portal"
+                        >
+                          <ArrowUpRight className="h-3 w-3" />
+                          <span>Portal</span>
+                        </a>
+                        <Link
+                          to={`/invoices/${inv.id}`}
+                          className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-brand-600"
+                        >
+                          <span>Details</span>
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -2061,6 +2115,43 @@ export function InvoiceDetailPage() {
                   </div>
                 </section>
 
+                {/* Deliverable Vault Escrow Status */}
+                {inv.external_invoice_id && (inv.external_invoice_id.startsWith("vault:") || inv.external_invoice_id.startsWith("http")) && (
+                  <section className="panel p-6 border-indigo-200/80 bg-gradient-to-br from-indigo-50/40 to-white">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Lock className="h-4 w-4 text-indigo-600" />
+                        <h3 className="font-bold text-slate-900 text-sm">Deliverable Vault</h3>
+                      </div>
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        inv.status === "PAID"
+                          ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                          : "bg-amber-100 text-amber-800 border border-amber-300"
+                      }`}>
+                        {inv.status === "PAID" ? "🔓 Unlocked & Delivered" : "🔒 Held in Escrow"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 mb-3 leading-relaxed">
+                      {inv.status === "PAID"
+                        ? "Payment is settled. Client has unlocked instant access to these project deliverables via their payment portal."
+                        : "Deliverables are locked. Client cannot access the files until full payment is settled."}
+                    </p>
+                    <div className="rounded-lg border border-slate-200 bg-white p-2.5 flex items-center justify-between text-xs font-mono">
+                      <span className="truncate text-slate-600 max-w-[200px]">
+                        {inv.external_invoice_id.replace(/^vault:/, "")}
+                      </span>
+                      <a
+                        href={inv.external_invoice_id.replace(/^vault:/, "")}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 font-bold text-indigo-600 hover:text-indigo-800 ml-2 shrink-0"
+                      >
+                        <ArrowUpRight className="h-3.5 w-3.5" /> Open
+                      </a>
+                    </div>
+                  </section>
+                )}
+
                 <section className="panel p-6">
                   <h3 className="font-bold text-slate-900 mb-3">Linked Conversations</h3>
                   {data.conversations.length ? (
@@ -2776,6 +2867,24 @@ export function ActionsPage() {
     }
   };
 
+  const handleVerifyProof = async (actionId: string) => {
+    setBusy(actionId);
+    setNotice(null);
+    try {
+      const res = await actionsApi.verifyProof(actionId);
+      setNotice(`Payment Settled! ${res.message}`);
+      r.reload();
+    } catch (err: any) {
+      setNotice("Verification failed: " + (err?.message || "Unknown error"));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const pendingProofs = (r.data?.value || []).filter(
+    (a) => a.action_type === "VERIFY_PAYMENT_PROOF" && (a.status === "PENDING" || a.status === "PROCESSING")
+  );
+
   return (
     <>
       <PageHeader
@@ -2802,6 +2911,32 @@ export function ActionsPage() {
         }
       />
 
+      {/* Astryx Luminous Pending Payment Proofs Alert */}
+      {pendingProofs.length > 0 && (
+        <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950 via-slate-900 to-slate-950 p-5 text-white shadow-card">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="font-bold text-white text-sm">
+                    {pendingProofs.length} Client Payment Proof{pendingProofs.length > 1 ? "s" : ""} Awaiting Settlement
+                  </h4>
+                  <span className="inline-flex items-center rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-mono font-bold text-emerald-300 border border-emerald-500/30">
+                    ACTION REQUIRED
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-slate-300 leading-relaxed">
+                  Clients have submitted UTR / reference IDs via your public checkout portal. Click &ldquo;1-Click Settle&rdquo; below to mark invoices PAID and automatically unlock deliverable vaults.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <select
           className="input w-full sm:w-56 text-xs font-semibold"
@@ -2816,7 +2951,11 @@ export function ActionsPage() {
             </option>
           ))}
         </select>
-        {notice && <p className="text-xs font-semibold text-rose-600">{notice}</p>}
+        {notice && (
+          <p className={`text-xs font-semibold ${notice.includes("Settled") || notice.includes("complete") ? "text-emerald-600" : "text-rose-600"}`}>
+            {notice}
+          </p>
+        )}
       </div>
 
       {r.loading ? (
@@ -2835,60 +2974,113 @@ export function ActionsPage() {
               <thead className="bg-slate-50/70 border-b border-slate-100">
                 <tr>
                   <th className="table-head">Action Type</th>
+                  <th className="table-head">Invoice & Customer</th>
                   <th className="table-head">Status</th>
                   <th className="table-head">Scheduled</th>
-                  <th className="table-head">Executed</th>
-                  <th className="table-head text-right">Override</th>
+                  <th className="table-head text-right">Settlement / Override</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {r.data.value.map((action) => (
-                  <tr key={action.id} className="transition-colors hover:bg-slate-50/70">
-                    <td className="table-cell">
-                      <div className="flex items-center gap-2.5">
-                        <Zap className="h-4 w-4 text-brand-600 shrink-0" />
-                        <div>
-                          <p className="font-bold text-slate-900 text-sm">
-                            {titleCase(action.action_type.replace(/_/g, " "))}
-                          </p>
-                          <p className="text-[11px] text-slate-400">
-                            {action.invoice_id ? "Invoice-level trigger" : "Account-level trigger"}
-                          </p>
+                {r.data.value.map((action) => {
+                  const meta = (action.metadata || {}) as Record<string, any>;
+                  const isProof = action.action_type === "VERIFY_PAYMENT_PROOF";
+                  const canSettle = isProof && (action.status === "PENDING" || action.status === "PROCESSING");
+
+                  return (
+                    <tr key={action.id} className={`transition-colors ${canSettle ? "bg-emerald-50/30 hover:bg-emerald-50/50" : "hover:bg-slate-50/70"}`}>
+                      <td className="table-cell">
+                        <div className="flex items-center gap-2.5">
+                          {isProof ? (
+                            <div className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
+                              <CheckCircle2 className="h-4 w-4" />
+                            </div>
+                          ) : (
+                            <div className="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600 shrink-0">
+                              <Zap className="h-4 w-4" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-bold text-slate-900 text-sm">
+                              {titleCase(action.action_type.replace(/_/g, " "))}
+                            </p>
+                            {isProof && meta.utr ? (
+                              <p className="font-mono text-[11px] font-bold text-emerald-700">
+                                UTR: {meta.utr} {meta.amount ? `· ₹${meta.amount}` : ""}
+                              </p>
+                            ) : (
+                              <p className="text-[11px] text-slate-400">
+                                {action.invoice_id ? "Invoice-level trigger" : "Account-level trigger"}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="table-cell">
-                      <Badge value={action.status} />
-                    </td>
-                    <td className="table-cell font-mono text-xs text-slate-500">
-                      {dateTime(action.scheduled_at)}
-                    </td>
-                    <td className="table-cell font-mono text-xs text-slate-500">
-                      {dateTime(action.executed_at)}
-                    </td>
-                    <td className="table-cell text-right">
-                      {(transitions[action.status] || []).length ? (
-                        <select
-                          className="h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 shadow-soft"
-                          disabled={busy === action.id}
-                          value=""
-                          onChange={(e) => {
-                            if (e.target.value) update(action, e.target.value);
-                          }}
-                        >
-                          <option value="">Transition state...</option>
-                          {transitions[action.status].map((next) => (
-                            <option value={next} key={next}>
-                              Set {titleCase(next)}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className="font-mono text-[11px] text-slate-400">Terminal</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="table-cell">
+                        <div>
+                          {action.invoices?.invoice_number ? (
+                            <Link
+                              to={`/invoices/${action.invoice_id}`}
+                              className="font-mono font-bold text-brand-600 hover:underline text-xs"
+                            >
+                              {action.invoices.invoice_number}
+                            </Link>
+                          ) : (
+                            <span className="font-mono text-xs text-slate-400">—</span>
+                          )}
+                          {action.customers?.name && (
+                            <p className="text-[11px] text-slate-500 font-medium">
+                              {action.customers.name}
+                            </p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="table-cell">
+                        <Badge value={action.status} />
+                      </td>
+                      <td className="table-cell font-mono text-xs text-slate-500">
+                        {dateTime(action.scheduled_at)}
+                      </td>
+                      <td className="table-cell text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {canSettle && (
+                            <button
+                              onClick={() => handleVerifyProof(action.id)}
+                              disabled={busy === action.id}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50 transition-all hover:scale-105"
+                            >
+                              {busy === action.id ? (
+                                <RefreshCw className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <CheckCircle2 className="h-3 w-3" />
+                              )}
+                              <span>1-Click Settle</span>
+                            </button>
+                          )}
+
+                          {(transitions[action.status] || []).length ? (
+                            <select
+                              className="h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 shadow-soft"
+                              disabled={busy === action.id}
+                              value=""
+                              onChange={(e) => {
+                                if (e.target.value) update(action, e.target.value);
+                              }}
+                            >
+                              <option value="">Transition state...</option>
+                              {transitions[action.status].map((next) => (
+                                <option value={next} key={next}>
+                                  Set {titleCase(next)}
+                                </option>
+                              ))}
+                            </select>
+                          ) : !canSettle ? (
+                            <span className="font-mono text-[11px] text-slate-400">Terminal</span>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -2954,158 +3146,283 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
 
   const registering = mode === "register";
 
-  return (
-    <main className="grid min-h-screen lg:grid-cols-[1.1fr_0.9fr] bg-slate-50 font-sans">
-      {/* Left Hero Pane (Fintech Midnight Gradient) */}
-      <section className="relative hidden flex-col justify-between overflow-hidden bg-midnight-950 p-14 text-white lg:flex border-r border-white/10">
-        {/* Glow ambient meshes */}
-        <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-brand-500/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-20 h-96 w-96 rounded-full bg-accent-cyan/15 blur-3xl" />
+  const fillDemo = () => {
+    setForm((curr) => ({
+      ...curr,
+      email: "srimanbhavani961@gmail.com",
+      password: "bhavanisri",
+    }));
+  };
 
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-violet-500 shadow-glow">
-            <Sparkles className="h-5 w-5 text-white" />
+  return (
+    <main className="grid min-h-screen lg:grid-cols-[1.15fr_0.85fr] bg-slate-950 font-sans selection:bg-brand-500 selection:text-white">
+      {/* Left Hero Pane (Astryx Obsidian & Luminous Meshes) */}
+      <section className="relative hidden flex-col justify-between overflow-hidden bg-midnight-950 p-12 lg:flex border-r border-white/10 text-white">
+        {/* Luminous ambient meshes */}
+        <div className="pointer-events-none absolute -right-24 -top-24 h-[500px] w-[500px] rounded-full bg-brand-500/20 blur-[120px]" />
+        <div className="pointer-events-none absolute -bottom-32 -left-20 h-[450px] w-[450px] rounded-full bg-accent-cyan/15 blur-[120px]" />
+
+        {/* Brand Header */}
+        <div className="flex items-center justify-between z-10">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-500 via-indigo-600 to-violet-500 shadow-glow ring-1 ring-white/20">
+              <Sparkles className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <span className="text-xl font-black tracking-tight text-white block">Ledgerlane</span>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                Autonomous Receivables OS
+              </span>
+            </div>
           </div>
-          <span className="text-lg font-black tracking-tight text-white">Ledgerlane</span>
+
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-bold text-emerald-400 backdrop-blur-md">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+            </span>
+            <span>Gemini 2.5 Flash Online</span>
+          </div>
         </div>
 
-        <div className="max-w-md my-auto">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-brand-300 backdrop-blur-md mb-6">
-            <ShieldCheck className="h-4 w-4 text-emerald-400" />
-            <span>Deterministic Financial Safety</span>
+        {/* Center Content */}
+        <div className="max-w-lg my-auto py-8 z-10">
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand-400/30 bg-brand-500/10 px-3.5 py-1 text-xs font-bold text-brand-300 backdrop-blur-md mb-5">
+            <Zap className="h-3.5 w-3.5 text-brand-400" />
+            <span>Eliminating 10+ Hours of AR Admin Weekly</span>
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight leading-tight text-white sm:text-5xl">
-            Autonomous receivables that collect faster.
+
+          <h1 className="text-4xl font-black tracking-tight leading-[1.15] text-white sm:text-5xl">
+            Autonomous receivables that collect{" "}
+            <span className="bg-gradient-to-r from-brand-300 via-indigo-200 to-teal-200 bg-clip-text text-transparent">
+              14 days faster.
+            </span>
           </h1>
-          <p className="mt-5 text-sm leading-relaxed text-slate-300">
-            Intelligently parse customer replies, automatically schedule follow-ups, and keep cash flow visible without manual email chasing.
+
+          <p className="mt-4 text-sm leading-relaxed text-slate-300">
+            Intelligently parses customer excuses with Gemini AI, schedules automated follow-ups with zero founder awkwardness, and settles directly to bank accounts via zero-fee UPI.
           </p>
 
-          <div className="mt-8 space-y-3.5 border-t border-white/10 pt-8 text-xs text-slate-300 font-medium">
-            <div className="flex items-center gap-2.5">
-              <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-              <span>AI intent classification with strict ledger guardrails</span>
+          {/* Astryx Live AR Simulation Bento Card */}
+          <div className="mt-7 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.08] to-white/[0.02] p-4.5 backdrop-blur-xl shadow-2xl space-y-3">
+            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="font-mono text-[11px] font-bold text-white tracking-wide">
+                  REAL-TIME AR EVENT · INV-1042
+                </span>
+              </div>
+              <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                ₹45,000 DUE
+              </span>
             </div>
-            <div className="flex items-center gap-2.5">
-              <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-              <span>Two-way Gmail sync with automated resolution</span>
+
+            {/* Inbound Customer Message Simulation */}
+            <div className="rounded-xl bg-slate-900/90 border border-white/5 p-3 text-xs">
+              <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                <span className="font-bold text-slate-300">From: Rohan Mehta (Acme Studios)</span>
+                <span className="font-mono">Inbound Email</span>
+              </div>
+              <p className="text-slate-200 italic font-mono text-[11px] leading-relaxed">
+                "Our finance head was out of office. We've scheduled the ₹45,000 transfer for this Friday via RTGS."
+              </p>
             </div>
-            <div className="flex items-center gap-2.5">
-              <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-              <span>Row-locked action queue preventing duplicate outreach</span>
+
+            {/* Gemini Classification Badge */}
+            <div className="flex items-center justify-between rounded-xl bg-brand-500/15 border border-brand-500/30 px-3 py-2 text-xs">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-3.5 w-3.5 text-brand-300 shrink-0" />
+                <span className="font-bold text-brand-200">Gemini 2.5 Classified:</span>
+              </div>
+              <span className="font-mono text-[10px] font-extrabold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                PAYMENT_PROMISED (99.8%)
+              </span>
+            </div>
+
+            {/* Autonomous Action */}
+            <div className="flex items-center gap-2 text-[11px] text-slate-300 pt-0.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+              <span>Chasing halted · Check-in auto-calendared for Friday</span>
+            </div>
+          </div>
+
+          {/* 3 Bento Mini-Stats */}
+          <div className="mt-6 grid grid-cols-3 gap-3">
+            <div className="rounded-xl border border-white/5 bg-white/[0.03] p-3 text-center">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">DSO Speed</span>
+              <p className="text-sm font-black text-emerald-400 mt-0.5 font-mono">14 Days Faster</p>
+            </div>
+            <div className="rounded-xl border border-white/5 bg-white/[0.03] p-3 text-center">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Transaction Fees</span>
+              <p className="text-sm font-black text-brand-300 mt-0.5 font-mono">0% (UPI Direct)</p>
+            </div>
+            <div className="rounded-xl border border-white/5 bg-white/[0.03] p-3 text-center">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Admin Saved</span>
+              <p className="text-sm font-black text-teal-300 mt-0.5 font-mono">10+ Hrs / Wk</p>
             </div>
           </div>
         </div>
 
-        <div className="text-xs text-slate-500">
-          Financial state remains authoritative and grounded in real bank receipts.
+        {/* Footer Guarantee */}
+        <div className="flex items-center justify-between text-[11px] text-slate-500 border-t border-white/10 pt-4 z-10">
+          <span>Row-Level Lock PostgreSQL Safety</span>
+          <span>Reg F & CAN-SPAM Suppressed</span>
         </div>
       </section>
 
       {/* Right Form Pane */}
-      <section className="flex items-center justify-center p-6 sm:p-12">
+      <section className="flex items-center justify-center p-6 sm:p-12 bg-slate-900/60 backdrop-blur-xl">
         <div className="w-full max-w-md">
-          <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-600 text-white">
-              <Sparkles className="h-4.5 w-4.5" />
+          {/* Mobile Brand Header */}
+          <div className="mb-6 flex items-center justify-between lg:hidden">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white shadow-glow">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <span className="text-lg font-bold text-white">Ledgerlane</span>
             </div>
-            <span className="text-lg font-bold text-slate-900">Ledgerlane</span>
+            <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+              AI Active
+            </span>
           </div>
 
-          <h2 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-            {registering ? "Create your workspace" : "Welcome back"}
-          </h2>
-          <p className="mt-2 text-sm text-slate-500">
-            {registering
-              ? "Set up your organization to automate receivables."
-              : "Sign in to access your collection dashboard."}
-          </p>
-
-          <form className="mt-8 space-y-4.5" onSubmit={submit}>
-            {registering && (
-              <>
-                <div>
-                  <label className="label" htmlFor="name">
-                    Full Name
-                  </label>
-                  <input
-                    id="name"
-                    className="input"
-                    autoComplete="name"
-                    placeholder="Jane Doe"
-                    value={form.name}
-                    onChange={set("name")}
-                  />
-                </div>
-                <div>
-                  <label className="label" htmlFor="organization">
-                    Company / Organization Name
-                  </label>
-                  <input
-                    id="organization"
-                    className="input"
-                    autoComplete="organization"
-                    placeholder="Acme Studios"
-                    value={form.organization_name}
-                    onChange={set("organization_name")}
-                  />
-                </div>
-              </>
-            )}
-
-            <div>
-              <label className="label" htmlFor="email">
-                Work Email
-              </label>
-              <input
-                id="email"
-                className="input"
-                type="email"
-                autoComplete="email"
-                placeholder="you@company.com"
-                value={form.email}
-                onChange={set("email")}
-              />
-            </div>
-
-            <div>
-              <label className="label" htmlFor="password">
-                Password
-              </label>
-              <input
-                id="password"
-                className="input"
-                type="password"
-                autoComplete={registering ? "new-password" : "current-password"}
-                placeholder="••••••••"
-                value={form.password}
-                onChange={set("password")}
-              />
-            </div>
-
-            {error && (
-              <p
-                className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-semibold text-rose-700"
-                role="alert"
+          {/* Form Header Card */}
+          <div className="rounded-2xl border border-white/10 bg-slate-900/90 p-8 shadow-2xl backdrop-blur-md">
+            {/* Mode Switcher Tabs */}
+            <div className="flex rounded-xl bg-slate-950/80 p-1 border border-white/10 mb-6">
+              <Link
+                to="/login"
+                className={`w-1/2 py-2 text-center text-xs font-bold rounded-lg transition-all ${
+                  !registering
+                    ? "bg-brand-600 text-white shadow-md"
+                    : "text-slate-400 hover:text-white"
+                }`}
               >
-                {error}
+                Sign In
+              </Link>
+              <Link
+                to="/register"
+                className={`w-1/2 py-2 text-center text-xs font-bold rounded-lg transition-all ${
+                  registering
+                    ? "bg-brand-600 text-white shadow-md"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                Create Account
+              </Link>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-black tracking-tight text-white sm:text-2xl">
+                {registering ? "Deploy your AR Workspace" : "Access your Command Center"}
+              </h2>
+              <p className="mt-1 text-xs text-slate-400">
+                {registering
+                  ? "Set up autonomous receivables for your business in 30 seconds."
+                  : "Sign in to manage active collections and ledger balances."}
               </p>
-            )}
+            </div>
 
-            <button className="btn-primary w-full mt-2" disabled={loading}>
-              {loading ? "Authenticating..." : registering ? "Create Workspace" : "Sign In"}
-            </button>
-          </form>
+            <form className="mt-6 space-y-4" onSubmit={submit}>
+              {registering && (
+                <>
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1" htmlFor="name">
+                      Full Name *
+                    </label>
+                    <input
+                      id="name"
+                      className="input bg-slate-950 border-white/10 text-white text-xs"
+                      autoComplete="name"
+                      placeholder="Sriman Bhavani"
+                      value={form.name}
+                      onChange={set("name")}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1" htmlFor="organization">
+                      Company / Organization Name *
+                    </label>
+                    <input
+                      id="organization"
+                      className="input bg-slate-950 border-white/10 text-white text-xs"
+                      autoComplete="organization"
+                      placeholder="Acme Technologies"
+                      value={form.organization_name}
+                      onChange={set("organization_name")}
+                    />
+                  </div>
+                </>
+              )}
 
-          <p className="mt-6 text-center text-xs font-medium text-slate-500">
-            {registering ? "Already have an account?" : "Need a workspace?"}{" "}
-            <Link
-              className="font-bold text-brand-600 hover:text-brand-700 hover:underline"
-              to={registering ? "/login" : "/register"}
-            >
-              {registering ? "Sign in" : "Create one now"}
-            </Link>
-          </p>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1" htmlFor="email">
+                  Work Email *
+                </label>
+                <input
+                  id="email"
+                  className="input bg-slate-950 border-white/10 text-white text-xs"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="srimanbhavani961@gmail.com"
+                  value={form.email}
+                  onChange={set("email")}
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400" htmlFor="password">
+                    Password *
+                  </label>
+                  {!registering && (
+                    <button
+                      type="button"
+                      onClick={fillDemo}
+                      className="text-[10px] font-semibold text-brand-400 hover:text-brand-300 hover:underline"
+                    >
+                      Fill Demo Credentials
+                    </button>
+                  )}
+                </div>
+                <input
+                  id="password"
+                  className="input bg-slate-950 border-white/10 text-white text-xs"
+                  type="password"
+                  autoComplete={registering ? "new-password" : "current-password"}
+                  placeholder="••••••••••"
+                  value={form.password}
+                  onChange={set("password")}
+                />
+              </div>
+
+              {error && (
+                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3.5 py-2.5 text-xs font-semibold text-rose-300 flex items-center justify-between animate-fade-in">
+                  <span>{error}</span>
+                  <button type="button" onClick={() => setError(null)} className="text-rose-400 hover:text-white">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary w-full h-11 text-xs font-bold shadow-glow mt-2"
+              >
+                {loading ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    <span>Connecting to Ledger...</span>
+                  </>
+                ) : registering ? (
+                  <span>Initialize Organization Workspace</span>
+                ) : (
+                  <span>Enter Collection Dashboard</span>
+                )}
+              </button>
+            </form>
+          </div>
         </div>
       </section>
     </main>

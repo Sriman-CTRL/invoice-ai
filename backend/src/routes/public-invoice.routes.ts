@@ -15,10 +15,19 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
             return;
         }
 
+        const orgSlug = typeof req.query.org === "string" ? req.query.org.trim() : null;
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invoice_number);
+        const whereClause: any = isUuid
+            ? { id: invoice_number }
+            : { invoice_number: { equals: invoice_number, mode: "insensitive" } };
+
+        if (orgSlug) {
+            whereClause.organizations = { slug: orgSlug };
+        }
+
         const invoice = await prisma.invoices.findFirst({
-            where: {
-                invoice_number: { equals: invoice_number, mode: "insensitive" },
-            },
+            where: whereClause,
+            orderBy: { created_at: "desc" },
             include: {
                 customers: true,
                 organizations: true,
@@ -105,10 +114,14 @@ router.post("/:invoice_number/submit-proof", async (req: Request, res: Response)
             return;
         }
 
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invoice_number);
+        const whereClause: any = isUuid
+            ? { id: invoice_number }
+            : { invoice_number: { equals: invoice_number, mode: "insensitive" } };
+
         const invoice = await prisma.invoices.findFirst({
-            where: {
-                invoice_number: { equals: invoice_number, mode: "insensitive" },
-            },
+            where: whereClause,
+            orderBy: { created_at: "desc" },
             include: {
                 customers: true,
                 organizations: true,

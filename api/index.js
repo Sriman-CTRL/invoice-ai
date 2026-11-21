@@ -2559,6 +2559,10 @@ router7.get("/", async (req, res) => {
     }
     const actions = await prisma_default.collection_actions.findMany({
       where: filters,
+      include: {
+        customers: true,
+        invoices: true
+      },
       orderBy: [
         { scheduled_at: "asc" },
         { created_at: "desc" }
@@ -2661,6 +2665,107 @@ router7.patch("/:id/status", async (req, res) => {
   } catch (error) {
     console.error("Error updating collection action status:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+router7.post("/:id/verify-proof", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const organization_id = req.body?.organization_id || req.user?.organization_id;
+    if (!organization_id || typeof organization_id !== "string") {
+      res.status(400).json({ error: "organization_id is required" });
+      return;
+    }
+    const action = await prisma_default.collection_actions.findFirst({
+      where: {
+        id,
+        organization_id
+      },
+      include: {
+        invoices: true,
+        customers: true
+      }
+    });
+    if (!action) {
+      res.status(404).json({ error: "Collection action not found" });
+      return;
+    }
+    if (!action.invoice_id) {
+      res.status(400).json({ error: "Action is not linked to an invoice" });
+      return;
+    }
+    const meta = action.metadata && typeof action.metadata === "object" ? action.metadata : {};
+    const utr = String(meta.utr || "DIRECT_VERIFIED");
+    const paymentId = meta.payment_id ? String(meta.payment_id) : null;
+    const result = await prisma_default.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw`
+        SELECT id FROM invoices WHERE id = ${action.invoice_id}::uuid AND organization_id = ${organization_id}::uuid FOR UPDATE
+      `;
+      if (locked.length === 0) {
+        throw new Error("INVOICE_NOT_FOUND");
+      }
+      const inv = await tx.invoices.findFirst({
+        where: { id: action.invoice_id, organization_id }
+      });
+      if (!inv) throw new Error("INVOICE_NOT_FOUND");
+      let payment = paymentId ? await tx.payments.findFirst({
+        where: { id: paymentId, organization_id, status: "PENDING" }
+      }) : await tx.payments.findFirst({
+        where: { invoice_id: action.invoice_id, organization_id, status: "PENDING" },
+        orderBy: { created_at: "desc" }
+      });
+      if (payment) {
+        payment = await tx.payments.update({
+          where: { id: payment.id },
+          data: {
+            status: "SUCCEEDED",
+            paid_at: /* @__PURE__ */ new Date()
+          }
+        });
+      } else {
+        const settled = await tx.payments.aggregate({
+          where: { invoice_id: action.invoice_id, organization_id, status: "SUCCEEDED" },
+          _sum: { amount: true }
+        });
+        const alreadyPaid = Number(settled._sum.amount ?? 0);
+        const outstanding = Math.max(0, Number(inv.amount) - alreadyPaid);
+        payment = await tx.payments.create({
+          data: {
+            organization_id,
+            invoice_id: action.invoice_id,
+            external_payment_id: utr,
+            amount: outstanding > 0 ? outstanding : Number(inv.amount),
+            currency: inv.currency,
+            status: "SUCCEEDED",
+            paid_at: /* @__PURE__ */ new Date()
+          }
+        });
+      }
+      const updatedInvoice = await tx.invoices.update({
+        where: { id: action.invoice_id },
+        data: { status: "PAID" }
+      });
+      const updatedAction = await tx.collection_actions.update({
+        where: { id: action.id },
+        data: {
+          status: "COMPLETED",
+          executed_at: /* @__PURE__ */ new Date(),
+          metadata: {
+            ...meta,
+            verified_at: (/* @__PURE__ */ new Date()).toISOString(),
+            settled_payment_id: payment.id
+          }
+        }
+      });
+      return { invoice: updatedInvoice, payment, action: updatedAction };
+    });
+    res.json({
+      success: true,
+      message: `Payment verified and settled! Invoice #${result.invoice.invoice_number} marked PAID. Deliverables unlocked.`,
+      ...result
+    });
+  } catch (error) {
+    console.error("Error verifying payment proof:", error);
+    res.status(500).json({ error: error instanceof Error ? error.message : "Failed to verify payment proof" });
   }
 });
 var collection_action_routes_default = router7;
@@ -3315,10 +3420,15 @@ router14.get("/:invoice_number", async (req, res) => {
       res.status(400).json({ error: "Invoice number is required" });
       return;
     }
+    const orgSlug = typeof req.query.org === "string" ? req.query.org.trim() : null;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invoice_number);
+    const whereClause = isUuid ? { id: invoice_number } : { invoice_number: { equals: invoice_number, mode: "insensitive" } };
+    if (orgSlug) {
+      whereClause.organizations = { slug: orgSlug };
+    }
     const invoice = await prisma_default.invoices.findFirst({
-      where: {
-        invoice_number: { equals: invoice_number, mode: "insensitive" }
-      },
+      where: whereClause,
+      orderBy: { created_at: "desc" },
       include: {
         customers: true,
         organizations: true,
@@ -3390,10 +3500,11 @@ router14.post("/:invoice_number/submit-proof", async (req, res) => {
       res.status(400).json({ error: "Invoice number and UTR / Reference ID are required." });
       return;
     }
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invoice_number);
+    const whereClause = isUuid ? { id: invoice_number } : { invoice_number: { equals: invoice_number, mode: "insensitive" } };
     const invoice = await prisma_default.invoices.findFirst({
-      where: {
-        invoice_number: { equals: invoice_number, mode: "insensitive" }
-      },
+      where: whereClause,
+      orderBy: { created_at: "desc" },
       include: {
         customers: true,
         organizations: true,

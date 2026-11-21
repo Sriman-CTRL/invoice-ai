@@ -169,6 +169,10 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
 
     const actions = await prisma.collection_actions.findMany({
       where: filters,
+      include: {
+        customers: true,
+        invoices: true,
+      },
       orderBy: [
         { scheduled_at: "asc" },
         { created_at: "desc" },
@@ -298,6 +302,135 @@ router.patch("/:id/status", async (req: Request, res: Response): Promise<void> =
   } catch (error) {
     console.error("Error updating collection action status:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
+ * POST /api/collection-actions/:id/verify-proof
+ * 1-Click settlement of client payment proof (UTR / Reference).
+ * Converts pending payment to SUCCEEDED, marks invoice as PAID, unlocks deliverable vault,
+ * and sets action status to COMPLETED.
+ */
+router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const organization_id = req.body?.organization_id || req.user?.organization_id;
+
+    if (!organization_id || typeof organization_id !== "string") {
+      res.status(400).json({ error: "organization_id is required" });
+      return;
+    }
+
+    const action = await prisma.collection_actions.findFirst({
+      where: {
+        id,
+        organization_id,
+      },
+      include: {
+        invoices: true,
+        customers: true,
+      },
+    });
+
+    if (!action) {
+      res.status(404).json({ error: "Collection action not found" });
+      return;
+    }
+
+    if (!action.invoice_id) {
+      res.status(400).json({ error: "Action is not linked to an invoice" });
+      return;
+    }
+
+    const meta = (action.metadata && typeof action.metadata === "object") ? (action.metadata as Record<string, unknown>) : {};
+    const utr = String(meta.utr || "DIRECT_VERIFIED");
+    const paymentId = meta.payment_id ? String(meta.payment_id) : null;
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Row lock on invoice
+      const locked = await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT id FROM invoices WHERE id = ${action.invoice_id}::uuid AND organization_id = ${organization_id}::uuid FOR UPDATE
+      `;
+      if (locked.length === 0) {
+        throw new Error("INVOICE_NOT_FOUND");
+      }
+
+      const inv = await tx.invoices.findFirst({
+        where: { id: action.invoice_id, organization_id },
+      });
+      if (!inv) throw new Error("INVOICE_NOT_FOUND");
+
+      // Check for pending payment to promote to SUCCEEDED
+      let payment = paymentId
+        ? await tx.payments.findFirst({
+            where: { id: paymentId, organization_id, status: "PENDING" },
+          })
+        : await tx.payments.findFirst({
+            where: { invoice_id: action.invoice_id, organization_id, status: "PENDING" },
+            orderBy: { created_at: "desc" },
+          });
+
+      if (payment) {
+        payment = await tx.payments.update({
+          where: { id: payment.id },
+          data: {
+            status: "SUCCEEDED",
+            paid_at: new Date(),
+          },
+        });
+      } else {
+        // Calculate remaining due
+        const settled = await tx.payments.aggregate({
+          where: { invoice_id: action.invoice_id, organization_id, status: "SUCCEEDED" },
+          _sum: { amount: true },
+        });
+        const alreadyPaid = Number(settled._sum.amount ?? 0);
+        const outstanding = Math.max(0, Number(inv.amount) - alreadyPaid);
+
+        payment = await tx.payments.create({
+          data: {
+            organization_id,
+            invoice_id: action.invoice_id,
+            external_payment_id: utr,
+            amount: outstanding > 0 ? outstanding : Number(inv.amount),
+            currency: inv.currency,
+            status: "SUCCEEDED",
+            paid_at: new Date(),
+          },
+        });
+      }
+
+      // Mark invoice as PAID
+      const updatedInvoice = await tx.invoices.update({
+        where: { id: action.invoice_id },
+        data: { status: "PAID" },
+      });
+
+      // Mark action as COMPLETED
+      const updatedAction = await tx.collection_actions.update({
+        where: { id: action.id },
+        data: {
+          status: "COMPLETED",
+          executed_at: new Date(),
+          metadata: {
+            ...meta,
+            verified_at: new Date().toISOString(),
+            settled_payment_id: payment.id,
+          },
+        },
+      });
+
+      return { invoice: updatedInvoice, payment, action: updatedAction };
+    });
+
+    res.json({
+      success: true,
+      message: `Payment verified and settled! Invoice #${result.invoice.invoice_number} marked PAID. Deliverables unlocked.`,
+      ...result,
+    });
+  } catch (error) {
+    console.error("Error verifying payment proof:", error);
+    res.status(500).json({ error: error instanceof Error ? error.message : "Failed to verify payment proof" });
   }
 });
 

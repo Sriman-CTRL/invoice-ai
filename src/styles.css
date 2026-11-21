@@ -1,3 +1,4 @@
+@import "@astryxdesign/theme-neutral/theme.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -97,5 +98,37 @@
 
   .badge-pulse {
     @apply relative flex h-2 w-2 shrink-0;
+  }
+
+  /* Astryx Design System Glass & Bento Utilities */
+  .astryx-panel {
+    @apply rounded-2xl border border-slate-200/80 bg-white/90 shadow-card backdrop-blur-md transition-all duration-300;
+  }
+  .astryx-panel:hover {
+    @apply border-slate-300/90 shadow-card-hover -translate-y-0.5;
+  }
+  .astryx-panel-dark {
+    @apply rounded-2xl border border-white/10 bg-midnight-950/80 text-white shadow-2xl backdrop-blur-xl transition-all duration-300;
+  }
+  .astryx-panel-dark:hover {
+    @apply border-white/20 shadow-glow;
+  }
+  .astryx-bento {
+    @apply relative overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-b from-white/95 to-slate-50/90 p-6 shadow-card backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-brand-500/30 hover:shadow-card-hover;
+  }
+  .astryx-bento-dark {
+    @apply relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.08] to-white/[0.02] p-6 text-white shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-brand-500/40 hover:shadow-glow;
+  }
+  .astryx-pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold backdrop-blur-md transition-all;
+  }
+  .astryx-radar-beacon {
+    @apply relative flex h-2.5 w-2.5 items-center justify-center;
+  }
+  .astryx-radar-beacon .ping {
+    @apply absolute inline-flex h-full w-full animate-ping rounded-full opacity-75;
+  }
+  .astryx-radar-beacon .dot {
+    @apply relative inline-flex h-2 w-2 rounded-full;
   }
 }

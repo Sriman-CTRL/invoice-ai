@@ -324,17 +324,22 @@ function SidebarContent({ close }: { close?: () => void }) {
         ))}
       </nav>
 
-      {/* Engine Status Card */}
+      {/* Astryx Live System Health Beacon */}
       <div className="px-4 pb-4">
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs backdrop-blur-sm">
+        <div className="rounded-xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-3 text-xs backdrop-blur-md">
           <div className="flex items-center justify-between">
-            <span className="font-semibold text-slate-300">Autonomous Engine</span>
-            <span className="inline-flex items-center gap-1.5 font-mono text-[10px] text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              ONLINE
+            <span className="font-bold text-white text-[11px] tracking-wide">Autonomous Engine</span>
+            <span className="inline-flex items-center gap-1.5 font-mono text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              </span>
+              ACTIVE
             </span>
           </div>
-          <p className="mt-1 text-[11px] text-slate-400">n8n + AI intent engine active</p>
+          <p className="mt-1.5 text-[10px] text-slate-400 font-mono">
+            Gemini 2.5 Flash · Neon Postgres RLS
+          </p>
         </div>
       </div>
 
@@ -371,6 +376,7 @@ function SidebarContent({ close }: { close?: () => void }) {
 export function Shell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const currentSection = location.pathname.split("/")[1] || "dashboard";
 
@@ -417,6 +423,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3.5">
+            {/* Astryx Quick Command Search Input */}
+            <div
+              onClick={() => navigate("/invoices")}
+              className="hidden md:flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200/90 bg-slate-100/70 px-3 py-1.5 text-xs text-slate-500 shadow-inner hover:border-slate-300 transition-colors"
+            >
+              <Search className="h-3.5 w-3.5 text-slate-400" />
+              <span className="text-xs text-slate-500 w-40 truncate">Quick jump to invoice...</span>
+              <kbd className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-400">
+                ⌘K
+              </kbd>
+            </div>
+
             {/* Live Indicator Pill */}
             <div className="hidden items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-50/80 px-3 py-1 text-xs font-semibold text-emerald-800 sm:flex shadow-sm">
               <span className="relative flex h-2 w-2">
