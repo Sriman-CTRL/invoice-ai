@@ -1,6 +1,7 @@
 import type { ClassificationResult, ClassifyInput, MessageIntent } from "./types";
 import { SUPPORTED_INTENTS, validateClassificationResult } from "./types";
 import { OllamaClassifier } from "./ollamaClassifier";
+import { GeminiClassifier } from "./geminiClassifier";
 
 // ─── Provider Interface ───────────────────────────────────────────────────────
 
@@ -202,7 +203,11 @@ export function getIntentClassifier(): IIntentClassifier {
         return new OllamaClassifier();
     }
 
+    if (provider === "gemini") {
+        return new GeminiClassifier();
+    }
+
     throw new Error(
-        `Unknown CLASSIFIER provider "${provider}". Supported values: "mock", "ollama".`
+        `Unknown CLASSIFIER provider "${provider}". Supported values: "mock", "ollama", "gemini".`
     );
 }
