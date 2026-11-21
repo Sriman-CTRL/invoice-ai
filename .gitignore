@@ -14,3 +14,6 @@ src/generated/
 .DS_Store
 .vscode/
 .neon
+
+.vercel
+.env*

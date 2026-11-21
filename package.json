@@ -5,24 +5,40 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "esbuild backend/src/server.ts --bundle --platform=node --target=node20 --format=esm --outfile=api/index.js --packages=external && tsc -b && vite build",
     "lint": "eslint . --max-warnings=0"
   },
   "dependencies": {
     "@neon/config": "^1.14.6",
     "@neon/env": "^2.1.9",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "@vitejs/plugin-react": "latest",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
     "lucide-react": "latest",
+    "pg": "^8.23.1",
     "react": "latest",
     "react-dom": "latest",
     "react-router-dom": "latest",
     "vite": "latest"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/pg": "^8.23.1",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "autoprefixer": "latest",
+    "esbuild": "^0.28.2",
     "postcss": "latest",
+    "prisma": "^7.10.1",
     "tailwindcss": "^3.4.17",
     "typescript": "latest"
   }
