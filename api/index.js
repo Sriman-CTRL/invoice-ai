@@ -980,7 +980,7 @@ var OllamaClassifier = class {
 
 // backend/src/services/ai/geminiClassifier.ts
 var GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-var GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-1.5-flash";
+var GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 var GEMINI_TIMEOUT_MS = parseInt(process.env.GEMINI_TIMEOUT_MS ?? "15000", 10);
 var SYSTEM_PROMPT2 = `You are an accounts-receivable message intent classifier for an invoice collection system.
 
@@ -1025,12 +1025,15 @@ ${input.message}
 }
 var GeminiClassifier = class {
   async classifyMessage(input) {
-    if (!GEMINI_API_KEY) {
+    const apiKey = process.env.GEMINI_API_KEY || GEMINI_API_KEY;
+    const model = process.env.GEMINI_MODEL || GEMINI_MODEL;
+    const timeoutMs = parseInt(process.env.GEMINI_TIMEOUT_MS ?? String(GEMINI_TIMEOUT_MS), 10);
+    if (!apiKey) {
       throw new Error(
         "GEMINI_API_KEY is not set in environment. Set GEMINI_API_KEY or use CLASSIFIER=mock."
       );
     }
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     const userPrompt = buildPrompt(input);
     const body = {
       contents: [
@@ -1048,7 +1051,7 @@ var GeminiClassifier = class {
       }
     };
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const response = await fetch(url, {
         method: "POST",

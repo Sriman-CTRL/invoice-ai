@@ -3,7 +3,7 @@ import { validateClassificationResult } from "./types";
 import type { IIntentClassifier } from "./intentClassifier";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-1.5-flash";
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 const GEMINI_TIMEOUT_MS = parseInt(process.env.GEMINI_TIMEOUT_MS ?? "15000", 10);
 
 const SYSTEM_PROMPT = `You are an accounts-receivable message intent classifier for an invoice collection system.
@@ -51,13 +51,17 @@ function buildPrompt(input: ClassifyInput): string {
 
 export class GeminiClassifier implements IIntentClassifier {
     async classifyMessage(input: ClassifyInput): Promise<ClassificationResult> {
-        if (!GEMINI_API_KEY) {
+        const apiKey = process.env.GEMINI_API_KEY || GEMINI_API_KEY;
+        const model = process.env.GEMINI_MODEL || GEMINI_MODEL;
+        const timeoutMs = parseInt(process.env.GEMINI_TIMEOUT_MS ?? String(GEMINI_TIMEOUT_MS), 10);
+
+        if (!apiKey) {
             throw new Error(
                 "GEMINI_API_KEY is not set in environment. Set GEMINI_API_KEY or use CLASSIFIER=mock."
             );
         }
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
         const userPrompt = buildPrompt(input);
 
         const body = {
@@ -77,7 +81,7 @@ export class GeminiClassifier implements IIntentClassifier {
         };
 
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
         try {
             const response = await fetch(url, {
