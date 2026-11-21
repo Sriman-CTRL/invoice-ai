@@ -9,6 +9,8 @@
     "lint": "eslint . --max-warnings=0"
   },
   "dependencies": {
+    "@neon/config": "^1.14.6",
+    "@neon/env": "^2.1.9",
     "@vitejs/plugin-react": "latest",
     "lucide-react": "latest",
     "react": "latest",

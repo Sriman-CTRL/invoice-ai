@@ -13,3 +13,4 @@ src/generated/
 *.log
 .DS_Store
 .vscode/
+.neon
