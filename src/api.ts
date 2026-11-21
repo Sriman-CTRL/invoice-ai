@@ -35,6 +35,23 @@ export const invoicesApi = {
   list: (status?: string) => request<Invoice[]>(`/invoices${status ? `?status=${encodeURIComponent(status)}` : ""}`),
   detail: (id: string) => request<InvoiceDetail>(`/invoices/${id}`),
   create: (data: { customer_id: string; invoice_number: string; amount: number; currency?: string; issued_at: string; due_at: string }) => request<Invoice>("/invoices", { method: "POST", body: JSON.stringify(data) }),
+  bulkImport: (invoices: Array<{
+    customer_name?: string;
+    customer_email: string;
+    company_name?: string;
+    phone?: string;
+    invoice_number: string;
+    amount: number;
+    currency?: string;
+    issued_at?: string;
+    due_at: string;
+    status?: string;
+  }>) => request<{
+    imported_count: number;
+    customers_created: number;
+    skipped_count: number;
+    errors: string[];
+  }>("/invoices/bulk-import", { method: "POST", body: JSON.stringify({ invoices }) }),
 };
 export const customersApi = {
   list: () => request<Customer[]>("/customers"),

@@ -482,6 +482,130 @@ async function getInvoiceDetails(organization_id, invoice_id) {
 var router3 = Router3();
 var UUID_REGEX2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var INVOICE_STATUSES = ["OPEN", "PAID", "PARTIALLY_PAID", "CANCELLED", "DRAFT"];
+function parseFlexibleDate(dateStr) {
+  if (!dateStr) return null;
+  const s = String(dateStr).trim();
+  if (!s) return null;
+  const direct = new Date(s);
+  if (!isNaN(direct.getTime())) return direct;
+  const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (dmy) {
+    const [, day, month, year] = dmy;
+    const parsed = new Date(Number(year), Number(month) - 1, Number(day));
+    if (!isNaN(parsed.getTime())) return parsed;
+  }
+  return null;
+}
+router3.post("/bulk-import", async (req, res) => {
+  try {
+    const organization_id = String(req.body?.organization_id || req.user?.organization_id || "");
+    if (!organization_id || !UUID_REGEX2.test(organization_id)) {
+      return res.status(400).json({ error: "Valid organization_id is required" });
+    }
+    const rawInvoices = req.body?.invoices;
+    if (!Array.isArray(rawInvoices) || rawInvoices.length === 0) {
+      return res.status(400).json({ error: "invoices must be a non-empty array" });
+    }
+    if (rawInvoices.length > 500) {
+      return res.status(400).json({ error: "Batch limit is 500 invoices per import" });
+    }
+    let imported_count = 0;
+    let customers_created = 0;
+    let skipped_count = 0;
+    const errors = [];
+    const existingCustomers = await prisma_default.customers.findMany({
+      where: { organization_id }
+    });
+    const customerMap = /* @__PURE__ */ new Map();
+    for (const c of existingCustomers) {
+      customerMap.set(c.email.toLowerCase().trim(), c.id);
+    }
+    const existingInvoices = await prisma_default.invoices.findMany({
+      where: { organization_id },
+      select: { invoice_number: true }
+    });
+    const existingInvoiceNumbers = new Set(existingInvoices.map((i) => i.invoice_number.toLowerCase().trim()));
+    for (let i = 0; i < rawInvoices.length; i++) {
+      const row = rawInvoices[i];
+      const rowNum = i + 1;
+      const invoiceNumber = String(row.invoice_number || "").trim();
+      if (!invoiceNumber) {
+        errors.push(`Row ${rowNum}: invoice_number is required`);
+        continue;
+      }
+      if (existingInvoiceNumbers.has(invoiceNumber.toLowerCase())) {
+        skipped_count++;
+        continue;
+      }
+      const rawAmount = Number(row.amount);
+      if (!Number.isFinite(rawAmount) || rawAmount <= 0) {
+        errors.push(`Row ${rowNum} (${invoiceNumber}): amount must be a positive number`);
+        continue;
+      }
+      const dueDate = parseFlexibleDate(row.due_at);
+      if (!dueDate) {
+        errors.push(`Row ${rowNum} (${invoiceNumber}): valid due_at date is required`);
+        continue;
+      }
+      const issuedDate = parseFlexibleDate(row.issued_at) || /* @__PURE__ */ new Date();
+      const customerEmail = String(row.customer_email || "").trim().toLowerCase();
+      const customerName = String(row.customer_name || row.company_name || customerEmail.split("@")[0] || "Customer").trim();
+      if (!customerEmail || !customerEmail.includes("@")) {
+        errors.push(`Row ${rowNum} (${invoiceNumber}): valid customer_email is required`);
+        continue;
+      }
+      let customerId = customerMap.get(customerEmail);
+      if (!customerId) {
+        try {
+          const newCustomer = await prisma_default.customers.create({
+            data: {
+              organization_id,
+              name: customerName,
+              email: customerEmail,
+              company_name: row.company_name ? String(row.company_name).trim() : null,
+              phone: row.customer_phone || row.phone ? String(row.customer_phone || row.phone).trim() : null
+            }
+          });
+          customerId = newCustomer.id;
+          customerMap.set(customerEmail, customerId);
+          customers_created++;
+        } catch (err) {
+          errors.push(`Row ${rowNum}: failed to create customer for ${customerEmail}`);
+          continue;
+        }
+      }
+      const normalizedStatus = row.status && INVOICE_STATUSES.includes(String(row.status).toUpperCase()) ? String(row.status).toUpperCase() : "OPEN";
+      try {
+        await prisma_default.invoices.create({
+          data: {
+            organization_id,
+            customer_id: customerId,
+            invoice_number: invoiceNumber,
+            external_invoice_id: row.external_invoice_id ? String(row.external_invoice_id).trim() : null,
+            amount: rawAmount,
+            currency: String(row.currency || "INR").trim().toUpperCase().slice(0, 3),
+            issued_at: issuedDate,
+            due_at: dueDate,
+            status: normalizedStatus
+          }
+        });
+        existingInvoiceNumbers.add(invoiceNumber.toLowerCase());
+        imported_count++;
+      } catch (err) {
+        errors.push(`Row ${rowNum} (${invoiceNumber}): failed to save invoice`);
+      }
+    }
+    return res.status(200).json({
+      imported_count,
+      customers_created,
+      skipped_count,
+      errors
+    });
+  } catch (error) {
+    console.error("Bulk import error:", error);
+    return res.status(500).json({ error: "Failed to process bulk import" });
+  }
+});
 router3.post("/", async (req, res) => {
   try {
     const {
