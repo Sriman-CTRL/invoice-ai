@@ -52,6 +52,11 @@ export const invoicesApi = {
     skipped_count: number;
     errors: string[];
   }>("/invoices/bulk-import", { method: "POST", body: JSON.stringify({ invoices }) }),
+  sendReminder: (id: string, data?: { subject?: string; body?: string }) =>
+    request<{ success: boolean; message: any; collection_action: any }>(`/invoices/${id}/send-reminder`, {
+      method: "POST",
+      body: JSON.stringify(data || {}),
+    }),
 };
 export const customersApi = {
   list: () => request<Customer[]>("/customers"),
@@ -63,7 +68,8 @@ export const customersApi = {
 export const conversationsApi = { list: () => request<Conversation[]>("/conversations"), detail: (id: string) => request<ConversationDetail>(`/conversations/${id}`) };
 export const paymentsApi = {
   list: (invoiceId?: string) => request<Payment[]>(`/payments${invoiceId ? `?invoice_id=${encodeURIComponent(invoiceId)}` : ""}`),
-  create: (data: { invoice_id: string; amount: number; paid_at?: string }) => request<Payment>("/payments", { method: "POST", body: JSON.stringify(data) }),
+  create: (data: { invoice_id: string; amount: number; paid_at?: string; external_payment_id?: string }) =>
+    request<Payment>("/payments", { method: "POST", body: JSON.stringify(data) }),
 };
 export const creditNotesApi = {
   list: (invoiceId?: string) => request<any[]>(`/credit-notes${invoiceId ? `?invoice_id=${encodeURIComponent(invoiceId)}` : ""}`),

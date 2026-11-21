@@ -9,10 +9,10 @@ const router = Router();
  */
 router.post("/process", async (req: Request, res: Response): Promise<void> => {
     try {
-        const { organization_id } = req.body;
+        const organization_id = String(req.body?.organization_id || (req as any).user?.organization_id || "");
 
-        if (!organization_id || typeof organization_id !== "string") {
-            res.status(400).json({ error: "organization_id is required in body" });
+        if (!organization_id) {
+            res.status(400).json({ error: "organization_id is required" });
             return;
         }
 

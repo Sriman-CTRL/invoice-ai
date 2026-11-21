@@ -298,4 +298,113 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+// Send Official Payment Reminder
+router.post("/:id/send-reminder", async (req, res) => {
+    try {
+        const organization_id = String(req.body?.organization_id || req.user?.organization_id || "");
+        const { id } = req.params;
+        const { subject, body, channel = "EMAIL" } = req.body ?? {};
+
+        if (!organization_id || !UUID_REGEX.test(organization_id)) {
+            return res.status(400).json({ error: "Valid organization_id is required" });
+        }
+        if (!UUID_REGEX.test(id)) {
+            return res.status(404).json({ error: "Invoice not found" });
+        }
+
+        const invoice = await prisma.invoices.findFirst({
+            where: { id, organization_id },
+            include: { customers: true, organizations: true },
+        });
+
+        if (!invoice) {
+            return res.status(404).json({ error: "Invoice not found" });
+        }
+
+        // Check suppressions (CAN-SPAM / Reg F opt-outs)
+        const isSuppressed = await prisma.suppressions.findFirst({
+            where: {
+                organization_id,
+                address: invoice.customers.email.toLowerCase(),
+            },
+        });
+
+        if (isSuppressed) {
+            return res.status(403).json({
+                error: `Outreach blocked: Customer email ${invoice.customers.email} has opted out of communications (${isSuppressed.reason}).`,
+                suppressed: true,
+            });
+        }
+
+        // Find or create conversation
+        let conversation = await prisma.conversations.findFirst({
+            where: {
+                organization_id,
+                customer_id: invoice.customer_id,
+                invoice_id: invoice.id,
+            },
+            orderBy: { created_at: "desc" },
+        });
+
+        if (!conversation) {
+            conversation = await prisma.conversations.create({
+                data: {
+                    organization_id,
+                    customer_id: invoice.customer_id,
+                    invoice_id: invoice.id,
+                    channel,
+                    status: "OPEN",
+                },
+            });
+        }
+
+        const reminderSubject = subject || `Payment Reminder: Invoice ${invoice.invoice_number} is past due`;
+        const reminderBody =
+            body ||
+            `Dear ${invoice.customers.name},\n\nThis is a friendly reminder that invoice ${invoice.invoice_number} for ${invoice.currency} ${invoice.amount} is currently outstanding. Please process payment at your earliest convenience.\n\nThank you,\n${invoice.organizations.name}`;
+
+        // Create outbound message in timeline
+        const message = await prisma.messages.create({
+            data: {
+                organization_id,
+                conversation_id: conversation.id,
+                direction: "OUTBOUND",
+                channel,
+                sender: `billing@${invoice.organizations.slug}.com`,
+                recipient: invoice.customers.email,
+                subject: reminderSubject,
+                body: reminderBody,
+            },
+        });
+
+        // Record completed collection action
+        const action = await prisma.collection_actions.create({
+            data: {
+                organization_id,
+                customer_id: invoice.customer_id,
+                invoice_id: invoice.id,
+                conversation_id: conversation.id,
+                action_type: "PAYMENT_REMINDER",
+                status: "COMPLETED",
+                scheduled_at: new Date(),
+                executed_at: new Date(),
+                metadata: {
+                    sent_message_id: message.id,
+                    channel,
+                    recipient: invoice.customers.email,
+                },
+            },
+        });
+
+        return res.status(200).json({
+            success: true,
+            message,
+            collection_action: action,
+        });
+    } catch (error) {
+        console.error("Error sending reminder:", error);
+        return res.status(500).json({ error: "Failed to send reminder" });
+    }
+});
+
 export default router;
