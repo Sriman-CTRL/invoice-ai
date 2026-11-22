@@ -313,7 +313,7 @@ router.patch("/:id/status", async (req: Request, res: Response): Promise<void> =
  */
 router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const organization_id = req.body?.organization_id || req.user?.organization_id;
 
     if (!organization_id || typeof organization_id !== "string") {
@@ -341,6 +341,7 @@ router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<vo
       res.status(400).json({ error: "Action is not linked to an invoice" });
       return;
     }
+    const invoiceId: string = action.invoice_id;
 
     const meta = (action.metadata && typeof action.metadata === "object") ? (action.metadata as Record<string, unknown>) : {};
     const utr = String(meta.utr || "DIRECT_VERIFIED");
@@ -349,14 +350,14 @@ router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<vo
     const result = await prisma.$transaction(async (tx) => {
       // Row lock on invoice
       const locked = await tx.$queryRaw<Array<{ id: string }>>`
-        SELECT id FROM invoices WHERE id = ${action.invoice_id}::uuid AND organization_id = ${organization_id}::uuid FOR UPDATE
+        SELECT id FROM invoices WHERE id = ${invoiceId}::uuid AND organization_id = ${organization_id}::uuid FOR UPDATE
       `;
       if (locked.length === 0) {
         throw new Error("INVOICE_NOT_FOUND");
       }
 
       const inv = await tx.invoices.findFirst({
-        where: { id: action.invoice_id, organization_id },
+        where: { id: invoiceId, organization_id },
       });
       if (!inv) throw new Error("INVOICE_NOT_FOUND");
 
@@ -366,7 +367,7 @@ router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<vo
             where: { id: paymentId, organization_id, status: "PENDING" },
           })
         : await tx.payments.findFirst({
-            where: { invoice_id: action.invoice_id, organization_id, status: "PENDING" },
+            where: { invoice_id: invoiceId, organization_id, status: "PENDING" },
             orderBy: { created_at: "desc" },
           });
 
@@ -381,16 +382,16 @@ router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<vo
       } else {
         // Calculate remaining due
         const settled = await tx.payments.aggregate({
-          where: { invoice_id: action.invoice_id, organization_id, status: "SUCCEEDED" },
+          where: { invoice_id: invoiceId, organization_id, status: "SUCCEEDED" },
           _sum: { amount: true },
         });
-        const alreadyPaid = Number(settled._sum.amount ?? 0);
+        const alreadyPaid = Number(settled._sum?.amount ?? 0);
         const outstanding = Math.max(0, Number(inv.amount) - alreadyPaid);
 
         payment = await tx.payments.create({
           data: {
             organization_id,
-            invoice_id: action.invoice_id,
+            invoice_id: invoiceId,
             external_payment_id: utr,
             amount: outstanding > 0 ? outstanding : Number(inv.amount),
             currency: inv.currency,
@@ -402,13 +403,13 @@ router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<vo
 
       // Mark PAID only when the invoice is fully settled; a partial proof must not unlock deliverables.
       const settledNow = await tx.payments.aggregate({
-        where: { invoice_id: action.invoice_id, organization_id, status: "SUCCEEDED" },
+        where: { invoice_id: invoiceId, organization_id, status: "SUCCEEDED" },
         _sum: { amount: true },
       });
       const totalPaid = Number(settledNow._sum?.amount ?? 0);
       const fullyPaid = totalPaid + 0.01 >= Number(inv.amount);
       const updatedInvoice = await tx.invoices.update({
-        where: { id: action.invoice_id },
+        where: { id: invoiceId },
         data: { status: fullyPaid ? "PAID" : "PARTIALLY_PAID" },
       });
 

@@ -55,7 +55,8 @@ let b: Tenant;
 before(async () => {
   if (!enabled) return;
   process.env.NODE_ENV = process.env.NODE_ENV || "test";
-  const { default: app } = await import("../server");
+  const serverModule: any = await import("../server.js");
+  const app = serverModule.default?.default ?? serverModule.default;
   server = app.listen(0);
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   // Same invoice number in both orgs on purpose: numbers are only unique per business.
@@ -66,7 +67,8 @@ before(async () => {
 after(async () => {
   if (!enabled) return;
   server?.close();
-  const { default: prisma } = await import("../lib/prisma");
+  const prismaModule: any = await import("../lib/prisma.js");
+  const prisma = prismaModule.default?.default ?? prismaModule.default;
   for (const org of created.orgIds) {
     for (const table of ["payments", "collection_actions", "messages", "conversations", "invoices", "customers", "suppressions", "credit_notes", "users"]) {
       await prisma.$executeRawUnsafe(`DELETE FROM ${table} WHERE organization_id = $1::uuid`, org).catch(() => undefined);
