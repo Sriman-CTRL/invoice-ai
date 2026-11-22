@@ -100,6 +100,12 @@ export const settingsApi = {
   save: (data: Partial<Omit<OrgSettings, "plan">>) => request<OrgSettings>("/organizations/settings", { method: "PUT", body: JSON.stringify(data) }),
   upgrade: (data: { plan: "PRO" | "AGENCY"; utr: string }) => request<{ success: boolean; message: string }>("/organizations/upgrade-request", { method: "POST", body: JSON.stringify(data) }),
 };
+export type PlanRequest = { id: string; plan: string; utr: string; status: string; created_at: string; organization_id: string; organization_name: string; current_plan: string; owner_email: string | null };
+export const adminApi = {
+  me: () => request<{ is_admin: boolean }>("/admin/me"),
+  planRequests: () => request<PlanRequest[]>("/admin/plan-requests"),
+  decide: (id: string, decision: "approve" | "reject") => request<{ success: boolean }>(`/admin/plan-requests/${id}/${decision}`, { method: "POST", body: JSON.stringify({}) }),
+};
 export const overdueApi = { process: () => request<{ invoices_detected: number; actions_created: number; created_action_ids: string[]; skipped: Array<{ invoice_id: string; reason: string }> }>("/overdue-invoices/process", { method: "POST", body: JSON.stringify({}) }) };
 export const publicApi = {
   getInvoice: (invoiceNumber: string) => request<PublicInvoiceDetail>(`/public/invoices/${encodeURIComponent(invoiceNumber)}`),

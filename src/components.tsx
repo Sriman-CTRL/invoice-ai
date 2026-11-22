@@ -17,6 +17,7 @@ import {
   RotateCw,
   Search,
   Settings,
+  ShieldCheck,
   Sparkles,
   Terminal,
   Users,
@@ -25,6 +26,7 @@ import {
 } from "lucide-react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { adminApi } from "./api";
 import { CommandPalette } from "./CommandPalette";
 import { useAuth } from "./auth";
 import { initials, titleCase } from "./lib";
@@ -278,6 +280,13 @@ function BrandMark() {
 function SidebarContent({ close }: { close?: () => void }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    adminApi.me().then((r) => setIsAdmin(r.is_admin)).catch(() => setIsAdmin(false));
+  }, [user?.id]);
+  const groups = isAdmin
+    ? [...nav, { label: "Platform", items: [{ to: "/admin", label: "Plan payments", icon: ShieldCheck }] }]
+    : nav;
 
   return (
     <div className="flex h-full flex-col bg-midnight-950 text-slate-300">
@@ -310,7 +319,7 @@ function SidebarContent({ close }: { close?: () => void }) {
 
       {/* Nav Groups */}
       <nav className="flex-1 space-y-7 overflow-y-auto px-4 py-6">
-        {nav.map((group) => (
+        {groups.map((group) => (
           <div key={group.label}>
             <p className="mb-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">
               {group.label}

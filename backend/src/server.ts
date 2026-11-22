@@ -17,6 +17,7 @@ import inboundRoutes from "./routes/inbound.routes";
 import complianceRoutes from "./routes/compliance.routes";
 import creditNoteRoutes from "./routes/credit-note.routes";
 import publicInvoiceRoutes from "./routes/public-invoice.routes";
+import adminRoutes from "./routes/admin.routes";
 import { authMiddleware } from "./middleware/auth.middleware";
 import { rateLimit } from "./middleware/rateLimit";
 
@@ -116,6 +117,7 @@ app.use(
 
 app.use("/api/customers", authMiddleware, customerRoutes);
 app.use("/api/organizations", authMiddleware, organizationRoutes);
+app.use("/api/admin", authMiddleware, adminRoutes);
 
 // Reprocess & ingest rate limits on messages
 app.use(
