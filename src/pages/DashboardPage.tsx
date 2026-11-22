@@ -7,6 +7,7 @@ import { dateTime, money, titleCase } from "../lib";
 import type { CollectionAction, Dashboard, Invoice } from "../types";
 import { useResource } from "./shared";
 import { CashFlowForecast } from "./CashFlowForecast";
+import { OnboardingChecklist } from "./OnboardingChecklist";
 import { useToast } from "../toast";
 
 interface MetricCardProps {
@@ -184,6 +185,11 @@ export function DashboardPage() {
           </button>
         </div>
       )}
+
+      <OnboardingChecklist
+        customers={data.customer_summary.total_customers}
+        invoices={Object.values(data.invoice_summary).reduce((a, b) => a + Number(b || 0), 0)}
+      />
 
       {/* 4 Hero KPI Cards */}
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowUpRight, Building2, Check, Copy, DollarSign, Lock, Mail, MessageSquare, Download, Printer, RefreshCw, Send, ShieldCheck, X } from "lucide-react";
-import { invoicesApi, organizationsApi, paymentsApi } from "../api";
+import { invoicesApi, organizationsApi, paymentsApi, settingsApi } from "../api";
 import { Badge, PageHeader } from "../components";
 import { date, money, titleCase } from "../lib";
 import type { Customer, Invoice, InvoiceDetail } from "../types";
@@ -480,9 +480,9 @@ export function InvoiceDetailPage() {
   const handlePdf = async (detail: InvoiceDetail) => {
     setPdfBusy(true);
     try {
-      const org = await organizationsApi.me().catch(() => null);
+      const [org, settings] = await Promise.all([organizationsApi.me().catch(() => null), settingsApi.get().catch(() => null)]);
       const { downloadInvoicePdf } = await import("../invoicePdf");
-      await downloadInvoicePdf(detail, { organizationName: org?.organization.name });
+      await downloadInvoicePdf(detail, { organizationName: org?.organization.name, settings });
       toast.success("Invoice PDF ready", `${detail.invoice.invoice_number}.pdf downloaded.`);
     } catch (e: any) {
       toast.error("Could not generate PDF", e?.message);

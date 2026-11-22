@@ -1,5 +1,6 @@
 import { Router } from "express";
 import prisma from "../lib/prisma";
+import { ensureOrgSettingsSchema, getOrgSettings, updateOrgSettings, validateSettingsPatch } from "../lib/orgSettings";
 
 const router = Router();
 
@@ -72,6 +73,46 @@ router.patch("/me", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to update organization" });
+  }
+});
+
+// Payment details & plan for the authenticated tenant (id always comes from the JWT).
+router.get("/settings", async (req, res) => {
+  try {
+    res.json(await getOrgSettings(req.user!.organization_id));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to load settings" });
+  }
+});
+
+router.put("/settings", async (req, res) => {
+  try {
+    const checked = validateSettingsPatch(req.body ?? {});
+    if ("error" in checked) return res.status(400).json({ error: checked.error });
+    res.json(await updateOrgSettings(req.user!.organization_id, checked.data));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to save settings" });
+  }
+});
+
+// Manual UPI upgrade: the org pays the platform via UPI and submits the UTR for verification.
+router.post("/upgrade-request", async (req, res) => {
+  try {
+    const plan = String(req.body?.plan || "").toUpperCase();
+    const utr = String(req.body?.utr || "").trim();
+    if (!["PRO", "AGENCY"].includes(plan)) return res.status(400).json({ error: "Choose a valid plan" });
+    if (!/^[A-Za-z0-9]{12,22}$/.test(utr)) return res.status(400).json({ error: "Enter the 12-digit UTR from your payment receipt" });
+    await ensureOrgSettingsSchema();
+    await prisma.$executeRawUnsafe(
+      "INSERT INTO plan_requests (organization_id, plan, utr) VALUES ($1::uuid, $2, $3)",
+      req.user!.organization_id, plan, utr,
+    );
+    res.status(201).json({ success: true, message: "Payment proof received. Your plan activates once verified, usually within a few hours." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to submit upgrade request" });
   }
 });
 

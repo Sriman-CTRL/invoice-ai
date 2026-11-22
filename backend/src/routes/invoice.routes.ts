@@ -1,6 +1,7 @@
 import { Router } from "express";
 import prisma from "../lib/prisma";
 import { getInvoiceDetails } from "../services/invoiceService";
+import { checkPlanLimit } from "../lib/orgSettings";
 
 const router = Router();
 
@@ -41,6 +42,9 @@ router.post("/bulk-import", async (req, res) => {
         if (rawInvoices.length > 500) {
             return res.status(400).json({ error: "Batch limit is 500 invoices per import" });
         }
+
+        const limitError = await checkPlanLimit(organization_id, rawInvoices.length);
+        if (limitError) return res.status(402).json({ error: limitError });
 
         let imported_count = 0;
         let customers_created = 0;
@@ -182,6 +186,9 @@ router.post("/", async (req, res) => {
         if (!UUID_REGEX.test(organization_id) || !UUID_REGEX.test(customer_id)) {
             return res.status(400).json({ error: "Invalid organization_id or customer_id" });
         }
+
+        const limitError = await checkPlanLimit(organization_id);
+        if (limitError) return res.status(402).json({ error: limitError });
 
         const invoiceAmount = Number(amount);
         if (!Number.isFinite(invoiceAmount) || invoiceAmount <= 0) {

@@ -22,6 +22,21 @@ import {
 import { publicApi } from "./api";
 import type { PublicInvoiceDetail } from "./types";
 
+function buildUpiUri(d: PublicInvoiceDetail) {
+  const payee = (d.payment.payee_name || d.organization.name).replace(/[^a-zA-Z0-9 ]/g, "").slice(0, 25);
+  const inv = d.invoice_number.replace(/[^a-zA-Z0-9-]/g, "");
+  return `upi://pay?pa=${encodeURIComponent(d.payment.upi_id || "")}&pn=${encodeURIComponent(payee)}&am=${Number(d.outstanding_amount).toFixed(2)}&cu=INR&tn=${encodeURIComponent(`Invoice ${inv}`)}`;
+}
+
+function NotConfigured({ what }: { what: string }) {
+  return (
+    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-left text-xs leading-relaxed text-amber-100">
+      <p className="font-bold">{what} isn't set up for this invoice yet.</p>
+      <p className="mt-1 text-amber-200/80">Please ask the sender for their payment details, or use another method.</p>
+    </div>
+  );
+}
+
 export function PublicPayPage() {
   const { invoiceNumber = "" } = useParams();
   const [data, setData] = useState<PublicInvoiceDetail | null>(null);
@@ -63,12 +78,9 @@ export function PublicPayPage() {
 
   // Generate dynamic UPI QR Code when invoice data is loaded
   useEffect(() => {
-    if (data && data.outstanding_amount > 0) {
-      // Standard NPCI UPI URI Scheme
-      const upiId = "ledgerlane.payments@okhdfcbank"; // Dynamic fallback / merchant UPI
-      const cleanOrg = data.organization.name.replace(/[^a-zA-Z0-9 ]/g, "").slice(0, 20);
-      const cleanInv = data.invoice_number.replace(/[^a-zA-Z0-9-]/g, "");
-      const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(cleanOrg)}&am=${data.outstanding_amount}&cu=INR&tn=${encodeURIComponent(`Invoice ${cleanInv}`)}`;
+    if (data && data.outstanding_amount > 0 && data.payment?.upi_id) {
+      // Standard NPCI UPI URI Scheme, paying the invoice owner's own UPI ID
+      const upiUri = buildUpiUri(data);
 
       QRCode.toDataURL(upiUri, {
         width: 256,
@@ -398,7 +410,8 @@ export function PublicPayPage() {
               </div>
 
               {/* TAB 1: UPI SCAN & PAY */}
-              {activeTab === "upi" && (
+              {activeTab === "upi" && !data.payment?.upi_id && <NotConfigured what="UPI" />}
+              {activeTab === "upi" && data.payment?.upi_id && (
                 <div className="space-y-4 text-center">
                   <div className="rounded-2xl bg-white p-4 inline-block mx-auto shadow-glow">
                     {qrDataUrl ? (
@@ -426,7 +439,7 @@ export function PublicPayPage() {
                   {/* Direct Mobile UPI Intent Button */}
                   <div className="pt-2">
                     <a
-                      href={`upi://pay?pa=ledgerlane.payments@okhdfcbank&pn=${encodeURIComponent(data.organization.name)}&am=${data.outstanding_amount}&cu=INR&tn=${encodeURIComponent(`Invoice ${data.invoice_number}`)}`}
+                      href={buildUpiUri(data)}
                       className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 px-4 py-3 text-xs font-bold text-white shadow-glow hover:opacity-95 transition-all"
                     >
                       <CreditCard className="h-4 w-4" />
@@ -453,16 +466,16 @@ export function PublicPayPage() {
                     Transfer funds via NEFT, RTGS, or IMPS using the official billing account details below:
                   </p>
 
-                  {[
-                    { label: "Beneficiary Name", value: data.organization.name },
-                    {
-                      label: "Account Number",
-                      value: `LEDG${data.invoice_number.replace(/[^a-zA-Z0-9]/g, "")}`,
-                    },
-                    { label: "IFSC Code", value: "HDFC0001234" },
-                    { label: "Bank & Branch", value: "HDFC Bank · Corporate Banking" },
-                    { label: "Account Type", value: "Current Account" },
-                  ].map((field) => (
+                  {!data.payment?.bank && <NotConfigured what="Bank transfer" />}
+                  {(data.payment?.bank
+                    ? [
+                        { label: "Beneficiary Name", value: data.payment.bank.account_name },
+                        { label: "Account Number", value: data.payment.bank.account_number },
+                        { label: "IFSC Code", value: data.payment.bank.ifsc },
+                        ...(data.payment.bank.bank_name ? [{ label: "Bank", value: data.payment.bank.bank_name }] : []),
+                      ]
+                    : []
+                  ).map((field) => (
                     <div
                       key={field.label}
                       className="flex items-center justify-between rounded-xl border border-white/5 bg-white/5 p-3"

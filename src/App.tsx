@@ -1,7 +1,8 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./auth";
 import { Shell } from "./components";
-import { ActionsPage, AuthPage, ConversationDetailPage, ConversationsPage, CustomerDetailPage, CustomersPage, DashboardPage, InvoiceDetailPage, InvoicesPage } from "./pages";
+import { ActionsPage, AuthPage, ConversationDetailPage, ConversationsPage, CustomerDetailPage, CustomersPage, DashboardPage, InvoiceDetailPage, InvoicesPage, SettingsPage } from "./pages";
+import { LandingPage } from "./LandingPage";
 import { PlaygroundPage } from "./playground";
 import { PublicPayPage } from "./PublicPayPage";
 import { PrivacyPolicyPage, TermsOfServicePage } from "./LegalPages";
@@ -11,6 +12,7 @@ function Protected({ children }: { children: React.ReactNode }) { const { user }
 export function App() {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/register" element={<AuthPage mode="register" />} />
       <Route path="/pay/:invoiceNumber" element={<PublicPayPage />} />
@@ -24,8 +26,9 @@ export function App() {
       <Route path="/conversations" element={<Protected><ConversationsPage /></Protected>} />
       <Route path="/conversations/:id" element={<Protected><ConversationDetailPage /></Protected>} />
       <Route path="/collection-actions" element={<Protected><ActionsPage /></Protected>} />
+      <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
       <Route path="/playground" element={<Protected><PlaygroundPage /></Protected>} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

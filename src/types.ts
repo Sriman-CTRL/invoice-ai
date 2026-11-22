@@ -21,9 +21,25 @@ export type PublicInvoiceDetail = {
   status: string;
   customer: { name: string; company_name: string | null; email: string; phone: string | null };
   organization: { name: string; slug: string };
+  payment: {
+    upi_id: string | null;
+    payee_name: string;
+    bank: { account_name: string; account_number: string; ifsc: string; bank_name: string | null } | null;
+  };
   has_deliverable: boolean;
   deliverable_url: string | null;
   deliverable_locked: boolean;
   pending_verification: boolean;
   pending_utr: string | null;
+};
+
+export type OrgSettings = {
+  upi_id: string | null;
+  payee_name: string | null;
+  bank_account_name: string | null;
+  bank_account_number: string | null;
+  bank_ifsc: string | null;
+  bank_name: string | null;
+  gstin: string | null;
+  plan: "FREE" | "PRO" | "AGENCY";
 };

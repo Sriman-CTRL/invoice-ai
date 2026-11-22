@@ -7,3 +7,4 @@ export { ConversationsPage } from "./ConversationsPage";
 export { ConversationDetailPage } from "./ConversationDetailPage";
 export { ActionsPage } from "./ActionsPage";
 export { AuthPage } from "./AuthPage";
+export { SettingsPage } from "./SettingsPage";

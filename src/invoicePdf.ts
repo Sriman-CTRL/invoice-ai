@@ -1,9 +1,8 @@
 import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
-import type { InvoiceDetail } from "./types";
+import type { InvoiceDetail, OrgSettings } from "./types";
 
 export const PUBLIC_BASE_URL = "https://invoice-ai-nine-beta.vercel.app";
-const MERCHANT_UPI_ID = "ledgerlane.payments@okhdfcbank";
 
 type Rgb = [number, number, number];
 const INK: Rgb = [15, 23, 42];
@@ -24,11 +23,14 @@ export interface InvoicePdfOptions {
   /** Optional TDS rate (percent) to preview in the TDS summary, e.g. 1, 2, 10. */
   tdsRate?: number;
   tdsSection?: string;
+  /** The seller's own payment details (UPI ID, bank, GSTIN). */
+  settings?: OrgSettings | null;
 }
 
 /** Builds a branded A4 invoice PDF entirely in the browser. Returns the jsPDF doc. */
 export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptions = {}): Promise<jsPDF> {
   const { invoice: inv, customer, financial_summary: fin } = data;
+  const st = opts.settings || null;
   const org = opts.organizationName || "Your Company";
   const currency = fin.currency || inv.currency || "INR";
   const paid = inv.status === "PAID";
@@ -53,7 +55,7 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(165, 180, 252);
-  doc.text("Powered by LedgerLane - Autonomous AR & Deliverable Escrow", M + 21, 26);
+  doc.text(st?.gstin ? `GSTIN: ${st.gstin}` : "Powered by LedgerLane", M + 21, 26);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
   doc.setTextColor(255, 255, 255);
@@ -154,21 +156,26 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   const qy = Math.max(y + 36, 170);
   doc.setDrawColor(...LINE);
   doc.roundedRect(M, qy, W - 2 * M, 52, 3, 3, "S");
-  const cleanOrg = org.replace(/[^a-zA-Z0-9 ]/g, "").slice(0, 20) || "LedgerLane";
-  const upi = `upi://pay?pa=${encodeURIComponent(MERCHANT_UPI_ID)}&pn=${encodeURIComponent(cleanOrg)}&am=${Number(fin.outstanding_amount).toFixed(2)}&cu=INR&tn=${encodeURIComponent(`Invoice ${inv.invoice_number}`)}`;
-  if (!paid && fin.outstanding_amount > 0) {
+  const cleanOrg = (st?.payee_name || org).replace(/[^a-zA-Z0-9 ]/g, "").slice(0, 25) || "Payee";
+  const upiId = st?.upi_id || "";
+  const upi = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(cleanOrg)}&am=${Number(fin.outstanding_amount).toFixed(2)}&cu=INR&tn=${encodeURIComponent(`Invoice ${inv.invoice_number}`)}`;
+  if (!paid && fin.outstanding_amount > 0 && upiId) {
     const qr = await QRCode.toDataURL(upi, { width: 320, margin: 1, color: { dark: "#0f172a", light: "#ffffff" } });
     doc.addImage(qr, "PNG", M + 5, qy + 6, 40, 40);
   } else {
-    doc.setFillColor(236, 253, 245);
+    doc.setFillColor(...(paid ? ([236, 253, 245] as Rgb) : ([241, 245, 249] as Rgb)));
     doc.roundedRect(M + 5, qy + 6, 40, 40, 3, 3, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(11); set(GREEN);
-    doc.text("PAID", M + 25, qy + 27, { align: "center" });
+    doc.setFont("helvetica", "bold"); doc.setFontSize(paid ? 11 : 8); set(paid ? GREEN : MUTED);
+    doc.text(paid ? "PAID" : "Pay via link", M + 25, qy + 27, { align: "center" });
   }
   const px = M + 52;
   label(paid ? "Payment received" : "Scan to pay with any UPI app", px, qy + 10);
   doc.setFont("helvetica", "normal"); doc.setFontSize(9); set(MUTED);
-  doc.text(paid ? "Thank you. This invoice is settled in full." : "Zero fees. NPCI UPI direct to account.", px, qy + 16);
+  doc.text(paid ? "Thank you. This invoice is settled in full." : upiId ? `UPI: ${upiId} (zero fees)` : "Use the secure link below to pay.", px, qy + 16);
+  if (!paid && st?.bank_account_number && st.bank_ifsc) {
+    doc.setFontSize(8);
+    doc.text(`Bank: ${st.bank_account_name || org} | A/C ${st.bank_account_number} | IFSC ${st.bank_ifsc}`, px, qy + 21);
+  }
   label("Pay online / submit UTR", px, qy + 27);
   doc.setFont("helvetica", "bold"); doc.setFontSize(9); set(BRAND);
   doc.textWithLink(payUrl, px, qy + 33, { url: payUrl });

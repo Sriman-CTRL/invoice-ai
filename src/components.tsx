@@ -16,6 +16,7 @@ import {
   Receipt,
   RotateCw,
   Search,
+  Settings,
   Sparkles,
   Terminal,
   Users,
@@ -253,6 +254,7 @@ const nav = [
       { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { to: "/invoices", label: "Invoices", icon: Receipt },
       { to: "/customers", label: "Customers", icon: Users },
+      { to: "/settings", label: "Settings", icon: Settings },
     ],
   },
   {

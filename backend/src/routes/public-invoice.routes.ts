@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
+import { getOrgSettings } from "../lib/orgSettings";
 
 const router = Router();
 
@@ -68,6 +69,9 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
             orderBy: { created_at: "desc" },
         });
 
+        const settings = await getOrgSettings(invoice.organization_id);
+        const hasBank = Boolean(settings.bank_account_number && settings.bank_ifsc);
+
         res.json({
             id: invoice.id,
             invoice_number: invoice.invoice_number,
@@ -87,6 +91,18 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
             organization: {
                 name: invoice.organizations.name,
                 slug: invoice.organizations.slug,
+            },
+            payment: {
+                upi_id: settings.upi_id,
+                payee_name: settings.payee_name || invoice.organizations.name,
+                bank: hasBank
+                    ? {
+                          account_name: settings.bank_account_name || settings.payee_name || invoice.organizations.name,
+                          account_number: settings.bank_account_number,
+                          ifsc: settings.bank_ifsc,
+                          bank_name: settings.bank_name,
+                      }
+                    : null,
             },
             has_deliverable: hasDeliverable,
             deliverable_url: deliverableUrl,

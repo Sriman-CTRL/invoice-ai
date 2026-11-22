@@ -1,4 +1,4 @@
-import type { CollectionAction, Conversation, ConversationDetail, Customer, CustomerDetail, Dashboard, Invoice, InvoiceDetail, Payment, PublicInvoiceDetail, User } from "./types";
+import type { OrgSettings, CollectionAction, Conversation, ConversationDetail, Customer, CustomerDetail, Dashboard, Invoice, InvoiceDetail, Payment, PublicInvoiceDetail, User } from "./types";
 
 const BASE_URL = import.meta.env.PROD ? "/api" : (import.meta.env.VITE_API_BASE_URL || "/api");
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
@@ -94,6 +94,11 @@ export const messagesApi = {
 export const organizationsApi = {
   me: () => request<{ organization: { id: string; name: string; slug: string }; inbox_address: string }>("/organizations/me"),
   updateMe: (data: { name?: string; slug?: string }) => request<{ organization: { id: string; name: string; slug: string }; inbox_address: string }>("/organizations/me", { method: "PATCH", body: JSON.stringify(data) }),
+};
+export const settingsApi = {
+  get: () => request<OrgSettings>("/organizations/settings"),
+  save: (data: Partial<Omit<OrgSettings, "plan">>) => request<OrgSettings>("/organizations/settings", { method: "PUT", body: JSON.stringify(data) }),
+  upgrade: (data: { plan: "PRO" | "AGENCY"; utr: string }) => request<{ success: boolean; message: string }>("/organizations/upgrade-request", { method: "POST", body: JSON.stringify(data) }),
 };
 export const overdueApi = { process: () => request<{ invoices_detected: number; actions_created: number; created_action_ids: string[]; skipped: Array<{ invoice_id: string; reason: string }> }>("/overdue-invoices/process", { method: "POST", body: JSON.stringify({}) }) };
 export const publicApi = {
