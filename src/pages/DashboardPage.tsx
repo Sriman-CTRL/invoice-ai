@@ -41,14 +41,14 @@ function MetricCard({
       <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${accentGradient}`} />
       <div className={`pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-gradient-to-br ${accentGradient} opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-20`} />
 
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{title}</p>
-          <p className="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl font-mono tabular-nums">
+          <p className="mt-2 truncate text-2xl font-extrabold tracking-tight text-slate-900 font-mono tabular-nums">
             {value}
           </p>
         </div>
-        <div className="grid h-12 w-12 place-items-center rounded-2xl border border-slate-200/80 bg-slate-50/80 text-slate-700 shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:border-brand-300 group-hover:bg-brand-50 group-hover:text-brand-600">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-slate-200/80 bg-slate-50/80 text-slate-700 shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:border-brand-300 group-hover:bg-brand-50 group-hover:text-brand-600">
           <Icon className="h-5 w-5" />
         </div>
       </div>
@@ -228,7 +228,7 @@ export function DashboardPage() {
       <div className="mt-7"><CashFlowForecast /></div>
 
       {/* Middle Section: Distribution + Automation Pipeline */}
-      <div className="mt-7 grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
+      <div className="mt-7 grid gap-6 xl:grid-cols-[1.3fr_0.7fr] xl:items-start">
         {/* Receivables Aging & Status */}
         <section className="panel p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-5">

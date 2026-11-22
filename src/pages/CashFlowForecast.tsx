@@ -82,7 +82,7 @@ export function CashFlowForecast() {
       <div className="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl" />
       <div className="relative flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="flex items-center gap-2 text-base font-bold">
+          <h2 className="flex items-center gap-2 text-base font-bold text-white">
             <CalendarClock className="h-4.5 w-4.5 text-indigo-300" /> Cash Flow Forecast
           </h2>
           <p className="mt-1 text-xs text-slate-400">Next {WEEKS} weeks, by due date and AI-extracted payment promises.</p>

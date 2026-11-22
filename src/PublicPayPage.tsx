@@ -241,13 +241,13 @@ export function PublicPayPage() {
                   <p className="text-slate-300">
                     Issued:{" "}
                     <span className="text-white font-medium">
-                      {data.issued_at ? new Date(data.issued_at).toLocaleDateString() : "Immediate"}
+                      {data.issued_at ? new Date(data.issued_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "Immediate"}
                     </span>
                   </p>
                   <p className="text-slate-300 mt-1">
                     Due Date:{" "}
                     <span className="text-white font-medium">
-                      {data.due_at ? new Date(data.due_at).toLocaleDateString() : "Upon Receipt"}
+                      {data.due_at ? new Date(data.due_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "Upon Receipt"}
                     </span>
                   </p>
                 </div>
@@ -270,19 +270,19 @@ export function PublicPayPage() {
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase font-semibold">Total</span>
                     <p className="font-mono text-sm font-bold text-white mt-0.5">
-                      {data.currency} {totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      {data.currency} {totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase font-semibold">Paid</span>
                     <p className="font-mono text-sm font-bold text-emerald-400 mt-0.5">
-                      {data.currency} {paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      {data.currency} {paidAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase font-semibold">Remaining</span>
                     <p className="font-mono text-base font-extrabold text-brand-300 mt-0.5">
-                      {data.currency} {outstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      {data.currency} {outstanding.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                 </div>
@@ -419,7 +419,7 @@ export function PublicPayPage() {
                       Scan with any UPI App (GPay, PhonePe, Paytm, CRED)
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5">
-                      Amount: {data.currency} {outstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      Amount: {data.currency} {outstanding.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </p>
                   </div>
 
