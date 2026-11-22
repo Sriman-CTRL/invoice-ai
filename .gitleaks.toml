@@ -4,11 +4,12 @@ title = "Ledgerlane gitleaks config"
 useDefault = true
 
 [allowlist]
-description = "Known, expired, rotated debug token that exists in git history only"
+description = "Known expired debug token (git history only) and test fixtures"
 regexes = [
   '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMCIs[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+''',
 ]
 paths = [
+  '''backend/src/__tests__/.*''',
   '''package-lock\.json''',
   '''api/index\.js''',
 ]

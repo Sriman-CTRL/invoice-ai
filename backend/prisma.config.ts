@@ -1,5 +1,9 @@
 import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
+
+// `prisma generate` only needs a syntactically valid URL; real commands (db push, migrate) need a real one.
+// Reading process.env directly (instead of env()) keeps generate working in CI / fresh clones without secrets.
+const url = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL || "postgresql://placeholder:placeholder@localhost:5432/placeholder";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -9,6 +13,6 @@ export default defineConfig({
   },
 
   datasource: {
-    url: env("DATABASE_URL_UNPOOLED") || env("DATABASE_URL"),
+    url,
   },
 });
