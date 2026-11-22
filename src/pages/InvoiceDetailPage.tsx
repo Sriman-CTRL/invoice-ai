@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowUpRight, Building2, Check, Copy, DollarSign, Lock, Mail, MessageSquare, Printer, RefreshCw, Send, ShieldCheck, X } from "lucide-react";
-import { invoicesApi, paymentsApi } from "../api";
+import { ArrowUpRight, Building2, Check, Copy, DollarSign, Lock, Mail, MessageSquare, Download, Printer, RefreshCw, Send, ShieldCheck, X } from "lucide-react";
+import { invoicesApi, organizationsApi, paymentsApi } from "../api";
 import { Badge, PageHeader } from "../components";
 import { date, money, titleCase } from "../lib";
 import type { Customer, Invoice, InvoiceDetail } from "../types";
 import { useResource, DetailLoad, ActionsTable } from "./shared";
+import { useToast } from "../toast";
 
 function SendReminderModal({
   isOpen,
@@ -26,6 +27,7 @@ function SendReminderModal({
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const toast = useToast();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -63,9 +65,11 @@ function SendReminderModal({
     setError(null);
     try {
       await invoicesApi.sendReminder(invoice.id, { subject, body });
+      toast.success("Reminder sent", `Logged for ${invoice.invoice_number}.`);
       onSuccess();
       onClose();
     } catch (err: any) {
+      toast.error("Reminder failed", err?.message);
       setError(err?.message || "Failed to send reminder");
     } finally {
       setSending(false);
@@ -244,6 +248,7 @@ function RecordPaymentModal({
   const [paidAt, setPaidAt] = useState(new Date().toISOString().slice(0, 10));
   const [externalPaymentId, setExternalPaymentId] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const toast = useToast();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -288,9 +293,11 @@ function RecordPaymentModal({
         paid_at: paidAt ? new Date(paidAt).toISOString() : new Date().toISOString(),
         external_payment_id: externalPaymentId.trim() || undefined,
       });
+      toast.success("Payment recorded", `${currency} ${num} applied to ${invoice.invoice_number}.`);
       onSuccess();
       onClose();
     } catch (err: any) {
+      toast.error("Payment failed", err?.message);
       setError(err?.message || "Failed to record payment");
     } finally {
       setSubmitting(false);
@@ -467,6 +474,22 @@ export function InvoiceDetailPage() {
   const [reminderOpen, setReminderOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const toast = useToast();
+
+  const handlePdf = async (detail: InvoiceDetail) => {
+    setPdfBusy(true);
+    try {
+      const org = await organizationsApi.me().catch(() => null);
+      const { downloadInvoicePdf } = await import("../invoicePdf");
+      await downloadInvoicePdf(detail, { organizationName: org?.organization.name });
+      toast.success("Invoice PDF ready", `${detail.invoice.invoice_number}.pdf downloaded.`);
+    } catch (e: any) {
+      toast.error("Could not generate PDF", e?.message);
+    } finally {
+      setPdfBusy(false);
+    }
+  };
 
   return (
     <DetailLoad resource={r}>
@@ -660,6 +683,7 @@ export function InvoiceDetailPage() {
                     <button
                       onClick={() => {
                         navigator.clipboard.writeText(`https://invoice-ai-nine-beta.vercel.app/pay/${inv.invoice_number}`);
+                        toast.success("Payment link copied");
                         setCopied(true);
                         setTimeout(() => setCopied(false), 2000);
                       }}
@@ -699,6 +723,14 @@ export function InvoiceDetailPage() {
                       <MessageSquare className="h-3.5 w-3.5 text-emerald-600" />
                       <span>Share on WhatsApp</span>
                     </a>
+                    <button
+                      onClick={() => handlePdf(data)}
+                      disabled={pdfBusy}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      <span>{pdfBusy ? "Building…" : "Download PDF"}</span>
+                    </button>
                     <button
                       onClick={() => window.print()}
                       className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-800"

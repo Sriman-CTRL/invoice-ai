@@ -5,12 +5,14 @@ import { customersApi } from "../api";
 import { Badge, PageHeader } from "../components";
 import { date, money, titleCase } from "../lib";
 import type { CustomerDetail, Invoice } from "../types";
+import { useToast } from "../toast";
 import { useResource, DetailLoad, ActionsTable } from "./shared";
 
 export function CustomerDetailPage() {
   const { id = "" } = useParams();
   const r = useResource(() => customersApi.detail(id), [id]);
   const [erasureBusy, setErasureBusy] = useState(false);
+  const toast = useToast();
   const [exportBusy, setExportBusy] = useState(false);
   const [complianceNotice, setComplianceNotice] = useState<string | null>(null);
 
@@ -25,8 +27,9 @@ export function CustomerDetailPage() {
       a.download = `customer-export-${customerId}.json`;
       a.click();
       URL.revokeObjectURL(url);
+      toast.success("Customer data exported");
     } catch {
-      alert("Failed to export customer data.");
+      toast.error("Failed to export customer data");
     } finally {
       setExportBusy(false);
     }
@@ -44,9 +47,10 @@ export function CustomerDetailPage() {
     try {
       const res = await customersApi.erasure(customerId);
       setComplianceNotice(res.legal_notice);
+      toast.success("Erasure processed", "Personal data anonymized.");
       r.reload();
     } catch (e: any) {
-      alert(e?.message || "Failed to process erasure.");
+      toast.error("Failed to process erasure", e?.message);
     } finally {
       setErasureBusy(false);
     }

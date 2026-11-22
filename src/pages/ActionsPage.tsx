@@ -6,6 +6,7 @@ import { Badge, EmptyState, ErrorState, PageHeader, TableSkeleton } from "../com
 import { dateTime, titleCase } from "../lib";
 import type { CollectionAction, Customer, Invoice } from "../types";
 import { useResource } from "./shared";
+import { useToast } from "../toast";
 
 const transitions: Record<string, string[]> = {
   PENDING: ["PROCESSING", "CANCELLED"],
@@ -15,6 +16,7 @@ const transitions: Record<string, string[]> = {
 export function ActionsPage() {
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const toast = useToast();
   const [notice, setNotice] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
 
@@ -28,8 +30,10 @@ export function ActionsPage() {
       setNotice(
         `Automated sweep complete: ${res.invoices_detected} overdue invoice(s) evaluated, ${res.actions_created} collection action(s) created.`
       );
+      toast.success("Overdue sweep complete", `${res.actions_created} collection action(s) created.`);
       r.reload();
     } catch (err: any) {
+      toast.error("Scan failed", err?.message);
       setNotice("Scan failed: " + (err?.message || "Unknown error"));
     } finally {
       setScanning(false);
@@ -41,9 +45,12 @@ export function ActionsPage() {
     setNotice(null);
     try {
       await actionsApi.updateStatus(action.id, next);
+      toast.success(`Action marked ${next.toLowerCase()}`);
       r.reload();
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Unable to transition action.");
+      const msg = error instanceof Error ? error.message : "Unable to transition action.";
+      toast.error("Update failed", msg);
+      setNotice(msg);
     } finally {
       setBusy(null);
     }
@@ -54,9 +61,11 @@ export function ActionsPage() {
     setNotice(null);
     try {
       const res = await actionsApi.verifyProof(actionId);
+      toast.success("Payment settled - vault unlocked", res.message);
       setNotice(`Payment Settled! ${res.message}`);
       r.reload();
     } catch (err: any) {
+      toast.error("Verification failed", err?.message);
       setNotice("Verification failed: " + (err?.message || "Unknown error"));
     } finally {
       setBusy(null);

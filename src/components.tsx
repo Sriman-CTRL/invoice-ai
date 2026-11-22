@@ -23,7 +23,8 @@ import {
   Zap,
 } from "lucide-react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { CommandPalette } from "./CommandPalette";
 import { useAuth } from "./auth";
 import { initials, titleCase } from "./lib";
 
@@ -170,9 +171,23 @@ export function EmptyState({
 }) {
   return (
     <div className="panel flex min-h-64 flex-col items-center justify-center p-8 text-center">
-      <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand-50 to-indigo-100/80 ring-8 ring-slate-100">
-        <Receipt className="h-7 w-7 text-brand-600" />
-      </div>
+      <svg viewBox="0 0 120 96" className="mb-3 h-24 w-28 fade-in" aria-hidden="true">
+        <defs>
+          <linearGradient id="es-g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#818cf8" />
+            <stop offset="1" stopColor="#4f46e5" />
+          </linearGradient>
+        </defs>
+        <ellipse cx="60" cy="86" rx="38" ry="5" fill="#e2e8f0" />
+        <rect x="30" y="14" width="50" height="64" rx="7" fill="#fff" stroke="#cbd5e1" strokeWidth="2" transform="rotate(-6 55 46)" />
+        <rect x="40" y="10" width="50" height="66" rx="7" fill="#fff" stroke="url(#es-g)" strokeWidth="2.5" />
+        <rect x="48" y="22" width="22" height="5" rx="2.5" fill="url(#es-g)" />
+        <rect x="48" y="34" width="34" height="4" rx="2" fill="#e2e8f0" />
+        <rect x="48" y="43" width="28" height="4" rx="2" fill="#e2e8f0" />
+        <rect x="48" y="52" width="32" height="4" rx="2" fill="#e2e8f0" />
+        <circle cx="84" cy="66" r="13" fill="url(#es-g)" />
+        <path d="M84 59v14M77 66h14" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
+      </svg>
       <h3 className="text-base font-bold text-slate-900">{title}</h3>
       <p className="mt-1.5 max-w-md text-sm text-slate-500 leading-relaxed">{detail}</p>
       {action && <div className="mt-6">{action}</div>}
@@ -375,6 +390,17 @@ function SidebarContent({ close }: { close?: () => void }) {
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -403,6 +429,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Main Content Pane */}
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       <div className="min-h-screen lg:pl-64">
         <header className="sticky top-0 z-20 flex h-18 items-center justify-between border-b border-slate-200/80 bg-white/80 px-4 backdrop-blur-md sm:px-8">
           <div className="flex items-center gap-3">
@@ -425,11 +452,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3.5">
             {/* Astryx Quick Command Search Input */}
             <div
-              onClick={() => navigate("/invoices")}
+              onClick={() => setPaletteOpen(true)}
               className="hidden md:flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200/90 bg-slate-100/70 px-3 py-1.5 text-xs text-slate-500 shadow-inner hover:border-slate-300 transition-colors"
             >
               <Search className="h-3.5 w-3.5 text-slate-400" />
-              <span className="text-xs text-slate-500 w-40 truncate">Quick jump to invoice...</span>
+              <span className="text-xs text-slate-500 w-40 truncate">Quick jump to invoice or customer...</span>
               <kbd className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-400">
                 ⌘K
               </kbd>
@@ -455,7 +482,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
+        <main key={location.pathname} className="page-in mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
           {children}
         </main>
       </div>

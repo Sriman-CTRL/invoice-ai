@@ -132,3 +132,14 @@
     @apply relative inline-flex h-2 w-2 rounded-full;
   }
 }
+
+/* Micro-interactions */
+@keyframes toast-in { from { opacity: 0; transform: translateY(12px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop-in { from { opacity: 0; transform: translateY(-8px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.toast-in { animation: toast-in .22s cubic-bezier(.2,.8,.2,1); }
+.fade-in { animation: fade-in .15s ease-out; }
+.pop-in { animation: pop-in .18s cubic-bezier(.2,.8,.2,1); }
+.page-in { animation: page-in .28s ease-out; }
+@media (prefers-reduced-motion: reduce) { .toast-in, .fade-in, .pop-in, .page-in { animation: none; } }

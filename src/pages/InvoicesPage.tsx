@@ -5,6 +5,7 @@ import { customersApi, invoicesApi } from "../api";
 import { Badge, EmptyState, ErrorState, PageHeader, SearchInput, TableSkeleton } from "../components";
 import { date, money } from "../lib";
 import type { Customer, Invoice } from "../types";
+import { useToast } from "../toast";
 import { useResource } from "./shared";
 
 function downloadSampleCSV() {
@@ -114,6 +115,7 @@ function BulkImportModal({
     skipped_count: number;
     errors: string[];
   } | null>(null);
+  const toast = useToast();
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -165,8 +167,10 @@ function BulkImportModal({
         }))
       );
       setImportResult(res);
+      toast.success("Import complete", `${res.imported_count} invoice(s) imported.`);
       onSuccess();
     } catch (err: any) {
+      toast.error("Import failed", err?.message);
       setError(err?.message || "Failed to import invoices");
     } finally {
       setImporting(false);
@@ -405,6 +409,7 @@ function CreateInvoiceModal({
   const [deliverableVaultUrl, setDeliverableVaultUrl] = useState("");
 
   const [saving, setSaving] = useState(false);
+  const toast = useToast();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -464,9 +469,11 @@ function CreateInvoiceModal({
         external_invoice_id: deliverableVaultUrl.trim() ? `vault:${deliverableVaultUrl.trim()}` : undefined,
       });
 
+      toast.success("Invoice created", invoiceNumber.trim());
       onSuccess();
       onClose();
     } catch (err: any) {
+      toast.error("Could not create invoice", err?.message);
       setError(err?.message || "Failed to create invoice.");
     } finally {
       setSaving(false);

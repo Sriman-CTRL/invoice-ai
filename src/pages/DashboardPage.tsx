@@ -6,6 +6,8 @@ import { Badge, ErrorState, PageHeader } from "../components";
 import { dateTime, money, titleCase } from "../lib";
 import type { CollectionAction, Dashboard, Invoice } from "../types";
 import { useResource } from "./shared";
+import { CashFlowForecast } from "./CashFlowForecast";
+import { useToast } from "../toast";
 
 interface MetricCardProps {
   title: string;
@@ -65,6 +67,7 @@ function MetricCard({
 
 export function DashboardPage() {
   const resource = useResource(() => dashboardApi.get(), []);
+  const toast = useToast();
   const [scanning, setScanning] = useState(false);
   const [scanNotice, setScanNotice] = useState<string | null>(null);
   const data = resource.data as Dashboard | null;
@@ -77,8 +80,10 @@ export function DashboardPage() {
       setScanNotice(
         `Autonomous Scan Complete: ${res.invoices_detected} past-due invoice(s) detected, ${res.actions_created} collection action(s) created.`
       );
+      toast.success("Autonomous scan complete", `${res.actions_created} collection action(s) created.`);
       resource.reload();
     } catch (err: any) {
+      toast.error("Scan failed", err?.message);
       setScanNotice("Scan failed: " + (err?.message || "Unknown error"));
     } finally {
       setScanning(false);
@@ -219,6 +224,8 @@ export function DashboardPage() {
           accentGradient="from-rose-500 to-amber-500"
         />
       </div>
+
+      <div className="mt-7"><CashFlowForecast /></div>
 
       {/* Middle Section: Distribution + Automation Pipeline */}
       <div className="mt-7 grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
