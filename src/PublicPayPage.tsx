@@ -62,6 +62,8 @@ export function PublicPayPage() {
     try {
       const res = await publicApi.getInvoice(invoiceNumber);
       setData(res);
+      // Personal UPI IDs are capped at about ₹1 lakh per payment; steer large invoices to bank transfer.
+      if (res.outstanding_amount > 100000 && res.payment?.bank) setActiveTab("bank");
       setProofAmount(String(res.outstanding_amount));
     } catch (err: any) {
       setError(err?.message || "Invoice not found or link has expired.");
@@ -243,8 +245,7 @@ export function PublicPayPage() {
                   {data.customer.company_name && (
                     <p className="text-slate-300">{data.customer.company_name}</p>
                   )}
-                  <p className="text-slate-400">{data.customer.email}</p>
-                  {data.customer.phone && <p className="text-slate-400">{data.customer.phone}</p>}
+                  {data.customer.email && <p className="text-slate-400">{data.customer.email}</p>}
                 </div>
                 <div>
                   <span className="text-slate-400 block mb-1 font-semibold uppercase tracking-wider text-[10px]">
@@ -434,6 +435,11 @@ export function PublicPayPage() {
                     <p className="text-[11px] text-slate-400 mt-0.5">
                       Amount: {data.currency} {outstanding.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </p>
+                    {outstanding > 100000 && (
+                      <p className="mx-auto mt-3 max-w-xs rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-[11px] leading-relaxed text-amber-100">
+                        Most UPI apps allow up to about ₹1 lakh per payment. {data.payment?.bank ? "For this amount, bank transfer (NEFT/RTGS) is easier." : "You can pay in parts and submit each UTR."}
+                      </p>
+                    )}
                   </div>
 
                   {/* Direct Mobile UPI Intent Button */}
@@ -605,7 +611,7 @@ export function PublicPayPage() {
           <span className="text-slate-700">•</span>
           <span>Peer-to-Peer Direct Bank Settlement</span>
           <span className="text-slate-700">•</span>
-          <span>Neon Postgres Tenant RLS</span>
+          <span>Tenant-isolated records</span>
         </div>
         <p className="mt-3 text-[11px] text-slate-600">
           Invoice AI facilitates peer-to-peer settlement verification and deliverable vault protection. We do not store banking credentials or hold customer funds.

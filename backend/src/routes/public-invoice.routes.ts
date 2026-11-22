@@ -4,31 +4,36 @@ import { getOrgSettings } from "../lib/orgSettings";
 
 const router = Router();
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const SAFE_URL_RE = /^https?:\/\/[^\s"'<>]+$/i;
+const STALE_LINK = "This payment link is not valid. Please ask the sender for a fresh link.";
+
+/** Public links are keyed by the invoice's random UUID. Invoice numbers are guessable and only unique per business. */
+function publicInvoiceId(param: unknown): string | null {
+    const id = String(param ?? "").trim();
+    return UUID_RE.test(id) ? id : null;
+}
+
+/** Deliverable links must be plain http(s) URLs so they can never execute script on the pay page. */
+export function safeDeliverableUrl(external: string | null | undefined): string | null {
+    const url = String(external ?? "").replace(/^vault:/, "").trim();
+    return SAFE_URL_RE.test(url) ? url : null;
+}
+
 /**
  * GET /api/public/invoices/:invoice_number
  * Public endpoint for clients to view invoice details, bank instructions, and deliverable status.
  */
 router.get("/:invoice_number", async (req: Request, res: Response): Promise<void> => {
     try {
-        const { invoice_number } = req.params;
-        if (!invoice_number) {
-            res.status(400).json({ error: "Invoice number is required" });
+        const invoiceId = publicInvoiceId(req.params.invoice_number);
+        if (!invoiceId) {
+            res.status(404).json({ error: STALE_LINK });
             return;
         }
 
-        const orgSlug = typeof req.query.org === "string" ? req.query.org.trim() : null;
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invoice_number);
-        const whereClause: any = isUuid
-            ? { id: invoice_number }
-            : { invoice_number: { equals: invoice_number, mode: "insensitive" } };
-
-        if (orgSlug) {
-            whereClause.organizations = { slug: orgSlug };
-        }
-
         const invoice = await prisma.invoices.findFirst({
-            where: whereClause,
-            orderBy: { created_at: "desc" },
+            where: { id: invoiceId },
             include: {
                 customers: true,
                 organizations: true,
@@ -53,10 +58,11 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
         let hasDeliverable = false;
         const external = invoice.external_invoice_id || "";
 
-        if (external.startsWith("http://") || external.startsWith("https://") || external.startsWith("vault:")) {
+        const safeUrl = safeDeliverableUrl(external);
+        if (safeUrl) {
             hasDeliverable = true;
             if (invoice.status === "PAID" || outstandingAmount <= 0) {
-                deliverableUrl = external.replace(/^vault:/, "");
+                deliverableUrl = safeUrl;
             }
         }
 
@@ -85,8 +91,8 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
             customer: {
                 name: invoice.customers.name,
                 company_name: invoice.customers.company_name,
-                email: invoice.customers.email,
-                phone: invoice.customers.phone,
+                email: null,
+                phone: null,
             },
             organization: {
                 name: invoice.organizations.name,
@@ -122,22 +128,30 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
  */
 router.post("/:invoice_number/submit-proof", async (req: Request, res: Response): Promise<void> => {
     try {
-        const { invoice_number } = req.params;
+        const invoiceId = publicInvoiceId(req.params.invoice_number);
         const { utr, amount, notes, paid_at } = req.body ?? {};
 
-        if (!invoice_number || !utr || String(utr).trim().length === 0) {
-            res.status(400).json({ error: "Invoice number and UTR / Reference ID are required." });
+        if (!invoiceId) {
+            res.status(404).json({ error: STALE_LINK });
+            return;
+        }
+        const cleanUtr = String(utr ?? "").trim().toUpperCase();
+        if (!/^[A-Z0-9]{6,30}$/.test(cleanUtr)) {
+            res.status(400).json({ error: "Enter the UTR / transaction reference exactly as shown in your banking app (letters and numbers only)." });
+            return;
+        }
+        if (notes !== undefined && notes !== null && (typeof notes !== "string" || notes.length > 500)) {
+            res.status(400).json({ error: "Notes must be under 500 characters." });
+            return;
+        }
+        const paidAt = paid_at ? new Date(paid_at) : new Date();
+        if (Number.isNaN(paidAt.getTime()) || paidAt.getTime() > Date.now() + 86_400_000) {
+            res.status(400).json({ error: "Invalid payment date." });
             return;
         }
 
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invoice_number);
-        const whereClause: any = isUuid
-            ? { id: invoice_number }
-            : { invoice_number: { equals: invoice_number, mode: "insensitive" } };
-
         const invoice = await prisma.invoices.findFirst({
-            where: whereClause,
-            orderBy: { created_at: "desc" },
+            where: { id: invoiceId },
             include: {
                 customers: true,
                 organizations: true,
@@ -152,8 +166,28 @@ router.post("/:invoice_number/submit-proof", async (req: Request, res: Response)
 
         const paidAmount = invoice.payments.reduce((acc, p) => acc + Number(p.amount), 0);
         const outstandingAmount = Math.max(0, Number(invoice.amount) - paidAmount);
-        const reportedAmount = Number(amount) > 0 ? Number(amount) : outstandingAmount;
-        const cleanUtr = String(utr).trim();
+        if (invoice.status === "PAID" || invoice.status === "CANCELLED" || outstandingAmount <= 0) {
+            res.status(409).json({ error: "This invoice is already settled." });
+            return;
+        }
+        const reportedAmount = amount === undefined || amount === null || amount === "" ? outstandingAmount : Number(amount);
+        if (!Number.isFinite(reportedAmount) || reportedAmount <= 0 || reportedAmount > outstandingAmount + 0.01) {
+            res.status(400).json({ error: `Amount must be between 1 and the outstanding ${outstandingAmount}.` });
+            return;
+        }
+        // Anti-spam: cap unverified proofs per invoice, and reject duplicate UTRs.
+        const pending = await prisma.payments.findMany({
+            where: { invoice_id: invoice.id, status: "PENDING" },
+            select: { external_payment_id: true },
+        });
+        if (pending.some((p) => (p.external_payment_id || "").toUpperCase() === cleanUtr)) {
+            res.status(409).json({ error: "This UTR has already been submitted and is awaiting verification." });
+            return;
+        }
+        if (pending.length >= 3) {
+            res.status(429).json({ error: "Several payment proofs are already awaiting verification for this invoice. Please wait for the sender to confirm." });
+            return;
+        }
 
         // 1. Create or update pending payment record
         const payment = await prisma.payments.create({
@@ -164,7 +198,7 @@ router.post("/:invoice_number/submit-proof", async (req: Request, res: Response)
                 currency: invoice.currency,
                 status: "PENDING",
                 external_payment_id: cleanUtr,
-                paid_at: paid_at ? new Date(paid_at) : new Date(),
+                paid_at: paidAt,
             },
         });
 

@@ -3,6 +3,7 @@ import { useAuth } from "./auth";
 import { Shell } from "./components";
 import { ActionsPage, AuthPage, ConversationDetailPage, ConversationsPage, CustomerDetailPage, CustomersPage, DashboardPage, InvoiceDetailPage, InvoicesPage, SettingsPage, AdminPage } from "./pages";
 import { LandingPage } from "./LandingPage";
+import { PricingPage } from "./PricingPage";
 import { PlaygroundPage } from "./playground";
 import { PublicPayPage } from "./PublicPayPage";
 import { PrivacyPolicyPage, TermsOfServicePage } from "./LegalPages";
@@ -13,6 +14,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/register" element={<AuthPage mode="register" />} />
       <Route path="/pay/:invoiceNumber" element={<PublicPayPage />} />

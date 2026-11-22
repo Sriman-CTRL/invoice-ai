@@ -34,7 +34,7 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   const org = opts.organizationName || "Your Company";
   const currency = fin.currency || inv.currency || "INR";
   const paid = inv.status === "PAID";
-  const payUrl = `${PUBLIC_BASE_URL}/pay/${encodeURIComponent(inv.invoice_number)}`;
+  const payUrl = `${PUBLIC_BASE_URL}/pay/${inv.id}`;
 
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const W = doc.internal.pageSize.getWidth();

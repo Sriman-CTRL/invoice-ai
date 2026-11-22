@@ -364,7 +364,7 @@ function SidebarContent({ close }: { close?: () => void }) {
             </span>
           </div>
           <p className="mt-1.5 text-[10px] text-slate-400 font-mono">
-            Gemini 2.5 Flash · Neon Postgres RLS
+            Gemini 2.5 Flash · Neon Postgres
           </p>
         </div>
       </div>

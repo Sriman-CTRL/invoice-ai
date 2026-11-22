@@ -68,9 +68,8 @@ app.use(
       if (!origin) return callback(null, true);
       if (
         allowedOrigins.includes(origin) ||
-        origin.endsWith(".vercel.app") ||
-        origin.startsWith("http://localhost:") ||
-        origin.startsWith("http://127.0.0.1:")
+        /^https:\/\/invoice-[a-z0-9-]+-sriman-ctrls-projects\.vercel\.app$/.test(origin) ||
+        (process.env.NODE_ENV !== "production" && /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin))
       ) {
         return callback(null, true);
       }
@@ -87,7 +86,7 @@ app.use(express.json({ limit: "1mb" }));
 
 // LAYER 5: Multi-Tier Rate Limiting
 // 1. Auth routes (login/register) - brute force defense
-app.use("/api/auth", rateLimit({ windowMs: 60_000, max: 60, message: "Too many authentication attempts. Please wait 1 minute." }), authRoutes);
+app.use("/api/auth", rateLimit({ windowMs: 60_000, max: 20, message: "Too many authentication attempts. Please wait 1 minute." }), authRoutes);
 
 // 2. Inbound webhook endpoint
 app.use("/api/inbound", inboundRoutes);

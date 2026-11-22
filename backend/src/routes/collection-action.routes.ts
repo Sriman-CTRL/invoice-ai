@@ -400,10 +400,16 @@ router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<vo
         });
       }
 
-      // Mark invoice as PAID
+      // Mark PAID only when the invoice is fully settled; a partial proof must not unlock deliverables.
+      const settledNow = await tx.payments.aggregate({
+        where: { invoice_id: action.invoice_id, organization_id, status: "SUCCEEDED" },
+        _sum: { amount: true },
+      });
+      const totalPaid = Number(settledNow._sum?.amount ?? 0);
+      const fullyPaid = totalPaid + 0.01 >= Number(inv.amount);
       const updatedInvoice = await tx.invoices.update({
         where: { id: action.invoice_id },
-        data: { status: "PAID" },
+        data: { status: fullyPaid ? "PAID" : "PARTIALLY_PAID" },
       });
 
       // Mark action as COMPLETED
@@ -425,7 +431,9 @@ router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<vo
 
     res.json({
       success: true,
-      message: `Payment verified and settled! Invoice #${result.invoice.invoice_number} marked PAID. Deliverables unlocked.`,
+      message: result.invoice.status === "PAID"
+        ? `Payment verified. Invoice #${result.invoice.invoice_number} is fully paid and deliverables are unlocked.`
+        : `Partial payment verified for #${result.invoice.invoice_number}. Deliverables stay locked until the balance is paid.`,
       ...result,
     });
   } catch (error) {

@@ -28,8 +28,8 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
       setError("Please complete all required fields.");
       return;
     }
-    if (form.password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    if (mode === "register" && (form.password.length < 10 || !/[A-Za-z]/.test(form.password) || !/[0-9]/.test(form.password))) {
+      setError("Password must be at least 10 characters and include a letter and a number.");
       return;
     }
 

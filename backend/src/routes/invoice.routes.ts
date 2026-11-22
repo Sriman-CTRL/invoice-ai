@@ -2,6 +2,7 @@ import { Router } from "express";
 import prisma from "../lib/prisma";
 import { getInvoiceDetails } from "../services/invoiceService";
 import { checkPlanLimit } from "../lib/orgSettings";
+import { safeDeliverableUrl } from "./public-invoice.routes";
 
 const router = Router();
 
@@ -189,6 +190,10 @@ router.post("/", async (req, res) => {
 
         const limitError = await checkPlanLimit(organization_id);
         if (limitError) return res.status(402).json({ error: limitError });
+
+        if (typeof external_invoice_id === "string" && external_invoice_id.startsWith("vault:") && !safeDeliverableUrl(external_invoice_id)) {
+            return res.status(400).json({ error: "Deliverable link must be a normal https:// web address." });
+        }
 
         const invoiceAmount = Number(amount);
         if (!Number.isFinite(invoiceAmount) || invoiceAmount <= 0) {

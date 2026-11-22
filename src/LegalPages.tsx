@@ -84,9 +84,9 @@ export function PrivacyPolicyPage() {
 
           <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-5 backdrop-blur-sm">
             <Database className="h-5 w-5 text-indigo-400 mb-2" />
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Neon Postgres RLS</h4>
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Tenant Isolation</h4>
             <p className="mt-1 text-[11px] text-slate-400 leading-relaxed">
-              Every organization operates within a cryptographically isolated tenant partition with row-level locks.
+              Every request is authorised against the signed-in organization, and payment links use unguessable random identifiers.
             </p>
           </div>
 
@@ -118,7 +118,7 @@ export function PrivacyPolicyPage() {
               deliverable escrow facilitation, and dispute resolution service for freelancers, agencies, and micro-SMEs.
               This Privacy Policy explains how we process personal and commercial data when you access our dashboard
               at <code className="text-slate-200 bg-white/5 px-1 py-0.5 rounded font-mono text-xs">invoice-ai-nine-beta.vercel.app</code> or
-              interact with public checkout portals (<code className="text-slate-200 bg-white/5 px-1 py-0.5 rounded font-mono text-xs">/pay/:invoice_number</code>).
+              interact with public checkout portals (<code className="text-slate-200 bg-white/5 px-1 py-0.5 rounded font-mono text-xs">/pay/:invoice_id</code>).
             </p>
           </section>
 
@@ -151,7 +151,7 @@ export function PrivacyPolicyPage() {
             </h2>
             <p>
               When a merchant uploads or links deliverables to an invoice, the asset URL is protected by the Deliverable Vault.
-              Public clients viewing <code className="text-slate-200 bg-white/5 px-1 py-0.5 rounded font-mono text-xs">/pay/:invoice_number</code> receive
+              Public clients viewing <code className="text-slate-200 bg-white/5 px-1 py-0.5 rounded font-mono text-xs">/pay/:invoice_id</code> receive
               a masked status confirming the file is attached, but direct access is cryptographically restricted until the
               invoice status transitions to <span className="font-mono text-emerald-400 font-bold">PAID</span>.
             </p>

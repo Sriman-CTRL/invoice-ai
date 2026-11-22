@@ -862,7 +862,7 @@ export function InvoicesPage() {
                     <td className="table-cell text-right">
                       <div className="flex items-center justify-end gap-2.5">
                         <a
-                          href={`/pay/${inv.invoice_number}`}
+                          href={`/pay/${inv.id}`}
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity"

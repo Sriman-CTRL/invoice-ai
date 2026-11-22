@@ -79,7 +79,7 @@ function SendReminderModal({
   const mailtoUrl = `mailto:${encodeURIComponent(customer.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   const cleanPhone = (customer.phone || "").replace(/[^0-9]/g, "");
   const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-    `*Payment Reminder — Invoice ${invoice.invoice_number}*\n\n${body}\n\n👉 View & Pay Online: https://invoice-ai-nine-beta.vercel.app/pay/${invoice.invoice_number}`
+    `*Payment Reminder — Invoice ${invoice.invoice_number}*\n\n${body}\n\n👉 View & Pay Online: https://invoice-ai-nine-beta.vercel.app/pay/${invoice.id}`
   )}`;
 
   return (
@@ -677,12 +677,12 @@ export function InvoiceDetailPage() {
                     <input
                       type="text"
                       readOnly
-                      value={`https://invoice-ai-nine-beta.vercel.app/pay/${inv.invoice_number}`}
+                      value={`https://invoice-ai-nine-beta.vercel.app/pay/${inv.id}`}
                       className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 font-mono text-xs text-slate-600 select-all"
                     />
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(`https://invoice-ai-nine-beta.vercel.app/pay/${inv.invoice_number}`);
+                        navigator.clipboard.writeText(`https://invoice-ai-nine-beta.vercel.app/pay/${inv.id}`);
                         toast.success("Payment link copied");
                         setCopied(true);
                         setTimeout(() => setCopied(false), 2000);
@@ -700,7 +700,7 @@ export function InvoiceDetailPage() {
                       )}
                     </button>
                     <a
-                      href={`/pay/${inv.invoice_number}`}
+                      href={`/pay/${inv.id}`}
                       target="_blank"
                       rel="noreferrer"
                       className="btn-secondary h-8 px-2.5 text-xs whitespace-nowrap inline-flex items-center gap-1 text-brand-600 hover:text-brand-700 font-bold"
@@ -714,7 +714,7 @@ export function InvoiceDetailPage() {
                   <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
                     <a
                       href={`https://wa.me/${(data.customer.phone || "").replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
-                        `Hi ${data.customer.name}, here is your invoice ${inv.invoice_number} for ${fin.currency} ${fin.outstanding_amount}. You can view details, scan UPI, or pay here: https://invoice-ai-nine-beta.vercel.app/pay/${inv.invoice_number}`
+                        `Hi ${data.customer.name}, here is your invoice ${inv.invoice_number} for ${fin.currency} ${fin.outstanding_amount}. You can view details, scan UPI, or pay here: https://invoice-ai-nine-beta.vercel.app/pay/${inv.id}`
                       )}`}
                       target="_blank"
                       rel="noreferrer"

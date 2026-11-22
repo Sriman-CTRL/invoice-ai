@@ -19,7 +19,7 @@ export type PublicInvoiceDetail = {
   issued_at: string | null;
   due_at: string | null;
   status: string;
-  customer: { name: string; company_name: string | null; email: string; phone: string | null };
+  customer: { name: string; company_name: string | null; email: string | null; phone: string | null };
   organization: { name: string; slug: string };
   payment: {
     upi_id: string | null;

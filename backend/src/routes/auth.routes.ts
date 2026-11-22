@@ -3,6 +3,7 @@ import prisma from "../lib/prisma";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET, JWT_EXPIRES_IN } from "../lib/config";
+import { clearLoginFailures, loginLockoutSeconds, recordLoginFailure } from "../lib/loginThrottle";
 
 const router = Router();
 
@@ -28,8 +29,8 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ error: "A valid email is required" });
       return;
     }
-    if (typeof password !== "string" || password.length < 8 || password.length > 72) {
-      res.status(400).json({ error: "Password must be between 8 and 72 characters" });
+    if (typeof password !== "string" || password.length < 10 || password.length > 72 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      res.status(400).json({ error: "Password must be 10-72 characters and include at least one letter and one number" });
       return;
     }
 
@@ -59,6 +60,10 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
       organization: { id: organization.id, name: organization.name, slug: organization.slug },
     });
   } catch (error) {
+    if (String((error as { code?: string })?.code) === "P2002" || /unique|duplicate/i.test(String((error as Error)?.message))) {
+      res.status(409).json({ error: "Email already in use" });
+      return;
+    }
     console.error("Register error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
@@ -73,7 +78,15 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const emailTrimmed = String(email).trim().toLowerCase();
+    const emailTrimmed = String(email).trim().toLowerCase().slice(0, 255);
+    const ip = String(req.ip || "unknown");
+
+    const wait = await loginLockoutSeconds(emailTrimmed, ip);
+    if (wait > 0) {
+      res.setHeader("Retry-After", String(wait));
+      res.status(429).json({ error: "Too many failed sign-in attempts. Please wait 15 minutes and try again." });
+      return;
+    }
 
     // Email is globally unique (register enforces it), but findFirst would be
     // ambiguous if that invariant ever breaks. Keep it explicit and cheap.
@@ -86,9 +99,11 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
     const isValid = await bcrypt.compare(String(password), hash);
 
     if (!user || !isValid) {
+      await recordLoginFailure(emailTrimmed, ip);
       res.status(401).json({ error: "Invalid credentials" });
       return;
     }
+    await clearLoginFailures(emailTrimmed);
 
     const token = jwt.sign(
       { id: user.id, organization_id: user.organization_id },
