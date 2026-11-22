@@ -1,0 +1,54 @@
+name: Security scans
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 3 * * 1" # weekly, Monday 03:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: Secret scan (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Gitleaks
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz | tar -xz gitleaks
+          ./gitleaks detect --source . --redact --verbose --exit-code 1
+
+  code:
+    name: Static analysis (Semgrep)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run Semgrep
+        run: |
+          pip install semgrep
+          semgrep scan --config p/typescript --config p/react --config p/nodejs --config p/secrets \
+            --exclude node_modules --exclude dist --exclude api/index.js --exclude src/generated \
+            --severity ERROR --error
+
+  dependencies:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Audit frontend (production deps, fail on critical)
+        run: npm audit --omit=dev --audit-level=critical
+      - name: Audit backend (production deps, fail on critical)
+        working-directory: ./backend
+        run: npm audit --omit=dev --audit-level=critical

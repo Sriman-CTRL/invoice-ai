@@ -353,6 +353,114 @@ var customer_routes_default = router;
 
 // backend/src/routes/organization.routes.ts
 import { Router as Router2 } from "express";
+
+// backend/src/lib/orgSettings.ts
+var SETTING_FIELDS = ["upi_id", "payee_name", "bank_account_name", "bank_account_number", "bank_ifsc", "bank_name", "gstin"];
+var ready = null;
+function ensureOrgSettingsSchema() {
+  if (!ready) {
+    ready = (async () => {
+      for (const col of SETTING_FIELDS) {
+        await prisma_default.$executeRawUnsafe(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS ${col} VARCHAR(255)`);
+      }
+      await prisma_default.$executeRawUnsafe(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS plan VARCHAR(20) NOT NULL DEFAULT 'FREE'`);
+      await prisma_default.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS plan_requests (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        organization_id UUID NOT NULL,
+        plan VARCHAR(20) NOT NULL,
+        utr VARCHAR(32) NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )`);
+    })().catch((e) => {
+      ready = null;
+      throw e;
+    });
+  }
+  return ready;
+}
+var EMPTY = {
+  upi_id: null,
+  payee_name: null,
+  bank_account_name: null,
+  bank_account_number: null,
+  bank_ifsc: null,
+  bank_name: null,
+  gstin: null,
+  plan: "FREE"
+};
+async function getOrgSettings(organizationId) {
+  await ensureOrgSettingsSchema();
+  const rows = await prisma_default.$queryRawUnsafe(
+    `SELECT upi_id, payee_name, bank_account_name, bank_account_number, bank_ifsc, bank_name, gstin, plan FROM organizations WHERE id = $1::uuid`,
+    organizationId
+  );
+  return rows[0] ?? EMPTY;
+}
+var UPI_RE = /^[a-zA-Z0-9._-]{2,64}@[a-zA-Z][a-zA-Z0-9]{1,31}$/;
+var IFSC_RE = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+var GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+var ACCT_RE = /^[0-9]{6,20}$/;
+function validateSettingsPatch(body) {
+  const data = {};
+  for (const field of SETTING_FIELDS) {
+    if (!(field in body)) continue;
+    const raw2 = body[field];
+    if (raw2 === null || raw2 === "") {
+      data[field] = null;
+      continue;
+    }
+    if (typeof raw2 !== "string") return { error: `${field} must be text` };
+    let v = raw2.trim().slice(0, 255);
+    if (field === "upi_id") {
+      v = v.toLowerCase();
+      if (!UPI_RE.test(v)) return { error: "Enter a valid UPI ID, e.g. yourname@okhdfcbank" };
+    }
+    if (field === "bank_ifsc") {
+      v = v.toUpperCase();
+      if (!IFSC_RE.test(v)) return { error: "IFSC must look like HDFC0001234" };
+    }
+    if (field === "gstin") {
+      v = v.toUpperCase();
+      if (!GSTIN_RE.test(v)) return { error: "GSTIN must be 15 characters, e.g. 29ABCDE1234F1Z5" };
+    }
+    if (field === "bank_account_number") {
+      v = v.replace(/\s+/g, "");
+      if (!ACCT_RE.test(v)) return { error: "Account number must be 6-20 digits" };
+    }
+    data[field] = v;
+  }
+  return { data };
+}
+async function updateOrgSettings(organizationId, patch) {
+  await ensureOrgSettingsSchema();
+  const keys = Object.keys(patch).filter((k) => SETTING_FIELDS.includes(k));
+  if (keys.length) {
+    const sets = keys.map((k, i) => `${k} = $${i + 2}`).join(", ");
+    await prisma_default.$executeRawUnsafe(
+      `UPDATE organizations SET ${sets}, updated_at = now() WHERE id = $1::uuid`,
+      organizationId,
+      ...keys.map((k) => patch[k] ?? null)
+    );
+  }
+  return getOrgSettings(organizationId);
+}
+var FREE_INVOICES_PER_MONTH = 5;
+async function checkPlanLimit(organizationId, adding = 1) {
+  const { plan } = await getOrgSettings(organizationId);
+  if (plan !== "FREE") return null;
+  const rows = await prisma_default.$queryRawUnsafe(
+    `SELECT count(*)::int AS n FROM invoices WHERE organization_id = $1::uuid AND created_at >= date_trunc('month', now())`,
+    organizationId
+  );
+  const used = rows[0]?.n ?? 0;
+  if (used + adding > FREE_INVOICES_PER_MONTH) {
+    return `Free plan allows ${FREE_INVOICES_PER_MONTH} invoices per month (${used} used). Upgrade to Pro for unlimited invoices.`;
+  }
+  return null;
+}
+
+// backend/src/routes/organization.routes.ts
 var router2 = Router2();
 var SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 router2.get("/me", async (req, res) => {
@@ -414,10 +522,47 @@ router2.patch("/me", async (req, res) => {
     res.status(500).json({ error: "Failed to update organization" });
   }
 });
+router2.get("/settings", async (req, res) => {
+  try {
+    res.json(await getOrgSettings(req.user.organization_id));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to load settings" });
+  }
+});
+router2.put("/settings", async (req, res) => {
+  try {
+    const checked = validateSettingsPatch(req.body ?? {});
+    if ("error" in checked) return res.status(400).json({ error: checked.error });
+    res.json(await updateOrgSettings(req.user.organization_id, checked.data));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to save settings" });
+  }
+});
+router2.post("/upgrade-request", async (req, res) => {
+  try {
+    const plan = String(req.body?.plan || "").toUpperCase();
+    const utr = String(req.body?.utr || "").trim();
+    if (!["PRO", "AGENCY"].includes(plan)) return res.status(400).json({ error: "Choose a valid plan" });
+    if (!/^[A-Za-z0-9]{12,22}$/.test(utr)) return res.status(400).json({ error: "Enter the 12-digit UTR from your payment receipt" });
+    await ensureOrgSettingsSchema();
+    await prisma_default.$executeRawUnsafe(
+      "INSERT INTO plan_requests (organization_id, plan, utr) VALUES ($1::uuid, $2, $3)",
+      req.user.organization_id,
+      plan,
+      utr
+    );
+    res.status(201).json({ success: true, message: "Payment proof received. Your plan activates once verified, usually within a few hours." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to submit upgrade request" });
+  }
+});
 var organization_routes_default = router2;
 
 // backend/src/routes/invoice.routes.ts
-import { Router as Router3 } from "express";
+import { Router as Router4 } from "express";
 
 // backend/src/services/invoiceService.ts
 async function getInvoiceDetails(organization_id, invoice_id) {
@@ -478,8 +623,242 @@ async function getInvoiceDetails(organization_id, invoice_id) {
   };
 }
 
-// backend/src/routes/invoice.routes.ts
+// backend/src/routes/public-invoice.routes.ts
+import { Router as Router3 } from "express";
 var router3 = Router3();
+var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var SAFE_URL_RE = /^https?:\/\/[^\s"'<>]+$/i;
+var STALE_LINK = "This payment link is not valid. Please ask the sender for a fresh link.";
+function publicInvoiceId(param) {
+  const id = String(param ?? "").trim();
+  return UUID_RE.test(id) ? id : null;
+}
+function safeDeliverableUrl(external) {
+  const url = String(external ?? "").replace(/^vault:/, "").trim();
+  return SAFE_URL_RE.test(url) ? url : null;
+}
+router3.get("/:invoice_number", async (req, res) => {
+  try {
+    const invoiceId = publicInvoiceId(req.params.invoice_number);
+    if (!invoiceId) {
+      res.status(404).json({ error: STALE_LINK });
+      return;
+    }
+    const invoice = await prisma_default.invoices.findFirst({
+      where: { id: invoiceId },
+      include: {
+        customers: true,
+        organizations: true,
+        payments: {
+          where: { status: "SUCCEEDED" },
+          orderBy: { created_at: "desc" }
+        }
+      }
+    });
+    if (!invoice) {
+      res.status(404).json({ error: "Invoice not found or link has expired." });
+      return;
+    }
+    const paidAmount = invoice.payments.reduce((acc, p) => acc + Number(p.amount), 0);
+    const invoiceAmount = Number(invoice.amount);
+    const outstandingAmount = Math.max(0, invoiceAmount - paidAmount);
+    let deliverableUrl = null;
+    let hasDeliverable = false;
+    const external = invoice.external_invoice_id || "";
+    const safeUrl = safeDeliverableUrl(external);
+    if (safeUrl) {
+      hasDeliverable = true;
+      if (invoice.status === "PAID" || outstandingAmount <= 0) {
+        deliverableUrl = safeUrl;
+      }
+    }
+    const pendingPayment = await prisma_default.payments.findFirst({
+      where: {
+        invoice_id: invoice.id,
+        status: "PENDING"
+      },
+      orderBy: { created_at: "desc" }
+    });
+    const settings = await getOrgSettings(invoice.organization_id);
+    const hasBank = Boolean(settings.bank_account_number && settings.bank_ifsc);
+    res.json({
+      id: invoice.id,
+      invoice_number: invoice.invoice_number,
+      amount: invoiceAmount,
+      paid_amount: paidAmount,
+      outstanding_amount: outstandingAmount,
+      currency: invoice.currency,
+      issued_at: invoice.issued_at,
+      due_at: invoice.due_at,
+      status: invoice.status,
+      customer: {
+        name: invoice.customers.name,
+        company_name: invoice.customers.company_name,
+        email: null,
+        phone: null
+      },
+      organization: {
+        name: invoice.organizations.name,
+        slug: invoice.organizations.slug
+      },
+      payment: {
+        upi_id: settings.upi_id,
+        payee_name: settings.payee_name || invoice.organizations.name,
+        bank: hasBank ? {
+          account_name: settings.bank_account_name || settings.payee_name || invoice.organizations.name,
+          account_number: settings.bank_account_number,
+          ifsc: settings.bank_ifsc,
+          bank_name: settings.bank_name
+        } : null
+      },
+      has_deliverable: hasDeliverable,
+      deliverable_url: deliverableUrl,
+      deliverable_locked: hasDeliverable && !deliverableUrl,
+      pending_verification: Boolean(pendingPayment),
+      pending_utr: pendingPayment?.external_payment_id || null
+    });
+  } catch (error) {
+    console.error("Public invoice lookup error:", error);
+    res.status(500).json({ error: "Failed to load invoice." });
+  }
+});
+router3.post("/:invoice_number/submit-proof", async (req, res) => {
+  try {
+    const invoiceId = publicInvoiceId(req.params.invoice_number);
+    const { utr, amount, notes, paid_at } = req.body ?? {};
+    if (!invoiceId) {
+      res.status(404).json({ error: STALE_LINK });
+      return;
+    }
+    const cleanUtr = String(utr ?? "").trim().toUpperCase();
+    if (!/^[A-Z0-9]{6,30}$/.test(cleanUtr)) {
+      res.status(400).json({ error: "Enter the UTR / transaction reference exactly as shown in your banking app (letters and numbers only)." });
+      return;
+    }
+    if (notes !== void 0 && notes !== null && (typeof notes !== "string" || notes.length > 500)) {
+      res.status(400).json({ error: "Notes must be under 500 characters." });
+      return;
+    }
+    const paidAt = paid_at ? new Date(paid_at) : /* @__PURE__ */ new Date();
+    if (Number.isNaN(paidAt.getTime()) || paidAt.getTime() > Date.now() + 864e5) {
+      res.status(400).json({ error: "Invalid payment date." });
+      return;
+    }
+    const invoice = await prisma_default.invoices.findFirst({
+      where: { id: invoiceId },
+      include: {
+        customers: true,
+        organizations: true,
+        payments: { where: { status: "SUCCEEDED" } }
+      }
+    });
+    if (!invoice) {
+      res.status(404).json({ error: "Invoice not found." });
+      return;
+    }
+    const paidAmount = invoice.payments.reduce((acc, p) => acc + Number(p.amount), 0);
+    const outstandingAmount = Math.max(0, Number(invoice.amount) - paidAmount);
+    if (invoice.status === "PAID" || invoice.status === "CANCELLED" || outstandingAmount <= 0) {
+      res.status(409).json({ error: "This invoice is already settled." });
+      return;
+    }
+    const reportedAmount = amount === void 0 || amount === null || amount === "" ? outstandingAmount : Number(amount);
+    if (!Number.isFinite(reportedAmount) || reportedAmount <= 0 || reportedAmount > outstandingAmount + 0.01) {
+      res.status(400).json({ error: `Amount must be between 1 and the outstanding ${outstandingAmount}.` });
+      return;
+    }
+    const pending = await prisma_default.payments.findMany({
+      where: { invoice_id: invoice.id, status: "PENDING" },
+      select: { external_payment_id: true }
+    });
+    if (pending.some((p) => (p.external_payment_id || "").toUpperCase() === cleanUtr)) {
+      res.status(409).json({ error: "This UTR has already been submitted and is awaiting verification." });
+      return;
+    }
+    if (pending.length >= 3) {
+      res.status(429).json({ error: "Several payment proofs are already awaiting verification for this invoice. Please wait for the sender to confirm." });
+      return;
+    }
+    const payment = await prisma_default.payments.create({
+      data: {
+        organization_id: invoice.organization_id,
+        invoice_id: invoice.id,
+        amount: reportedAmount,
+        currency: invoice.currency,
+        status: "PENDING",
+        external_payment_id: cleanUtr,
+        paid_at: paidAt
+      }
+    });
+    let conversation = await prisma_default.conversations.findFirst({
+      where: {
+        organization_id: invoice.organization_id,
+        customer_id: invoice.customer_id,
+        invoice_id: invoice.id
+      }
+    });
+    if (!conversation) {
+      conversation = await prisma_default.conversations.create({
+        data: {
+          organization_id: invoice.organization_id,
+          customer_id: invoice.customer_id,
+          invoice_id: invoice.id,
+          channel: "PORTAL",
+          status: "OPEN"
+        }
+      });
+    }
+    await prisma_default.messages.create({
+      data: {
+        organization_id: invoice.organization_id,
+        conversation_id: conversation.id,
+        direction: "INBOUND",
+        channel: "PORTAL",
+        sender: invoice.customers.email,
+        recipient: `billing@${invoice.organizations.slug}.com`,
+        subject: `Payment Submitted: UTR ${cleanUtr}`,
+        body: `Customer submitted payment proof via checkout portal:
+- Amount: ${invoice.currency} ${reportedAmount}
+- UTR / Ref: ${cleanUtr}${notes ? `
+- Customer Notes: ${notes}` : ""}
+
+Please verify your bank statement to confirm settlement.`,
+        ai_intent: "PAYMENT_PROMISED",
+        ai_confidence: 1
+      }
+    });
+    const action = await prisma_default.collection_actions.create({
+      data: {
+        organization_id: invoice.organization_id,
+        customer_id: invoice.customer_id,
+        invoice_id: invoice.id,
+        conversation_id: conversation.id,
+        action_type: "VERIFY_PAYMENT_PROOF",
+        status: "PENDING",
+        scheduled_at: /* @__PURE__ */ new Date(),
+        metadata: {
+          payment_id: payment.id,
+          utr: cleanUtr,
+          amount: reportedAmount,
+          customer_notes: notes || null
+        }
+      }
+    });
+    res.status(200).json({
+      success: true,
+      message: "Payment reference submitted successfully. The billing team has been notified to verify and settle.",
+      payment_id: payment.id,
+      action_id: action.id
+    });
+  } catch (error) {
+    console.error("Submit payment proof error:", error);
+    res.status(500).json({ error: "Failed to submit payment confirmation." });
+  }
+});
+var public_invoice_routes_default = router3;
+
+// backend/src/routes/invoice.routes.ts
+var router4 = Router4();
 var UUID_REGEX2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var INVOICE_STATUSES = ["OPEN", "PAID", "PARTIALLY_PAID", "CANCELLED", "DRAFT"];
 function parseFlexibleDate(dateStr) {
@@ -496,7 +875,7 @@ function parseFlexibleDate(dateStr) {
   }
   return null;
 }
-router3.post("/bulk-import", async (req, res) => {
+router4.post("/bulk-import", async (req, res) => {
   try {
     const organization_id = String(req.body?.organization_id || req.user?.organization_id || "");
     if (!organization_id || !UUID_REGEX2.test(organization_id)) {
@@ -509,6 +888,8 @@ router3.post("/bulk-import", async (req, res) => {
     if (rawInvoices.length > 500) {
       return res.status(400).json({ error: "Batch limit is 500 invoices per import" });
     }
+    const limitError = await checkPlanLimit(organization_id, rawInvoices.length);
+    if (limitError) return res.status(402).json({ error: limitError });
     let imported_count = 0;
     let customers_created = 0;
     let skipped_count = 0;
@@ -606,7 +987,7 @@ router3.post("/bulk-import", async (req, res) => {
     return res.status(500).json({ error: "Failed to process bulk import" });
   }
 });
-router3.post("/", async (req, res) => {
+router4.post("/", async (req, res) => {
   try {
     const {
       organization_id,
@@ -626,6 +1007,11 @@ router3.post("/", async (req, res) => {
     }
     if (!UUID_REGEX2.test(organization_id) || !UUID_REGEX2.test(customer_id)) {
       return res.status(400).json({ error: "Invalid organization_id or customer_id" });
+    }
+    const limitError = await checkPlanLimit(organization_id);
+    if (limitError) return res.status(402).json({ error: limitError });
+    if (typeof external_invoice_id === "string" && external_invoice_id.startsWith("vault:") && !safeDeliverableUrl(external_invoice_id)) {
+      return res.status(400).json({ error: "Deliverable link must be a normal https:// web address." });
     }
     const invoiceAmount = Number(amount);
     if (!Number.isFinite(invoiceAmount) || invoiceAmount <= 0) {
@@ -665,7 +1051,7 @@ router3.post("/", async (req, res) => {
     res.status(500).json({ error: "Failed to create invoice" });
   }
 });
-router3.get("/", async (req, res) => {
+router4.get("/", async (req, res) => {
   try {
     const { organization_id, status } = req.query;
     if (!organization_id) {
@@ -689,7 +1075,7 @@ router3.get("/", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch invoices" });
   }
 });
-router3.get("/:id", async (req, res) => {
+router4.get("/:id", async (req, res) => {
   try {
     const { organization_id } = req.query;
     const { id } = req.params;
@@ -719,7 +1105,7 @@ router3.get("/:id", async (req, res) => {
     });
   }
 });
-router3.post("/:id/send-reminder", async (req, res) => {
+router4.post("/:id/send-reminder", async (req, res) => {
   try {
     const organization_id = String(req.body?.organization_id || req.user?.organization_id || "");
     const { id } = req.params;
@@ -814,10 +1200,10 @@ ${invoice.organizations.name}`;
     return res.status(500).json({ error: "Failed to send reminder" });
   }
 });
-var invoice_routes_default = router3;
+var invoice_routes_default = router4;
 
 // backend/src/routes/payment.routes.ts
-import { Router as Router4 } from "express";
+import { Router as Router5 } from "express";
 
 // backend/src/lib/auditLogger.ts
 import crypto from "crypto";
@@ -850,10 +1236,10 @@ var AuditLogger = class {
 var auditLogger = new AuditLogger();
 
 // backend/src/routes/payment.routes.ts
-var router4 = Router4();
+var router5 = Router5();
 var UUID_REGEX3 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var ALLOWED_STATUSES = ["SUCCEEDED", "PENDING", "FAILED"];
-router4.post("/", async (req, res) => {
+router5.post("/", async (req, res) => {
   try {
     const {
       organization_id,
@@ -964,7 +1350,7 @@ router4.post("/", async (req, res) => {
     res.status(500).json({ error: "Failed to create payment" });
   }
 });
-router4.get("/", async (req, res) => {
+router5.get("/", async (req, res) => {
   try {
     const { organization_id, invoice_id } = req.query;
     if (!organization_id) {
@@ -987,10 +1373,10 @@ router4.get("/", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch payments" });
   }
 });
-var payment_routes_default = router4;
+var payment_routes_default = router5;
 
 // backend/src/routes/message.routes.ts
-import { Router as Router5 } from "express";
+import { Router as Router6 } from "express";
 
 // backend/src/services/ai/types.ts
 var SUPPORTED_INTENTS = [
@@ -2074,8 +2460,8 @@ async function classifyInboundMessage(organization_id, message_id) {
 }
 
 // backend/src/routes/message.routes.ts
-var router5 = Router5();
-router5.post("/", async (req, res) => {
+var router6 = Router6();
+router6.post("/", async (req, res) => {
   try {
     const {
       organization_id,
@@ -2118,7 +2504,7 @@ router5.post("/", async (req, res) => {
     return res.status(500).json({ error: "Failed to create message" });
   }
 });
-router5.post("/ingest", async (req, res) => {
+router6.post("/ingest", async (req, res) => {
   try {
     const organization_id = String(req.body?.organization_id || "");
     const { from, subject, text, html, invoice_number, to } = req.body ?? {};
@@ -2147,7 +2533,7 @@ router5.post("/ingest", async (req, res) => {
     });
   }
 });
-router5.post(["/reprocess", "/reprocess-unclassified"], async (req, res) => {
+router6.post(["/reprocess", "/reprocess-unclassified"], async (req, res) => {
   try {
     const organization_id = String(req.body?.organization_id || req.user?.organization_id || "");
     if (!organization_id) {
@@ -2193,7 +2579,7 @@ router5.post(["/reprocess", "/reprocess-unclassified"], async (req, res) => {
     return res.status(500).json({ error: "Failed to reprocess unclassified messages" });
   }
 });
-router5.get("/conversation/:conversation_id", async (req, res) => {
+router6.get("/conversation/:conversation_id", async (req, res) => {
   try {
     const organization_id = req.query.organization_id;
     const { conversation_id } = req.params;
@@ -2232,7 +2618,7 @@ var CLASSIFY_ERROR_MESSAGE = {
   CLASSIFIER_FAILED: "AI classifier failed",
   INVALID_CLASSIFICATION: "AI classifier returned an invalid response"
 };
-router5.post("/:message_id/classify", async (req, res) => {
+router6.post("/:message_id/classify", async (req, res) => {
   try {
     const organization_id = String(req.body?.organization_id || "");
     if (!organization_id) {
@@ -2251,10 +2637,10 @@ router5.post("/:message_id/classify", async (req, res) => {
     return res.status(500).json({ error: "Failed to classify message" });
   }
 });
-var message_routes_default = router5;
+var message_routes_default = router6;
 
 // backend/src/routes/conversation.routes.ts
-import { Router as Router6 } from "express";
+import { Router as Router7 } from "express";
 
 // backend/src/services/conversationService.ts
 async function getConversationDetails(organization_id, conversation_id) {
@@ -2285,14 +2671,14 @@ async function getConversationDetails(organization_id, conversation_id) {
 }
 
 // backend/src/routes/conversation.routes.ts
-var router6 = Router6();
+var router7 = Router7();
 var UUID_REGEX4 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function extractEmail(input) {
   const match = input.match(/<([^>]+)>/);
   if (match) return match[1].trim().toLowerCase();
   return input.trim().toLowerCase();
 }
-router6.post("/resolve", async (req, res) => {
+router7.post("/resolve", async (req, res) => {
   try {
     const organization_id = req.body?.organization_id || req.user?.organization_id;
     const thread_id = req.body?.thread_id;
@@ -2359,7 +2745,7 @@ router6.post("/resolve", async (req, res) => {
     return res.status(500).json({ error: "Failed to resolve conversation" });
   }
 });
-router6.post("/", async (req, res) => {
+router7.post("/", async (req, res) => {
   try {
     const { organization_id, customer_id, invoice_id, channel, external_thread_id } = req.body;
     if (!organization_id || !customer_id || !channel) {
@@ -2390,7 +2776,7 @@ router6.post("/", async (req, res) => {
     return res.status(500).json({ error: "Failed to create conversation" });
   }
 });
-router6.get("/", async (req, res) => {
+router7.get("/", async (req, res) => {
   try {
     const organization_id = req.query.organization_id;
     if (!organization_id) {
@@ -2414,7 +2800,7 @@ router6.get("/", async (req, res) => {
     return res.status(500).json({ error: "Failed to fetch conversations" });
   }
 });
-router6.get("/:id", async (req, res) => {
+router7.get("/:id", async (req, res) => {
   try {
     const { organization_id } = req.query;
     const { id } = req.params;
@@ -2437,13 +2823,13 @@ router6.get("/:id", async (req, res) => {
     return res.status(500).json({ error: "Failed to fetch conversation" });
   }
 });
-var conversation_routes_default = router6;
+var conversation_routes_default = router7;
 
 // backend/src/routes/collection-action.routes.ts
-import { Router as Router7 } from "express";
-var router7 = Router7();
+import { Router as Router8 } from "express";
+var router8 = Router8();
 var VALID_STATUSES = ["PENDING", "PROCESSING", "COMPLETED", "FAILED", "CANCELLED"];
-router7.post(["/claim", "/claim-due"], async (req, res) => {
+router8.post(["/claim", "/claim-due"], async (req, res) => {
   try {
     const organization_id = req.body?.organization_id || req.user?.organization_id;
     if (!organization_id || typeof organization_id !== "string") {
@@ -2537,7 +2923,7 @@ router7.post(["/claim", "/claim-due"], async (req, res) => {
     res.status(500).json({ error: "Failed to claim collection actions" });
   }
 });
-router7.get("/", async (req, res) => {
+router8.get("/", async (req, res) => {
   try {
     const { organization_id, status, action_type, customer_id, invoice_id } = req.query;
     if (!organization_id || typeof organization_id !== "string") {
@@ -2577,7 +2963,7 @@ router7.get("/", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router7.get("/:id", async (req, res) => {
+router8.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { organization_id } = req.query;
@@ -2606,7 +2992,7 @@ router7.get("/:id", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router7.patch("/:id/status", async (req, res) => {
+router8.patch("/:id/status", async (req, res) => {
   try {
     const { id } = req.params;
     const organization_id = req.body?.organization_id || req.user?.organization_id;
@@ -2667,7 +3053,7 @@ router7.patch("/:id/status", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router7.post("/:id/verify-proof", async (req, res) => {
+router8.post("/:id/verify-proof", async (req, res) => {
   try {
     const { id } = req.params;
     const organization_id = req.body?.organization_id || req.user?.organization_id;
@@ -2740,9 +3126,15 @@ router7.post("/:id/verify-proof", async (req, res) => {
           }
         });
       }
+      const settledNow = await tx.payments.aggregate({
+        where: { invoice_id: action.invoice_id, organization_id, status: "SUCCEEDED" },
+        _sum: { amount: true }
+      });
+      const totalPaid = Number(settledNow._sum?.amount ?? 0);
+      const fullyPaid = totalPaid + 0.01 >= Number(inv.amount);
       const updatedInvoice = await tx.invoices.update({
         where: { id: action.invoice_id },
-        data: { status: "PAID" }
+        data: { status: fullyPaid ? "PAID" : "PARTIALLY_PAID" }
       });
       const updatedAction = await tx.collection_actions.update({
         where: { id: action.id },
@@ -2760,7 +3152,7 @@ router7.post("/:id/verify-proof", async (req, res) => {
     });
     res.json({
       success: true,
-      message: `Payment verified and settled! Invoice #${result.invoice.invoice_number} marked PAID. Deliverables unlocked.`,
+      message: result.invoice.status === "PAID" ? `Payment verified. Invoice #${result.invoice.invoice_number} is fully paid and deliverables are unlocked.` : `Partial payment verified for #${result.invoice.invoice_number}. Deliverables stay locked until the balance is paid.`,
       ...result
     });
   } catch (error) {
@@ -2768,10 +3160,10 @@ router7.post("/:id/verify-proof", async (req, res) => {
     res.status(500).json({ error: error instanceof Error ? error.message : "Failed to verify payment proof" });
   }
 });
-var collection_action_routes_default = router7;
+var collection_action_routes_default = router8;
 
 // backend/src/routes/overdue-invoices.routes.ts
-import { Router as Router8 } from "express";
+import { Router as Router9 } from "express";
 
 // backend/src/services/overdueInvoiceEngine.ts
 async function processOverdueInvoices(organization_id) {
@@ -2836,8 +3228,8 @@ async function processOverdueInvoices(organization_id) {
 }
 
 // backend/src/routes/overdue-invoices.routes.ts
-var router8 = Router8();
-router8.post("/process", async (req, res) => {
+var router9 = Router9();
+router9.post("/process", async (req, res) => {
   try {
     const organization_id = String(req.body?.organization_id || req.user?.organization_id || "");
     if (!organization_id) {
@@ -2851,10 +3243,10 @@ router8.post("/process", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-var overdue_invoices_routes_default = router8;
+var overdue_invoices_routes_default = router9;
 
 // backend/src/routes/dashboard.routes.ts
-import { Router as Router9 } from "express";
+import { Router as Router10 } from "express";
 
 // backend/src/services/dashboardService.ts
 async function getDashboardData(organization_id) {
@@ -3019,9 +3411,9 @@ async function getDashboardData(organization_id) {
 }
 
 // backend/src/routes/dashboard.routes.ts
-var router9 = Router9();
+var router10 = Router10();
 var UUID_REGEX5 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-router9.get("/", async (req, res) => {
+router10.get("/", async (req, res) => {
   try {
     const { organization_id } = req.query;
     if (!organization_id || typeof organization_id !== "string") {
@@ -3039,20 +3431,71 @@ router9.get("/", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-var dashboard_routes_default = router9;
+var dashboard_routes_default = router10;
 
 // backend/src/routes/auth.routes.ts
-import { Router as Router10 } from "express";
+import { Router as Router11 } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-var router10 = Router10();
+
+// backend/src/lib/loginThrottle.ts
+var WINDOW_MINUTES = 15;
+var MAX_PER_EMAIL = 8;
+var MAX_PER_IP = 30;
+var ready2 = null;
+function ensureTable() {
+  if (!ready2) {
+    ready2 = (async () => {
+      await prisma_default.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS auth_failures (
+        id BIGSERIAL PRIMARY KEY,
+        email VARCHAR(255) NOT NULL,
+        ip VARCHAR(64) NOT NULL,
+        at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )`);
+      await prisma_default.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS auth_failures_email_at ON auth_failures (email, at)`);
+      await prisma_default.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS auth_failures_ip_at ON auth_failures (ip, at)`);
+    })().catch((e) => {
+      ready2 = null;
+      throw e;
+    });
+  }
+  return ready2;
+}
+async function loginLockoutSeconds(email, ip) {
+  await ensureTable();
+  const rows = await prisma_default.$queryRawUnsafe(
+    `SELECT
+       count(*) FILTER (WHERE email = $1)::int AS by_email,
+       count(*) FILTER (WHERE ip = $2)::int AS by_ip
+     FROM auth_failures
+     WHERE at > now() - interval '${WINDOW_MINUTES} minutes' AND (email = $1 OR ip = $2)`,
+    email,
+    ip
+  );
+  const r = rows[0] ?? { by_email: 0, by_ip: 0 };
+  return r.by_email >= MAX_PER_EMAIL || r.by_ip >= MAX_PER_IP ? WINDOW_MINUTES * 60 : 0;
+}
+async function recordLoginFailure(email, ip) {
+  await ensureTable();
+  await prisma_default.$executeRawUnsafe(`INSERT INTO auth_failures (email, ip) VALUES ($1, $2)`, email.slice(0, 255), ip.slice(0, 64));
+  if (Math.random() < 0.05) {
+    await prisma_default.$executeRawUnsafe(`DELETE FROM auth_failures WHERE at < now() - interval '1 day'`);
+  }
+}
+async function clearLoginFailures(email) {
+  await ensureTable();
+  await prisma_default.$executeRawUnsafe(`DELETE FROM auth_failures WHERE email = $1`, email);
+}
+
+// backend/src/routes/auth.routes.ts
+var router11 = Router11();
 var EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 var dummyHashPromise = null;
 function slugify(name) {
   const base = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32) || "org";
   return `${base}-${Date.now().toString(36)}`;
 }
-router10.post("/register", async (req, res) => {
+router11.post("/register", async (req, res) => {
   try {
     const { email, password, name, organization_name } = req.body ?? {};
     if (!email || !password || !organization_name) {
@@ -3064,8 +3507,8 @@ router10.post("/register", async (req, res) => {
       res.status(400).json({ error: "A valid email is required" });
       return;
     }
-    if (typeof password !== "string" || password.length < 8 || password.length > 72) {
-      res.status(400).json({ error: "Password must be between 8 and 72 characters" });
+    if (typeof password !== "string" || password.length < 10 || password.length > 72 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      res.status(400).json({ error: "Password must be 10-72 characters and include at least one letter and one number" });
       return;
     }
     const existingUser = await prisma_default.users.findFirst({ where: { email: emailTrimmed } });
@@ -3090,26 +3533,39 @@ router10.post("/register", async (req, res) => {
       organization: { id: organization.id, name: organization.name, slug: organization.slug }
     });
   } catch (error) {
+    if (String(error?.code) === "P2002" || /unique|duplicate/i.test(String(error?.message))) {
+      res.status(409).json({ error: "Email already in use" });
+      return;
+    }
     console.error("Register error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router10.post("/login", async (req, res) => {
+router11.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body ?? {};
     if (!email || !password) {
       res.status(400).json({ error: "email and password are required" });
       return;
     }
-    const emailTrimmed = String(email).trim().toLowerCase();
+    const emailTrimmed = String(email).trim().toLowerCase().slice(0, 255);
+    const ip = String(req.ip || "unknown");
+    const wait = await loginLockoutSeconds(emailTrimmed, ip);
+    if (wait > 0) {
+      res.setHeader("Retry-After", String(wait));
+      res.status(429).json({ error: "Too many failed sign-in attempts. Please wait 15 minutes and try again." });
+      return;
+    }
     const user = await prisma_default.users.findFirst({ where: { email: emailTrimmed } });
     dummyHashPromise ??= bcrypt.hash("invalid-password-probe", 12);
     const hash = user?.password_hash ?? await dummyHashPromise;
     const isValid = await bcrypt.compare(String(password), hash);
     if (!user || !isValid) {
+      await recordLoginFailure(emailTrimmed, ip);
       res.status(401).json({ error: "Invalid credentials" });
       return;
     }
+    await clearLoginFailures(emailTrimmed);
     const token = jwt.sign(
       { id: user.id, organization_id: user.organization_id },
       JWT_SECRET,
@@ -3124,10 +3580,10 @@ router10.post("/login", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-var auth_routes_default = router10;
+var auth_routes_default = router11;
 
 // backend/src/routes/inbound.routes.ts
-import { Router as Router11 } from "express";
+import { Router as Router12 } from "express";
 import crypto2 from "crypto";
 
 // backend/src/middleware/rateLimit.ts
@@ -3159,7 +3615,7 @@ function rateLimit(options) {
 }
 
 // backend/src/routes/inbound.routes.ts
-var router11 = Router11();
+var router12 = Router12();
 function safeCompare(a, b) {
   if (typeof a !== "string" || typeof b !== "string") return false;
   const bufA = Buffer.from(a);
@@ -3167,7 +3623,7 @@ function safeCompare(a, b) {
   if (bufA.length !== bufB.length) return false;
   return crypto2.timingSafeEqual(bufA, bufB);
 }
-router11.post(
+router12.post(
   "/email",
   rateLimit({ windowMs: 6e4, max: 60, message: "Inbound rate limit exceeded" }),
   async (req, res) => {
@@ -3211,12 +3667,12 @@ router11.post(
     }
   }
 );
-var inbound_routes_default = router11;
+var inbound_routes_default = router12;
 
 // backend/src/routes/compliance.routes.ts
-import { Router as Router12 } from "express";
-var router12 = Router12();
-router12.post("/authorize-send", async (req, res) => {
+import { Router as Router13 } from "express";
+var router13 = Router13();
+router13.post("/authorize-send", async (req, res) => {
   try {
     const organization_id = req.user?.organization_id;
     if (!organization_id) {
@@ -3236,7 +3692,7 @@ router12.post("/authorize-send", async (req, res) => {
     res.status(500).json({ error: "Failed to evaluate compliance authorization" });
   }
 });
-router12.get("/suppressions", async (req, res) => {
+router13.get("/suppressions", async (req, res) => {
   try {
     const organization_id = req.user?.organization_id;
     if (!organization_id) {
@@ -3252,7 +3708,7 @@ router12.get("/suppressions", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch suppressions" });
   }
 });
-router12.post("/suppressions", async (req, res) => {
+router13.post("/suppressions", async (req, res) => {
   try {
     const organization_id = req.user?.organization_id;
     if (!organization_id) {
@@ -3273,13 +3729,13 @@ router12.post("/suppressions", async (req, res) => {
     res.status(500).json({ error: "Failed to add suppression" });
   }
 });
-var compliance_routes_default = router12;
+var compliance_routes_default = router13;
 
 // backend/src/routes/credit-note.routes.ts
-import { Router as Router13 } from "express";
-var router13 = Router13();
+import { Router as Router14 } from "express";
+var router14 = Router14();
 var UUID_REGEX6 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-router13.post("/", async (req, res) => {
+router14.post("/", async (req, res) => {
   try {
     const organization_id = req.user?.organization_id;
     const { invoice_id, amount, reason } = req.body ?? {};
@@ -3383,7 +3839,7 @@ router13.post("/", async (req, res) => {
     res.status(500).json({ error: "Failed to issue credit note" });
   }
 });
-router13.get("/", async (req, res) => {
+router14.get("/", async (req, res) => {
   try {
     const organization_id = req.user?.organization_id;
     if (!organization_id) {
@@ -3408,194 +3864,81 @@ router13.get("/", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch credit notes" });
   }
 });
-var credit_note_routes_default = router13;
+var credit_note_routes_default = router14;
 
-// backend/src/routes/public-invoice.routes.ts
-import { Router as Router14 } from "express";
-var router14 = Router14();
-router14.get("/:invoice_number", async (req, res) => {
+// backend/src/routes/admin.routes.ts
+import { Router as Router15 } from "express";
+var router15 = Router15();
+async function isPlatformAdmin(userId) {
+  const allowed = (process.env.PLATFORM_ADMIN_EMAILS || "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+  if (!allowed.length) return false;
+  const rows = await prisma_default.$queryRawUnsafe("SELECT email FROM users WHERE id = $1::uuid", userId);
+  return Boolean(rows[0] && allowed.includes(rows[0].email.toLowerCase()));
+}
+async function requireAdmin(req, res, next) {
   try {
-    const { invoice_number } = req.params;
-    if (!invoice_number) {
-      res.status(400).json({ error: "Invoice number is required" });
+    if (!req.user || !await isPlatformAdmin(req.user.id)) {
+      res.status(403).json({ error: "Platform admin access required" });
       return;
     }
-    const orgSlug = typeof req.query.org === "string" ? req.query.org.trim() : null;
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invoice_number);
-    const whereClause = isUuid ? { id: invoice_number } : { invoice_number: { equals: invoice_number, mode: "insensitive" } };
-    if (orgSlug) {
-      whereClause.organizations = { slug: orgSlug };
-    }
-    const invoice = await prisma_default.invoices.findFirst({
-      where: whereClause,
-      orderBy: { created_at: "desc" },
-      include: {
-        customers: true,
-        organizations: true,
-        payments: {
-          where: { status: "SUCCEEDED" },
-          orderBy: { created_at: "desc" }
-        }
-      }
-    });
-    if (!invoice) {
-      res.status(404).json({ error: "Invoice not found or link has expired." });
-      return;
-    }
-    const paidAmount = invoice.payments.reduce((acc, p) => acc + Number(p.amount), 0);
-    const invoiceAmount = Number(invoice.amount);
-    const outstandingAmount = Math.max(0, invoiceAmount - paidAmount);
-    let deliverableUrl = null;
-    let hasDeliverable = false;
-    const external = invoice.external_invoice_id || "";
-    if (external.startsWith("http://") || external.startsWith("https://") || external.startsWith("vault:")) {
-      hasDeliverable = true;
-      if (invoice.status === "PAID" || outstandingAmount <= 0) {
-        deliverableUrl = external.replace(/^vault:/, "");
-      }
-    }
-    const pendingPayment = await prisma_default.payments.findFirst({
-      where: {
-        invoice_id: invoice.id,
-        status: "PENDING"
-      },
-      orderBy: { created_at: "desc" }
-    });
-    res.json({
-      id: invoice.id,
-      invoice_number: invoice.invoice_number,
-      amount: invoiceAmount,
-      paid_amount: paidAmount,
-      outstanding_amount: outstandingAmount,
-      currency: invoice.currency,
-      issued_at: invoice.issued_at,
-      due_at: invoice.due_at,
-      status: invoice.status,
-      customer: {
-        name: invoice.customers.name,
-        company_name: invoice.customers.company_name,
-        email: invoice.customers.email,
-        phone: invoice.customers.phone
-      },
-      organization: {
-        name: invoice.organizations.name,
-        slug: invoice.organizations.slug
-      },
-      has_deliverable: hasDeliverable,
-      deliverable_url: deliverableUrl,
-      deliverable_locked: hasDeliverable && !deliverableUrl,
-      pending_verification: Boolean(pendingPayment),
-      pending_utr: pendingPayment?.external_payment_id || null
-    });
+    next();
   } catch (error) {
-    console.error("Public invoice lookup error:", error);
-    res.status(500).json({ error: "Failed to load invoice." });
+    console.error(error);
+    res.status(500).json({ error: "Failed to verify admin access" });
+  }
+}
+router15.get("/me", async (req, res) => {
+  try {
+    res.json({ is_admin: req.user ? await isPlatformAdmin(req.user.id) : false });
+  } catch {
+    res.json({ is_admin: false });
   }
 });
-router14.post("/:invoice_number/submit-proof", async (req, res) => {
+router15.get("/plan-requests", requireAdmin, async (_req, res) => {
   try {
-    const { invoice_number } = req.params;
-    const { utr, amount, notes, paid_at } = req.body ?? {};
-    if (!invoice_number || !utr || String(utr).trim().length === 0) {
-      res.status(400).json({ error: "Invoice number and UTR / Reference ID are required." });
-      return;
-    }
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invoice_number);
-    const whereClause = isUuid ? { id: invoice_number } : { invoice_number: { equals: invoice_number, mode: "insensitive" } };
-    const invoice = await prisma_default.invoices.findFirst({
-      where: whereClause,
-      orderBy: { created_at: "desc" },
-      include: {
-        customers: true,
-        organizations: true,
-        payments: { where: { status: "SUCCEEDED" } }
-      }
-    });
-    if (!invoice) {
-      res.status(404).json({ error: "Invoice not found." });
-      return;
-    }
-    const paidAmount = invoice.payments.reduce((acc, p) => acc + Number(p.amount), 0);
-    const outstandingAmount = Math.max(0, Number(invoice.amount) - paidAmount);
-    const reportedAmount = Number(amount) > 0 ? Number(amount) : outstandingAmount;
-    const cleanUtr = String(utr).trim();
-    const payment = await prisma_default.payments.create({
-      data: {
-        organization_id: invoice.organization_id,
-        invoice_id: invoice.id,
-        amount: reportedAmount,
-        currency: invoice.currency,
-        status: "PENDING",
-        external_payment_id: cleanUtr,
-        paid_at: paid_at ? new Date(paid_at) : /* @__PURE__ */ new Date()
-      }
-    });
-    let conversation = await prisma_default.conversations.findFirst({
-      where: {
-        organization_id: invoice.organization_id,
-        customer_id: invoice.customer_id,
-        invoice_id: invoice.id
-      }
-    });
-    if (!conversation) {
-      conversation = await prisma_default.conversations.create({
-        data: {
-          organization_id: invoice.organization_id,
-          customer_id: invoice.customer_id,
-          invoice_id: invoice.id,
-          channel: "PORTAL",
-          status: "OPEN"
-        }
-      });
-    }
-    await prisma_default.messages.create({
-      data: {
-        organization_id: invoice.organization_id,
-        conversation_id: conversation.id,
-        direction: "INBOUND",
-        channel: "PORTAL",
-        sender: invoice.customers.email,
-        recipient: `billing@${invoice.organizations.slug}.com`,
-        subject: `Payment Submitted: UTR ${cleanUtr}`,
-        body: `Customer submitted payment proof via checkout portal:
-- Amount: ${invoice.currency} ${reportedAmount}
-- UTR / Ref: ${cleanUtr}${notes ? `
-- Customer Notes: ${notes}` : ""}
-
-Please verify your bank statement to confirm settlement.`,
-        ai_intent: "PAYMENT_PROMISED",
-        ai_confidence: 1
-      }
-    });
-    const action = await prisma_default.collection_actions.create({
-      data: {
-        organization_id: invoice.organization_id,
-        customer_id: invoice.customer_id,
-        invoice_id: invoice.id,
-        conversation_id: conversation.id,
-        action_type: "VERIFY_PAYMENT_PROOF",
-        status: "PENDING",
-        scheduled_at: /* @__PURE__ */ new Date(),
-        metadata: {
-          payment_id: payment.id,
-          utr: cleanUtr,
-          amount: reportedAmount,
-          customer_notes: notes || null
-        }
-      }
-    });
-    res.status(200).json({
-      success: true,
-      message: "Payment reference submitted successfully. The billing team has been notified to verify and settle.",
-      payment_id: payment.id,
-      action_id: action.id
-    });
+    await ensureOrgSettingsSchema();
+    const rows = await prisma_default.$queryRawUnsafe(
+      `SELECT r.id, r.plan, r.utr, r.status, r.created_at, o.id AS organization_id, o.name AS organization_name, o.plan AS current_plan,
+              (SELECT email FROM users u WHERE u.organization_id = o.id ORDER BY u.created_at LIMIT 1) AS owner_email
+       FROM plan_requests r JOIN organizations o ON o.id = r.organization_id
+       ORDER BY (r.status = 'PENDING') DESC, r.created_at DESC LIMIT 200`
+    );
+    res.json(rows);
   } catch (error) {
-    console.error("Submit payment proof error:", error);
-    res.status(500).json({ error: "Failed to submit payment confirmation." });
+    console.error(error);
+    res.status(500).json({ error: "Failed to load plan requests" });
   }
 });
-var public_invoice_routes_default = router14;
+var UUID_RE2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+router15.post("/plan-requests/:id/:decision", requireAdmin, async (req, res) => {
+  try {
+    const id = String(req.params.id);
+    const decision = String(req.params.decision);
+    if (!UUID_RE2.test(id) || !["approve", "reject"].includes(decision)) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    await ensureOrgSettingsSchema();
+    const status = decision === "approve" ? "APPROVED" : "REJECTED";
+    const updated = await prisma_default.$queryRawUnsafe(
+      `UPDATE plan_requests SET status = $2 WHERE id = $1::uuid AND status = 'PENDING' RETURNING organization_id, plan`,
+      id,
+      status
+    );
+    if (!updated.length) {
+      res.status(409).json({ error: "Request not found or already processed" });
+      return;
+    }
+    if (decision === "approve") {
+      await prisma_default.$executeRawUnsafe(`UPDATE organizations SET plan = $2, updated_at = now() WHERE id = $1::uuid`, updated[0].organization_id, updated[0].plan);
+    }
+    res.json({ success: true, status });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to process request" });
+  }
+});
+var admin_routes_default = router15;
 
 // backend/src/middleware/auth.middleware.ts
 import jwt2 from "jsonwebtoken";
@@ -3607,7 +3950,7 @@ function authMiddleware(req, res, next) {
   }
   const token = authHeader.split(" ")[1];
   try {
-    const decoded = jwt2.verify(token, JWT_SECRET);
+    const decoded = jwt2.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
     if (!decoded.organization_id) {
       res.status(401).json({ error: "Invalid token" });
       return;
@@ -3678,7 +4021,7 @@ app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app") || origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) {
+      if (allowedOrigins.includes(origin) || /^https:\/\/invoice-[a-z0-9-]+-sriman-ctrls-projects\.vercel\.app$/.test(origin) || process.env.NODE_ENV !== "production" && /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) {
         return callback(null, true);
       }
       return callback(new Error(`CORS blocked for origin: ${origin}`));
@@ -3691,7 +4034,7 @@ app.use(
   })
 );
 app.use(express.json({ limit: "1mb" }));
-app.use("/api/auth", rateLimit({ windowMs: 6e4, max: 60, message: "Too many authentication attempts. Please wait 1 minute." }), auth_routes_default);
+app.use("/api/auth", rateLimit({ windowMs: 6e4, max: 20, message: "Too many authentication attempts. Please wait 1 minute." }), auth_routes_default);
 app.use("/api/inbound", inbound_routes_default);
 app.use(
   "/api/public/invoices",
@@ -3712,6 +4055,7 @@ app.use(
 );
 app.use("/api/customers", authMiddleware, customer_routes_default);
 app.use("/api/organizations", authMiddleware, organization_routes_default);
+app.use("/api/admin", authMiddleware, admin_routes_default);
 app.use(
   "/api/messages",
   authMiddleware,
