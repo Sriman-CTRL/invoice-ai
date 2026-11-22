@@ -22,7 +22,13 @@ jobs:
       - name: Run Gitleaks
         run: |
           curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz | tar -xz gitleaks
-          ./gitleaks detect --source . --redact --verbose --exit-code 1
+          ./gitleaks detect --source . --redact --exit-code 0 --report-format json --report-path leaks.json
+          node -e '
+            const r = require("fs").existsSync("leaks.json") ? JSON.parse(require("fs").readFileSync("leaks.json", "utf8")) : [];
+            for (const f of r) console.log("::error file=" + f.File + ",line=" + f.StartLine + "::" + f.RuleID + " in commit " + String(f.Commit).slice(0, 7));
+            if (r.length) { console.log(r.length + " potential secret(s) found"); process.exit(1); }
+            console.log("No secrets found");
+          '
 
   code:
     name: Static analysis (Semgrep)

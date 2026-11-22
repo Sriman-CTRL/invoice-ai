@@ -1,0 +1,14 @@
+title = "Ledgerlane gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known, expired, rotated debug token that exists in git history only"
+regexes = [
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMCIs[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+''',
+]
+paths = [
+  '''package-lock\.json''',
+  '''api/index\.js''',
+]
