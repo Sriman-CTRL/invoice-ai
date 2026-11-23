@@ -15,8 +15,8 @@ const FEATURES = [
     body: "Every invoice gets its own payment page with a UPI QR code for exactly the right amount. Money goes directly to your account. No payment-gateway cut.",
   },
   {
-    icon: BellRing, tone: "from-sky-500 to-blue-600", title: "Reminders sent for you",
-    body: "Overdue invoices get polite reminders by email or WhatsApp. When a client replies \"I'll pay Friday\", Ledgerlane notes the date so you know what money is coming.",
+    icon: BellRing, tone: "from-sky-500 to-blue-600", title: "Reminders in one tap",
+    body: "See which invoices are overdue and send a polite, ready-written reminder by email or WhatsApp with one tap. Automatic sending and reading client replies are coming next. Join the waitlist.",
   },
 ];
 
@@ -53,7 +53,7 @@ export function LandingPage() {
           <span className="bg-gradient-to-r from-indigo-300 via-violet-300 to-emerald-300 bg-clip-text text-transparent">Every time, without chasing.</span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-400">
-          Send an invoice, your client pays by UPI straight to your bank, and your final files unlock only after they've paid. Ledgerlane sends the reminders so you don't have to.
+          Send an invoice, your client pays by UPI straight to your bank, and your final files unlock only after they've paid. Ledgerlane keeps track of who owes you, and helps you chase politely.
         </p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <Link to="/register" className="inline-flex h-12 items-center gap-2 rounded-xl bg-indigo-500 px-7 text-sm font-bold text-white shadow-[0_10px_40px_-10px_rgba(99,102,241,0.9)] transition hover:bg-indigo-400">

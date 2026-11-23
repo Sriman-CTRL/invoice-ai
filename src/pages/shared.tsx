@@ -79,7 +79,7 @@ export function ActionsTable({ actions }: { actions: CollectionAction[] }) {
         </div>
       ) : (
         <p className="px-6 py-8 text-center text-xs text-slate-400">
-          No automated collection actions scheduled yet.
+          No follow-up tasks yet.
         </p>
       )}
     </section>

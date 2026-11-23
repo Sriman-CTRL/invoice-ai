@@ -197,7 +197,7 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   doc.setDrawColor(...LINE);
   doc.line(M, H - 20, W - M, H - 20);
   doc.setFont("helvetica", "normal"); doc.setFontSize(8); set(MUTED);
-  doc.text(`${org} - Generated with LedgerLane. Deliverables unlock automatically on verified payment.`, M, H - 14);
+  doc.text(`${org} - Generated with LedgerLane. Deliverables unlock once payment is confirmed.`, M, H - 14);
   doc.text("Computer-generated invoice; no signature required.", M, H - 9.5);
 
   doc.setProperties({ title: `Invoice ${inv.invoice_number}`, subject: `Invoice for ${customer.name}`, creator: "LedgerLane" });

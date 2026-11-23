@@ -20,6 +20,7 @@ function Stat({ label, value, icon: Icon, hint }: { label: string; value: number
 export function AdminGrowthPage() {
   const [days, setDays] = useState(30);
   const r = useResource(() => adminApi.analytics(days), [days]);
+  const leads = useResource(() => adminApi.leads(), []);
   const header = (
     <PageHeader
       title="Growth"
@@ -113,6 +114,27 @@ export function AdminGrowthPage() {
           </ul>
         </section>
       </div>
+
+      <section className="panel mt-6 p-6">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-base font-bold text-slate-900">Waitlist &amp; feedback</h2>
+          <p className="text-xs text-slate-400">{leads.data ? `${leads.data.counts.waitlist ?? 0} on waitlist · ${leads.data.counts.feedback ?? 0} feedback` : ""}</p>
+        </div>
+        {leads.data?.leads.length ? (
+          <ul className="mt-4 divide-y divide-slate-100 text-sm">
+            {leads.data.leads.map((l) => (
+              <li key={l.id} className="py-3">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className={`rounded-full px-2 py-0.5 font-bold uppercase ${l.kind === "waitlist" ? "bg-amber-100 text-amber-800" : "bg-sky-100 text-sky-800"}`}>{l.kind}{l.plan ? ` · ${l.plan}` : ""}</span>
+                  <span className="font-mono text-slate-700">{l.email || "no email"}</span>
+                  <span className="text-slate-400">{new Date(l.at).toLocaleString("en-IN")}</span>
+                </div>
+                {l.message && <p className="mt-1.5 whitespace-pre-wrap text-slate-700">{l.message}</p>}
+              </li>
+            ))}
+          </ul>
+        ) : <p className="mt-4 text-sm text-slate-400">Nothing yet. Every waitlist email and piece of feedback will show up here.</p>}
+      </section>
     </>
   );
 }

@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Check, ChevronDown, Minus } from "lucide-react";
 import { MarketingShell } from "./marketing";
-import { COMPARISON, PLANS, inrPlain } from "./plans";
+import { COMPARISON, PLANS, PAYMENTS_OPEN, featureLabel, inrPlain, isSoon } from "./plans";
+import { LeadForm } from "./LeadForms";
 
 const BILLING_FAQ = [
   { q: "Is there a fee on the payments I receive?", a: "No. Clients pay you directly by UPI or bank transfer, so there's no percentage taken. Payment gateways typically charge around 2% per payment; with Ledgerlane you only pay the flat monthly price." },
-  { q: "How do I pay for Pro or Agency?", a: "From Settings inside the app, scan the UPI QR for your plan and enter the transaction number. Your plan is switched on once the payment is confirmed." },
+  { q: "When can I buy Pro or Agency?", a: "Not yet, on purpose. Join the waitlist and we'll email you when automatic reminders and reply-reading work. Until then, Starter is free and fully usable." },
   { q: "Will I be charged automatically every month?", a: "No. Nothing is taken from your account automatically. You pay each month yourself, and you can stop whenever you like." },
   { q: "What happens to my data if I go back to Starter?", a: "Nothing is deleted. Your invoices, clients and history stay. Starter just limits you to 5 new invoices a month." },
   { q: "What counts as an invoice?", a: "Each invoice you create or import counts once, in the month you create it. Sending reminders or recording payments doesn't count." },
@@ -15,19 +16,26 @@ const BILLING_FAQ = [
 function Cell({ v }: { v: boolean | string }) {
   if (v === true) return <Check className="mx-auto h-4 w-4 text-emerald-400" aria-label="Included" />;
   if (v === false) return <Minus className="mx-auto h-4 w-4 text-slate-600" aria-label="Not included" />;
+  if (v === "Soon") return <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-300">Coming soon</span>;
   return <span className="text-sm font-semibold text-slate-200">{v}</span>;
 }
 
 export function PricingPage() {
   const [open, setOpen] = useState<number | null>(0);
+  const [waitlistFor, setWaitlistFor] = useState<string | null>(null);
 
   return (
     <MarketingShell>
       <section className="mx-auto max-w-3xl px-5 pb-4 pt-12 text-center sm:pt-16">
         <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">Simple, honest pricing</h1>
         <p className="mx-auto mt-4 max-w-xl text-lg text-slate-400">
-          Start free. Upgrade when you're sending more than 5 invoices a month. No percentage of your payments, ever.
+          Start free. No percentage of your payments, ever.
         </p>
+        {!PAYMENTS_OPEN && (
+          <p className="mx-auto mt-5 max-w-xl rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm leading-relaxed text-amber-100">
+            <b>Paid plans open soon.</b> We're finishing automatic reminders and reply-reading first, and we won't charge for things that don't work yet. Join the waitlist and we'll email you the day they're ready.
+          </p>
+        )}
       </section>
 
       {/* Plans */}
@@ -43,20 +51,30 @@ export function PricingPage() {
                 <span className="text-sm text-slate-400">{p.price ? "per month" : "forever"}</span>
               </p>
               <p className="mt-1 h-4 text-xs text-slate-500">{p.price ? `About ₹${Math.round(p.price / 30)} a day` : ""}</p>
-              <Link to="/register" className={`mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all ${p.highlight ? "bg-indigo-500 text-white hover:bg-indigo-400" : "border border-white/15 text-white hover:bg-white/10"}`}>
-                {p.price ? `Start free, upgrade anytime` : "Start free"} <ArrowRight className="h-4 w-4" />
-              </Link>
+              {p.price && !PAYMENTS_OPEN ? (
+                <>
+                  <button onClick={() => setWaitlistFor(waitlistFor === p.id ? null : p.id)} className={`mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all ${p.highlight ? "bg-indigo-500 text-white hover:bg-indigo-400" : "border border-white/15 text-white hover:bg-white/10"}`}>
+                    Join the waitlist
+                  </button>
+                  {waitlistFor === p.id && <div className="mt-3"><LeadForm kind="waitlist" plan={p.id} variant="dark" /></div>}
+                </>
+              ) : (
+                <Link to="/register" className={`mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all ${p.highlight ? "bg-indigo-500 text-white hover:bg-indigo-400" : "border border-white/15 text-white hover:bg-white/10"}`}>
+                  {p.price ? "Start free, upgrade anytime" : "Start free"} <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
               <ul className="mt-7 flex-1 space-y-3 border-t border-white/10 pt-6">
                 {p.features.map((f) => (
                   <li key={f} className="flex items-start gap-2.5 text-sm text-slate-300">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" /> {f}
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+                    <span>{featureLabel(f)}{isSoon(f) && <span className="ml-2 rounded-full bg-amber-400/15 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-300">Soon</span>}</span>
                   </li>
                 ))}
               </ul>
             </div>
           ))}
         </div>
-        <p className="mt-6 text-center text-xs text-slate-500">Prices in Indian Rupees. Every account starts on Starter; upgrade from Settings when you need more.</p>
+        <p className="mt-6 text-center text-xs text-slate-500">Prices in Indian Rupees. Every account starts on Starter. Paid plans open when the features marked "Soon" are ready.</p>
       </section>
 
       {/* Comparison */}

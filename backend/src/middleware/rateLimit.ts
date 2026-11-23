@@ -6,6 +6,7 @@ interface Bucket {
 }
 
 const buckets = new Map<string, Bucket>();
+let limiterSeq = 0;
 
 /**
  * Minimal in-memory fixed-window rate limiter. Good enough to blunt login
@@ -19,11 +20,14 @@ export function rateLimit(options: {
   message?: string;
 }) {
   const { windowMs, max, message = "Too many requests. Try again shortly." } = options;
+  // Each limiter keeps its own counters. Without this prefix every limiter shared one bucket per IP,
+  // so unrelated routes (page-view tracking, public pages) ate the budget of the strictest limiter.
+  const limiterId = ++limiterSeq;
   const keyFn = options.keyFn ?? ((req: Request) => req.ip || "unknown");
 
   return (req: Request, res: Response, next: NextFunction): void => {
     const now = Date.now();
-    const key = keyFn(req);
+    const key = `${limiterId}:${keyFn(req)}`;
 
     let bucket = buckets.get(key);
     if (!bucket || bucket.resetAt <= now) {

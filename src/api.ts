@@ -119,9 +119,15 @@ export async function fetchProofImage(actionId: string): Promise<string> {
   if (!res.ok) throw new ApiError(res.status, res.status === 404 ? "No screenshot was attached to this payment." : "Could not load the screenshot.");
   return URL.createObjectURL(await res.blob());
 }
+export const leadsApi = {
+  submit: (data: { kind: "waitlist" | "feedback"; email?: string; message?: string; plan?: string; website?: string }) =>
+    request<{ success: boolean; message: string }>("/leads", { method: "POST", body: JSON.stringify(data) }),
+};
+export type Lead = { id: string; at: string; kind: string; email: string | null; plan: string | null; message: string | null };
 export const adminApi = {
   me: () => request<{ is_admin: boolean }>("/admin/me"),
   planRequests: () => request<PlanRequest[]>("/admin/plan-requests"),
+  leads: () => request<{ leads: Lead[]; counts: Record<string, number> }>("/admin/leads"),
   analytics: (days: number) => request<AdminAnalytics>(`/admin/analytics?days=${days}`),
   decide: (id: string, decision: "approve" | "reject") => request<{ success: boolean }>(`/admin/plan-requests/${id}/${decision}`, { method: "POST", body: JSON.stringify({}) }),
 };

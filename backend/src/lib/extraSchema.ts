@@ -18,6 +18,14 @@ export function ensureExtraSchema(): Promise<void> {
         visitor VARCHAR(40)
       )`);
       await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS analytics_events_at ON analytics_events (at)`);
+      await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS leads (
+        id BIGSERIAL PRIMARY KEY,
+        at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        kind VARCHAR(20) NOT NULL,
+        email VARCHAR(255),
+        plan VARCHAR(20),
+        message VARCHAR(1000)
+      )`);
       await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS payment_proof_images (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         organization_id UUID NOT NULL,

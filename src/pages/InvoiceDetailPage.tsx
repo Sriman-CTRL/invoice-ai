@@ -65,7 +65,7 @@ function SendReminderModal({
     setError(null);
     try {
       await invoicesApi.sendReminder(invoice.id, { subject, body });
-      toast.success("Reminder sent", `Logged for ${invoice.invoice_number}.`);
+      toast.success("Saved to history", `Noted for ${invoice.invoice_number}. Use Email or WhatsApp to actually deliver it.`);
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -88,7 +88,7 @@ function SendReminderModal({
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50/70">
           <div className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-brand-600" />
-            <h3 className="font-bold text-slate-900">Send Payment Reminder</h3>
+            <h3 className="font-bold text-slate-900">Payment reminder</h3>
           </div>
           <button onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
             <X className="h-5 w-5" />
@@ -175,6 +175,10 @@ function SendReminderModal({
             />
           </div>
 
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-900">
+            <b>Ledgerlane doesn't send messages for you yet.</b> Tap <b>Email Client</b> or <b>WhatsApp</b> to send this from your own account, then press <b>Mark as sent</b> to keep a record.
+          </p>
+
           <div className="flex items-center justify-between pt-2 border-t border-slate-100">
             <div className="flex items-center gap-2">
               <a
@@ -211,12 +215,12 @@ function SendReminderModal({
                 {sending ? (
                   <>
                     <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                    <span>Sending...</span>
+                    <span>Saving...</span>
                   </>
                 ) : (
                   <>
                     <Send className="h-3.5 w-3.5" />
-                    <span>Send via Platform</span>
+                    <span>Mark as sent</span>
                   </>
                 )}
               </button>

@@ -718,6 +718,14 @@ function ensureExtraSchema() {
         visitor VARCHAR(40)
       )`);
       await prisma_default.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS analytics_events_at ON analytics_events (at)`);
+      await prisma_default.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS leads (
+        id BIGSERIAL PRIMARY KEY,
+        at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        kind VARCHAR(20) NOT NULL,
+        email VARCHAR(255),
+        plan VARCHAR(20),
+        message VARCHAR(1000)
+      )`);
       await prisma_default.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS payment_proof_images (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         organization_id UUID NOT NULL,
@@ -3889,12 +3897,14 @@ import crypto2 from "crypto";
 
 // backend/src/middleware/rateLimit.ts
 var buckets = /* @__PURE__ */ new Map();
+var limiterSeq = 0;
 function rateLimit(options) {
   const { windowMs, max, message = "Too many requests. Try again shortly." } = options;
+  const limiterId = ++limiterSeq;
   const keyFn = options.keyFn ?? ((req) => req.ip || "unknown");
   return (req, res, next) => {
     const now = Date.now();
-    const key = keyFn(req);
+    const key = `${limiterId}:${keyFn(req)}`;
     let bucket = buckets.get(key);
     if (!bucket || bucket.resetAt <= now) {
       bucket = { count: 0, resetAt: now + windowMs };
@@ -4240,6 +4250,19 @@ router15.get("/analytics", requireAdmin, async (req, res) => {
     res.status(500).json({ error: "Failed to load analytics" });
   }
 });
+router15.get("/leads", requireAdmin, async (_req, res) => {
+  try {
+    await ensureExtraSchema();
+    const [rows, counts] = await Promise.all([
+      prisma_default.$queryRawUnsafe("SELECT id::text, at, kind, email, plan, message FROM leads ORDER BY at DESC LIMIT 100"),
+      prisma_default.$queryRawUnsafe("SELECT kind, count(*)::int AS n FROM leads GROUP BY kind")
+    ]);
+    res.json({ leads: rows, counts: Object.fromEntries(counts.map((c) => [c.kind, c.n])) });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to load leads" });
+  }
+});
 var UUID_RE2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 router15.post("/plan-requests/:id/:decision", requireAdmin, async (req, res) => {
   try {
@@ -4309,6 +4332,62 @@ router16.post("/", async (req, res) => {
 });
 var events_routes_default = router16;
 
+// backend/src/routes/leads.routes.ts
+import { Router as Router17 } from "express";
+var router17 = Router17();
+var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+router17.post("/", async (req, res) => {
+  try {
+    const { kind, email, message, plan, website } = req.body ?? {};
+    if (website) {
+      res.status(204).end();
+      return;
+    }
+    if (kind !== "waitlist" && kind !== "feedback") {
+      res.status(400).json({ error: "Invalid request." });
+      return;
+    }
+    const cleanEmail = typeof email === "string" ? email.trim().toLowerCase().slice(0, 255) : "";
+    if ((kind === "waitlist" || cleanEmail) && !EMAIL_RE.test(cleanEmail)) {
+      res.status(400).json({ error: "Please enter a valid email address." });
+      return;
+    }
+    const cleanMessage = typeof message === "string" ? message.trim().slice(0, 1e3) : "";
+    if (kind === "feedback" && cleanMessage.length < 3) {
+      res.status(400).json({ error: "Please write a few words so we understand." });
+      return;
+    }
+    const cleanPlan = ["PRO", "AGENCY"].includes(String(plan ?? "").toUpperCase()) ? String(plan).toUpperCase() : null;
+    await ensureExtraSchema();
+    if (kind === "waitlist") {
+      const existing = await prisma_default.$queryRawUnsafe(
+        "SELECT id FROM leads WHERE kind = 'waitlist' AND email = $1 AND COALESCE(plan, '') = COALESCE($2, '') LIMIT 1",
+        cleanEmail,
+        cleanPlan
+      );
+      if (existing.length) {
+        res.status(200).json({ success: true, message: "You're already on the list. We'll email you." });
+        return;
+      }
+    }
+    await prisma_default.$executeRawUnsafe(
+      "INSERT INTO leads (kind, email, plan, message) VALUES ($1, $2, $3, $4)",
+      kind,
+      cleanEmail || null,
+      cleanPlan,
+      cleanMessage || null
+    );
+    res.status(201).json({
+      success: true,
+      message: kind === "waitlist" ? "You're on the list. We'll email you when it's ready." : "Thank you. Your feedback goes straight to the founder."
+    });
+  } catch (error) {
+    console.error("leads error:", error);
+    res.status(500).json({ error: "Something went wrong. Please try again." });
+  }
+});
+var leads_routes_default = router17;
+
 // backend/src/server.ts
 var app = express();
 app.set("trust proxy", 1);
@@ -4359,6 +4438,7 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 app.use("/api/auth", systemContext, rateLimit({ windowMs: 6e4, max: 20, message: "Too many authentication attempts. Please wait 1 minute." }), auth_routes_default);
 app.use("/api/events", systemContext, rateLimit({ windowMs: 6e4, max: 120, message: "Too many events." }), events_routes_default);
+app.use("/api/leads", systemContext, rateLimit({ windowMs: 6e4, max: 8, message: "Too many submissions. Please try again in a minute." }), leads_routes_default);
 app.use("/api/inbound", systemContext, inbound_routes_default);
 app.use(
   "/api/public/invoices",

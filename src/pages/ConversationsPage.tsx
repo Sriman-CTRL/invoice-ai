@@ -23,7 +23,7 @@ export function ConversationsPage() {
     <>
       <PageHeader
         title="Customer Inbox"
-        detail="AI-classified customer email replies and automated negotiation threads."
+        detail="Customer replies and the AI's reading of each one (beta)."
         actions={
           <div className="w-full sm:max-w-xs">
             <SearchInput

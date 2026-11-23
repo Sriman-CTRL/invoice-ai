@@ -3,7 +3,9 @@ import QRCode from "qrcode";
 import { Banknote, Check, CreditCard, Crown, Landmark, ShieldCheck } from "lucide-react";
 import { accountApi, settingsApi } from "../api";
 import { PageHeader, TableSkeleton, ErrorState } from "../components";
-import { PLANS, PLATFORM_UPI_ID, SUPPORT_EMAIL, inrPlain, type Plan } from "../plans";
+import { PAYMENTS_OPEN, PLANS, PLATFORM_UPI_ID, SUPPORT_EMAIL, inrPlain, type Plan } from "../plans";
+import { LeadDialog } from "../LeadForms";
+import { useAuth } from "../auth";
 import { useToast } from "../toast";
 import type { OrgSettings } from "../types";
 import { useResource } from "./shared";
@@ -152,6 +154,7 @@ function ChangePasswordCard() {
 export function SettingsPage() {
   const r = useResource(() => settingsApi.get(), []);
   const toast = useToast();
+  const { user } = useAuth();
   const [form, setForm] = useState<Form>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [upgrade, setUpgrade] = useState<Plan | null>(null);
@@ -250,7 +253,7 @@ export function SettingsPage() {
                   {current ? (
                     <p className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-brand-700"><Check className="h-3.5 w-3.5" /> Current plan</p>
                   ) : p.price > 0 && plan === "FREE" ? (
-                    <button className="btn-primary mt-3 h-9 w-full text-xs" onClick={() => setUpgrade(p)}><CreditCard className="h-3.5 w-3.5" /> Upgrade to {p.name}</button>
+                    <button className="btn-primary mt-3 h-9 w-full text-xs" onClick={() => setUpgrade(p)}><CreditCard className="h-3.5 w-3.5" /> {PAYMENTS_OPEN ? `Upgrade to ${p.name}` : `Join ${p.name} waitlist`}</button>
                   ) : p.id === "AGENCY" && plan === "PRO" ? (
                     <button className="btn-secondary mt-3 h-9 w-full text-xs" onClick={() => setUpgrade(p)}>Upgrade to {p.name}</button>
                   ) : null}
@@ -263,7 +266,16 @@ export function SettingsPage() {
 
       <ChangePasswordCard />
 
-      {upgrade && <UpgradePanel plan={upgrade} current={plan} onClose={() => setUpgrade(null)} />}
+      {upgrade && PAYMENTS_OPEN && <UpgradePanel plan={upgrade} current={plan} onClose={() => setUpgrade(null)} />}
+      <LeadDialog
+        open={Boolean(upgrade) && !PAYMENTS_OPEN}
+        onClose={() => setUpgrade(null)}
+        kind="waitlist"
+        plan={upgrade?.id}
+        defaultEmail={user?.email}
+        title={`Join the ${upgrade?.name ?? "paid plan"} waitlist`}
+        intro="Paid plans aren't open yet: we're finishing automatic reminders and reply-reading first, and we won't charge for features that don't work. Leave your email and we'll tell you the day they're ready."
+      />
     </>
   );
 }

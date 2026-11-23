@@ -29,8 +29,8 @@ export const PLANS: Plan[] = [
     highlight: true,
     features: [
       "Unlimited invoices and clients",
-      "Automatic reminders for overdue invoices",
-      "AI reads client replies and notes promised dates",
+      "Automatic reminders for overdue invoices [soon]",
+      "AI reads client replies and notes promised dates [soon]",
       "Cash-flow forecast: see what's coming in",
       "TDS calculator when recording payments",
       "Import invoices from a spreadsheet (CSV)",
@@ -43,7 +43,7 @@ export const PLANS: Plan[] = [
     tagline: "For agencies with many clients and a finance person.",
     features: [
       "Everything in Pro",
-      "Your own billing email address for client replies",
+      "Your own billing email address for client replies [soon]",
       "GSTIN printed on every invoice",
       "Priority support",
       "Customer data export and erasure (DPDP Act)",
@@ -59,16 +59,21 @@ export const COMPARISON: Array<[string, boolean | string, boolean | string, bool
   ["Files unlock only after payment", true, true, true],
   ["PDF invoices with UPI QR", true, true, true],
   ["Confirm client payments in one click", true, true, true],
-  ["WhatsApp & email reminder links", true, true, true],
-  ["Automatic overdue reminders", false, true, true],
-  ["AI reads client replies", false, true, true],
+  ["WhatsApp & email reminders (you tap send)", true, true, true],
+  ["Automatic overdue reminders", false, "Soon", "Soon"],
+  ["AI reads client replies", false, "Soon", "Soon"],
   ["Cash-flow forecast", true, true, true],
   ["TDS (194C / 194J) calculator", true, true, true],
   ["Spreadsheet (CSV) import", true, true, true],
-  ["Own billing email address", false, false, true],
+  ["Own billing email address", false, false, "Soon"],
   ["Priority support", false, false, true],
   ["Fee on each payment you receive", "None", "None", "None"],
 ];
+
+/** Paid plans stay closed (waitlist only) until the automation they promise actually works. Set VITE_PAYMENTS_OPEN=true to reopen. */
+export const PAYMENTS_OPEN: boolean = (import.meta.env.VITE_PAYMENTS_OPEN as string | undefined) === "true";
+export const isSoon = (feature: string) => feature.endsWith("[soon]");
+export const featureLabel = (feature: string) => feature.replace(/\s*\[soon\]$/, "");
 
 /** Set VITE_PLATFORM_UPI_ID in your environment to receive plan payments. Empty = upgrades disabled. */
 export const PLATFORM_UPI_ID: string = (import.meta.env.VITE_PLATFORM_UPI_ID as string | undefined) || "";

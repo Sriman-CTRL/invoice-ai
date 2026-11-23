@@ -735,7 +735,7 @@ export function InvoicesPage() {
     <>
       <PageHeader
         title="Receivables Ledger"
-        detail="Manage invoice balances, payment schedules, and automated collection actions."
+        detail="Manage invoice balances, due dates, and follow-ups."
         actions={
           <div className="flex items-center gap-2.5">
             <span className="font-mono text-xs font-semibold text-slate-500 hidden sm:inline mr-1">

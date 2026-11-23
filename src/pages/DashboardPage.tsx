@@ -79,9 +79,9 @@ export function DashboardPage() {
     try {
       const res = await overdueApi.process();
       setScanNotice(
-        `Autonomous Scan Complete: ${res.invoices_detected} past-due invoice(s) detected, ${res.actions_created} collection action(s) created.`
+        `Overdue check complete: ${res.invoices_detected} past-due invoice(s) found, ${res.actions_created} follow-up task(s) created.`
       );
-      toast.success("Autonomous scan complete", `${res.actions_created} collection action(s) created.`);
+      toast.success("Overdue check complete", `${res.actions_created} follow-up task(s) created.`);
       resource.reload();
     } catch (err: any) {
       toast.error("Scan failed", err?.message);
@@ -145,7 +145,7 @@ export function DashboardPage() {
     <>
       <PageHeader
         title="Accounts Receivable Hub"
-        detail="Real-time ledger balances, automated email queues, and AI classification."
+        detail="Your invoices, what's overdue, and what's coming in."
         actions={
           <div className="flex items-center gap-2.5">
             <button
@@ -293,7 +293,7 @@ export function DashboardPage() {
           <div className="flex items-center justify-between border-b border-slate-100 pb-5">
             <div>
               <h2 className="text-base font-bold text-slate-900">Action Queue</h2>
-              <p className="mt-0.5 text-xs text-slate-500">Autonomous follow-up pipeline</p>
+              <p className="mt-0.5 text-xs text-slate-500">Follow-up tasks</p>
             </div>
             <Link
               to="/collection-actions"

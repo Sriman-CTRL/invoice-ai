@@ -268,3 +268,36 @@ test("PASSWORD: changing a password needs the current one, enforces strength, an
   assert.equal((await call("POST", "/api/auth/login", { email, password: first })).status, 401, "old password no longer works");
   assert.equal((await call("POST", "/api/auth/login", { email, password: "Brand-New-Pass-9051" })).status, 200, "new password works");
 });
+
+test("LEADS: waitlist and feedback are validated, de-duplicated, spam-resistant, and visible only to the admin", opts, async () => {
+  const stamp = Date.now();
+  const email = `lead-${stamp}@example.com`;
+  assert.equal((await call("POST", "/api/leads", { kind: "nonsense", email })).status, 400, "unknown kind");
+  assert.equal((await call("POST", "/api/leads", { kind: "waitlist", email: "not-an-email" })).status, 400, "bad email");
+  assert.equal((await call("POST", "/api/leads", { kind: "feedback", message: "x" })).status, 400, "too short");
+  assert.equal((await call("POST", "/api/leads", { kind: "waitlist", email: `bot-${stamp}@example.com`, website: "http://spam.example" })).status, 204, "honeypot is silently dropped");
+
+  assert.equal((await call("POST", "/api/leads", { kind: "waitlist", email, plan: "pro" })).status, 201);
+  assert.equal((await call("POST", "/api/leads", { kind: "waitlist", email, plan: "pro" })).status, 200, "same email + plan is stored once");
+  const fb = await call("POST", "/api/leads", { kind: "feedback", message: `The reminder button did nothing ${stamp}`, email });
+  assert.equal(fb.status, 201);
+
+  assert.equal((await call("GET", "/api/admin/leads", undefined, a.token)).status, 403, "non-admin cannot read leads");
+
+  const prismaModule: any = await import("../lib/prisma.js");
+  const prisma = prismaModule.default?.default ?? prismaModule.default;
+  const adminEmail = await prismaModule.runAsSystem(async () => (await prisma.$queryRawUnsafe("SELECT email FROM users WHERE organization_id = $1::uuid LIMIT 1", a.orgId))[0].email);
+  const previous = process.env.PLATFORM_ADMIN_EMAILS;
+  process.env.PLATFORM_ADMIN_EMAILS = adminEmail;
+  try {
+    const list = await call("GET", "/api/admin/leads", undefined, a.token);
+    assert.equal(list.status, 200);
+    const mine = list.json.leads.filter((l: any) => l.email === email);
+    assert.equal(mine.filter((l: any) => l.kind === "waitlist").length, 1, "waitlist entry exists exactly once");
+    assert.ok(mine.some((l: any) => l.kind === "feedback" && l.message.includes(String(stamp))), "feedback stored");
+    assert.ok(!list.json.leads.some((l: any) => String(l.email).startsWith(`bot-${stamp}`)), "honeypot entry was not stored");
+  } finally {
+    if (previous === undefined) delete process.env.PLATFORM_ADMIN_EMAILS; else process.env.PLATFORM_ADMIN_EMAILS = previous;
+    await prismaModule.runAsSystem(async () => { await prisma.$executeRawUnsafe("DELETE FROM leads WHERE email = $1", email); });
+  }
+});

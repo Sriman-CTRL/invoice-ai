@@ -84,6 +84,21 @@ router.get("/analytics", requireAdmin, async (req, res) => {
   }
 });
 
+/** Waitlist sign-ups and feedback messages, newest first. */
+router.get("/leads", requireAdmin, async (_req, res) => {
+  try {
+    await ensureExtraSchema();
+    const [rows, counts] = await Promise.all([
+      prisma.$queryRawUnsafe<{ id: string; at: string; kind: string; email: string | null; plan: string | null; message: string | null }[]>("SELECT id::text, at, kind, email, plan, message FROM leads ORDER BY at DESC LIMIT 100"),
+      prisma.$queryRawUnsafe<{ kind: string; n: number }[]>("SELECT kind, count(*)::int AS n FROM leads GROUP BY kind"),
+    ]);
+    res.json({ leads: rows, counts: Object.fromEntries(counts.map((c) => [c.kind, c.n])) });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to load leads" });
+  }
+});
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Approve = activate the requested plan for that organisation. Only PENDING requests can be actioned.

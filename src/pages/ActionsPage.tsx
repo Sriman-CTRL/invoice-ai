@@ -28,9 +28,9 @@ export function ActionsPage() {
     try {
       const res = await overdueApi.process();
       setNotice(
-        `Automated sweep complete: ${res.invoices_detected} overdue invoice(s) evaluated, ${res.actions_created} collection action(s) created.`
+        `Overdue check complete: ${res.invoices_detected} overdue invoice(s) checked, ${res.actions_created} follow-up task(s) created.`
       );
-      toast.success("Overdue sweep complete", `${res.actions_created} collection action(s) created.`);
+      toast.success("Overdue check complete", `${res.actions_created} follow-up task(s) created.`);
       r.reload();
     } catch (err: any) {
       toast.error("Scan failed", err?.message);
@@ -102,7 +102,7 @@ export function ActionsPage() {
       )}
       <PageHeader
         title="Collection Action Engine"
-        detail="Scheduled autonomous outreach, dispute escalations, and payment verifications."
+        detail="Follow-ups to send, disputes to handle, and payments to confirm."
         actions={
           <button
             onClick={handleRunScan}

@@ -27,6 +27,7 @@ import {
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { adminApi } from "./api";
+import { LeadDialog } from "./LeadForms";
 import { CommandPalette } from "./CommandPalette";
 import { useAuth } from "./auth";
 import { initials, titleCase } from "./lib";
@@ -281,6 +282,7 @@ function SidebarContent({ close }: { close?: () => void }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   useEffect(() => {
     adminApi.me().then((r) => setIsAdmin(r.is_admin)).catch(() => setIsAdmin(false));
   }, [user?.id]);
@@ -303,7 +305,7 @@ function SidebarContent({ close }: { close?: () => void }) {
                 AI
               </span>
             </div>
-            <p className="text-[11px] font-medium text-slate-400">Autonomous Collections</p>
+            <p className="text-[11px] font-medium text-slate-400">Invoices &amp; payments</p>
           </div>
         </Link>
         {close && (
@@ -350,17 +352,25 @@ function SidebarContent({ close }: { close?: () => void }) {
         ))}
       </nav>
 
+      <div className="px-4 pb-3">
+        <button onClick={() => setFeedbackOpen(true)} className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-left text-xs font-semibold text-slate-300 transition-colors hover:bg-white/[0.08] hover:text-white">
+          💬 Tell us what's missing
+          <span className="mt-0.5 block text-[10px] font-normal text-slate-500">Goes straight to the founder</span>
+        </button>
+      </div>
+      <LeadDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} kind="feedback" defaultEmail={user?.email} title="Tell us what's missing" intro="What were you trying to do? What got in the way? Every message is read." />
+
       {/* Astryx Live System Health Beacon */}
       <div className="px-4 pb-4">
         <div className="rounded-xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-3 text-xs backdrop-blur-md">
           <div className="flex items-center justify-between">
-            <span className="font-bold text-white text-[11px] tracking-wide">Autonomous Engine</span>
+            <span className="font-bold text-white text-[11px] tracking-wide">AI assistant</span>
             <span className="inline-flex items-center gap-1.5 font-mono text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
               </span>
-              ACTIVE
+              BETA
             </span>
           </div>
           <p className="mt-1.5 text-[10px] text-slate-400 font-mono">

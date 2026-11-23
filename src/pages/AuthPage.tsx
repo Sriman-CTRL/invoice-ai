@@ -79,7 +79,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
             <div>
               <span className="text-xl font-black tracking-tight text-white block">Ledgerlane</span>
               <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
-                Autonomous Receivables OS
+                Invoices & payments
               </span>
             </div>
           </div>
@@ -108,7 +108,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
           </h1>
 
           <p className="mt-4 text-sm leading-relaxed text-slate-300">
-            Intelligently parses customer excuses with Gemini AI, schedules automated follow-ups with zero founder awkwardness, and settles directly to bank accounts via zero-fee UPI.
+            Send invoices with a UPI QR code, keep your final files locked until the client pays, and see at a glance who still owes you. Payments go straight to your bank account.
           </p>
 
           {/* Astryx Live AR Simulation Bento Card */}
@@ -117,7 +117,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
                 <span className="font-mono text-[11px] font-bold text-white tracking-wide">
-                  REAL-TIME AR EVENT · INV-1042
+                  EXAMPLE · HOW REPLY-READING WILL WORK
                 </span>
               </div>
               <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
@@ -166,7 +166,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
             </div>
             <div className="rounded-xl border border-white/5 bg-white/[0.03] p-3 text-center">
               <span className="text-[10px] uppercase font-bold text-slate-400 block">Reminders</span>
-              <p className="text-sm font-black text-teal-300 mt-0.5 font-mono">Sent for you</p>
+              <p className="text-sm font-black text-teal-300 mt-0.5 font-mono">Email & WhatsApp</p>
             </div>
           </div>
         </div>
@@ -194,7 +194,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
               <span className="text-lg font-bold text-white">Ledgerlane</span>
             </div>
             <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-              AI Active
+              Beta
             </span>
           </div>
 
@@ -230,8 +230,8 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
               </h2>
               <p className="mt-1 text-xs text-slate-400">
                 {registering
-                  ? "Set up autonomous receivables for your business in 30 seconds."
-                  : "Sign in to manage active collections and ledger balances."}
+                  ? "Set up your workspace in a few minutes."
+                  : "Sign in to see your invoices and who owes you."}
               </p>
             </div>
 

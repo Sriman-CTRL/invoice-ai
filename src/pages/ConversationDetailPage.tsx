@@ -29,7 +29,7 @@ export function ConversationDetailPage() {
                     Message History
                   </span>
                   <span className="text-[11px] text-slate-400 font-medium">
-                    Ledgerlane AI Engine Active
+                    AI assistant (beta)
                   </span>
                 </div>
               </div>
@@ -56,7 +56,7 @@ export function ConversationDetailPage() {
                                 isOutbound ? "text-brand-100" : "text-slate-400"
                               }`}
                             >
-                              {isOutbound ? "Your Automated Agent" : "Customer Reply"}
+                              {isOutbound ? "You" : "Customer Reply"}
                             </span>
                             <span className={isOutbound ? "text-brand-200" : "text-slate-400"}>
                               {dateTime(m.created_at)}

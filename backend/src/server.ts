@@ -19,6 +19,7 @@ import creditNoteRoutes from "./routes/credit-note.routes";
 import publicInvoiceRoutes from "./routes/public-invoice.routes";
 import adminRoutes from "./routes/admin.routes";
 import eventsRoutes from "./routes/events.routes";
+import leadsRoutes from "./routes/leads.routes";
 import { authMiddleware } from "./middleware/auth.middleware";
 import { rateLimit } from "./middleware/rateLimit";
 
@@ -91,6 +92,9 @@ app.use("/api/auth", systemContext, rateLimit({ windowMs: 60_000, max: 20, messa
 
 // Privacy-friendly first-party analytics (page views only, no cookies/IPs stored)
 app.use("/api/events", systemContext, rateLimit({ windowMs: 60_000, max: 120, message: "Too many events." }), eventsRoutes);
+
+// Public waitlist + feedback (strict rate limit; honeypot inside the route)
+app.use("/api/leads", systemContext, rateLimit({ windowMs: 60_000, max: 8, message: "Too many submissions. Please try again in a minute." }), leadsRoutes);
 
 // 2. Inbound webhook endpoint
 app.use("/api/inbound", systemContext, inboundRoutes);
