@@ -174,7 +174,7 @@ release/commit date and weekly npm downloads for each candidate.
 
 **Notes (R2):** Licence/date/downloads from the public npm registry; stars only for razorpay/ifsc. Recommendation: write GSTIN and amount-in-words ourselves, IFSC regex plus the ifsc package only if small. Doc-only, no deps added.
 
-## [ ] T1. SEO, link previews and og:image
+## [x] T1. SEO, link previews and og:image
 
 Problem: paivo.in is a client-rendered SPA; crawlers and WhatsApp/LinkedIn previews see only the `<title>`.
 
@@ -199,6 +199,8 @@ Problem: paivo.in is a client-rendered SPA; crawlers and WhatsApp/LinkedIn previ
    `.well-known/` from the catch-all rewrite). Do not loosen any header.
 7. `npm run build`; confirm `dist/index.html` has the tags + fallback, and `dist/robots.txt`, `dist/sitemap.xml`,
    `dist/og.png` exist.
+
+**Notes (T1):** Added meta/OG/Twitter/JSON-LD and a static fallback inside #root (createRoot replaces it on load). robots.txt and sitemap.xml in public/; scripts/make-og.mjs renders public/og.png (45 KB) with devDependency @resvg/resvg-js. vercel.json: catch-all rewrite now excludes robots.txt, sitemap.xml, og.png and .well-known/ (no header changed; Vercel serves files before rewrites anyway). dist has all tags and files. DoD: typecheck pass; tests 54 run/54 pass/0 skip; build pass.
 
 ## [ ] U1. Conversion improvements from the teardown
 

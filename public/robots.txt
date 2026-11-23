@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /invoices
+Disallow: /customers
+Disallow: /conversations
+Disallow: /collection-actions
+Disallow: /settings
+Disallow: /analytics
+Disallow: /admin
+Disallow: /playground
+Disallow: /pay/
+Disallow: /client/
+
+Sitemap: https://paivo.in/sitemap.xml
