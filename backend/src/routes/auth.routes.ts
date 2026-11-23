@@ -1,3 +1,4 @@
+import { encodeAttribution } from "../lib/attribution";
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
 import bcrypt from "bcryptjs";
@@ -20,7 +21,7 @@ function slugify(name: string): string {
 
 router.post("/register", turnstileGuard, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, name, organization_name, accepted_terms, heard_from } = req.body ?? {};
+    const { email, password, name, organization_name, accepted_terms, heard_from, attribution } = req.body ?? {};
 
     if (accepted_terms !== true) {
       res.status(400).json({ error: "Please confirm you are 18 or older and accept the Terms and Privacy Policy." });
@@ -80,6 +81,13 @@ router.post("/register", turnstileGuard, async (req: Request, res: Response): Pr
       await prisma
         .$executeRawUnsafe(`INSERT INTO analytics_events (event, path) VALUES ('signup_source', $1)`, heard_from)
         .catch((e) => console.warn("source log skipped:", (e as Error).message));
+    }
+
+    const tags = encodeAttribution(attribution);
+    if (tags) {
+      await prisma
+        .$executeRawUnsafe(`INSERT INTO analytics_events (event, path) VALUES ('signup_attr', $1)`, tags)
+        .catch((e) => console.warn("attribution log skipped:", (e as Error).message));
     }
 
     res.status(201).json({

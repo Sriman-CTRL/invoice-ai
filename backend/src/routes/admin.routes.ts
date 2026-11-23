@@ -60,21 +60,23 @@ router.get("/analytics", requireAdmin, async (req, res) => {
     await ensureExtraSchema();
     const days = Math.min(Math.max(parseInt(String(req.query.days ?? "30"), 10) || 30, 1), 365);
     const q = <T,>(sql: string) => prisma.$queryRawUnsafe<T[]>(sql, days);
-    const [daily, pages, referrers, visitorsFor, signups, activated, pending, orgsTotal, paidOrgs] = await Promise.all([
-      q<{ day: string; views: number; visitors: number }>(`SELECT to_char(date_trunc('day', at), 'YYYY-MM-DD') AS day, count(*)::int AS views, count(DISTINCT visitor)::int AS visitors FROM analytics_events WHERE at > now() - ($1::int * interval '1 day') GROUP BY 1 ORDER BY 1`),
-      q<{ path: string; views: number }>(`SELECT path, count(*)::int AS views FROM analytics_events WHERE at > now() - ($1::int * interval '1 day') GROUP BY 1 ORDER BY 2 DESC LIMIT 10`),
-      q<{ referrer: string; visits: number }>(`SELECT referrer, count(DISTINCT visitor)::int AS visits FROM analytics_events WHERE referrer IS NOT NULL AND at > now() - ($1::int * interval '1 day') GROUP BY 1 ORDER BY 2 DESC LIMIT 8`),
-      q<{ path: string; visitors: number }>(`SELECT path, count(DISTINCT visitor)::int AS visitors FROM analytics_events WHERE path IN ('/', '/pricing', '/register') AND at > now() - ($1::int * interval '1 day') GROUP BY 1`),
+    const [daily, pages, referrers, visitorsFor, signups, activated, pending, orgsTotal, paidOrgs, sources, heard] = await Promise.all([
+      q<{ day: string; views: number; visitors: number }>(`SELECT to_char(date_trunc('day', at), 'YYYY-MM-DD') AS day, count(*)::int AS views, count(DISTINCT visitor)::int AS visitors FROM analytics_events WHERE event = 'pageview' AND at > now() - ($1::int * interval '1 day') GROUP BY 1 ORDER BY 1`),
+      q<{ path: string; views: number }>(`SELECT path, count(*)::int AS views FROM analytics_events WHERE event = 'pageview' AND at > now() - ($1::int * interval '1 day') GROUP BY 1 ORDER BY 2 DESC LIMIT 10`),
+      q<{ referrer: string; visits: number }>(`SELECT referrer, count(DISTINCT visitor)::int AS visits FROM analytics_events WHERE event = 'pageview' AND referrer IS NOT NULL AND at > now() - ($1::int * interval '1 day') GROUP BY 1 ORDER BY 2 DESC LIMIT 8`),
+      q<{ path: string; visitors: number }>(`SELECT path, count(DISTINCT visitor)::int AS visitors FROM analytics_events WHERE event = 'pageview' AND path IN ('/', '/pricing', '/register') AND at > now() - ($1::int * interval '1 day') GROUP BY 1`),
       q<{ n: number }>(`SELECT count(*)::int AS n FROM users WHERE created_at > now() - ($1::int * interval '1 day')`),
       q<{ n: number }>(`SELECT count(DISTINCT i.organization_id)::int AS n FROM invoices i JOIN organizations o ON o.id = i.organization_id WHERE o.created_at > now() - ($1::int * interval '1 day')`),
       q<{ n: number }>(`SELECT count(*)::int AS n FROM plan_requests WHERE status = 'PENDING' AND $1::int > 0`),
       q<{ n: number }>(`SELECT count(*)::int AS n FROM organizations WHERE $1::int > 0`),
       q<{ n: number }>(`SELECT count(*)::int AS n FROM organizations WHERE plan <> 'FREE' AND $1::int > 0`),
+      q<{ source: string; medium: string; campaign: string; visitors: number; signups: number }>(`SELECT split_part(path, '|', 1) AS source, split_part(path, '|', 2) AS medium, split_part(path, '|', 3) AS campaign, count(DISTINCT visitor) FILTER (WHERE event = 'attribution')::int AS visitors, count(*) FILTER (WHERE event = 'signup_attr')::int AS signups FROM analytics_events WHERE event IN ('attribution', 'signup_attr') AND at > now() - ($1::int * interval '1 day') GROUP BY 1, 2, 3 ORDER BY 5 DESC, 4 DESC LIMIT 20`),
+      q<{ answer: string; signups: number }>(`SELECT path AS answer, count(*)::int AS signups FROM analytics_events WHERE event = 'signup_source' AND at > now() - ($1::int * interval '1 day') GROUP BY 1 ORDER BY 2 DESC LIMIT 12`),
     ]);
     const v = (p: string) => visitorsFor.find((x) => x.path === p)?.visitors ?? 0;
     res.json({
       days,
-      daily, pages, referrers,
+      daily, pages, referrers, sources, heard,
       funnel: { landing: v("/"), pricing: v("/pricing"), register_page: v("/register"), signups: signups[0]?.n ?? 0, activated: activated[0]?.n ?? 0 },
       totals: { organizations: orgsTotal[0]?.n ?? 0, paid_organizations: paidOrgs[0]?.n ?? 0, pending_upgrades: pending[0]?.n ?? 0 },
     });

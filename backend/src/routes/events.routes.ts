@@ -1,6 +1,7 @@
 import { Request, Response, Router } from "express";
 import prisma from "../lib/prisma";
 import { ensureExtraSchema } from "../lib/extraSchema";
+import { encodeAttribution } from "../lib/attribution";
 
 const router = Router();
 
@@ -13,7 +14,17 @@ const VISITOR_RE = /^[A-Za-z0-9_-]{8,40}$/;
  */
 router.post("/", async (req: Request, res: Response): Promise<void> => {
   try {
-    const { event, path, referrer, visitor } = req.body ?? {};
+    const { event, path, referrer, visitor, attribution } = req.body ?? {};
+    if (event === "attribution") {
+      const tags = encodeAttribution(attribution);
+      const who = typeof visitor === "string" && VISITOR_RE.test(visitor) ? visitor : null;
+      if (tags && who) {
+        await ensureExtraSchema();
+        await prisma.$executeRawUnsafe("INSERT INTO analytics_events (event, path, visitor) VALUES ('attribution', $1, $2)", tags, who);
+      }
+      res.status(204).end();
+      return;
+    }
     if (event !== "pageview" || typeof path !== "string" || !path.startsWith("/") || path.length > 200) {
       res.status(204).end();
       return;

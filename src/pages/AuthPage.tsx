@@ -4,6 +4,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Check, CheckCircle2, RefreshCw, Sparkles, X, Zap } from "lucide-react";
 import { Badge } from "../components";
 import { useAuth } from "../auth";
+import { loadAttribution } from "../attribution";
 import type { Customer, Dashboard } from "../types";
 
 export function AuthPage({ mode }: { mode: "login" | "register" }) {
@@ -52,7 +53,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
         await login(form.email, form.password);
         navigate("/dashboard");
       } else {
-        await register({ ...form, accepted_terms: accepted, heard_from: heardFrom || undefined, turnstile_token: humanToken ?? undefined });
+        await register({ ...form, accepted_terms: accepted, heard_from: heardFrom || undefined, attribution: loadAttribution() ?? undefined, turnstile_token: humanToken ?? undefined });
         navigate("/login", { state: { registered: true } });
       }
     } catch (err) {

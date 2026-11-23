@@ -229,6 +229,13 @@ test("ANALYTICS: page views are recorded without personal data and the report is
   const prismaModule: any = await import("../lib/prisma.js");
   const prisma = prismaModule.default?.default ?? prismaModule.default;
   const email = await prismaModule.runAsSystem(async () => (await prisma.$queryRawUnsafe("SELECT email FROM users WHERE organization_id = $1::uuid LIMIT 1", a.orgId))[0].email);
+  // Campaign attribution: one visit event and one sign-up carrying the same (sanitised) tags.
+  const tag = `src${Date.now()}`;
+  assert.equal((await call("POST", "/api/events", { event: "attribution", path: "/", visitor: "attrvisitor12345", attribution: { utm_source: tag.toUpperCase(), utm_medium: "DM", utm_campaign: "first10<" } })).status, 204);
+  const attrEmail = `attr-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
+  const attrReg = await call("POST", "/api/auth/register", { email: attrEmail, password: "Attribution-Pass-4821", organization_name: "Attr Org", accepted_terms: true, attribution: { utm_source: tag, utm_medium: "dm", utm_campaign: "first10" } });
+  assert.equal(attrReg.status, 201);
+  created.orgIds.push(attrReg.json.organization.id);
   const previous = process.env.PLATFORM_ADMIN_EMAILS;
   process.env.PLATFORM_ADMIN_EMAILS = email;
   try {
@@ -238,6 +245,13 @@ test("ANALYTICS: page views are recorded without personal data and the report is
     assert.ok(report.json.pages.find((p: any) => p.path === "/pay/:id"), "invoice uuid in the path was normalised to :id");
     assert.ok(!JSON.stringify(report.json).includes(a.invoiceId), "raw invoice ids are never stored");
     assert.ok(report.json.referrers.some((r: any) => r.referrer === "www.linkedin.com"), "referrer reduced to hostname");
+    const row = report.json.sources.find((x: any) => x.source === tag);
+    assert.ok(row, "source row present");
+    assert.equal(row.medium, "dm", "tags are lowercased and stripped of unsafe characters");
+    assert.equal(row.campaign, "first10");
+    assert.equal(row.visitors, 1);
+    assert.equal(row.signups, 1);
+    assert.ok(!report.json.pages.some((p: any) => p.path.includes("|")), "attribution events do not pollute page views");
   } finally {
     if (previous === undefined) delete process.env.PLATFORM_ADMIN_EMAILS; else process.env.PLATFORM_ADMIN_EMAILS = previous;
   }

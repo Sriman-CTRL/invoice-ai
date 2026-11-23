@@ -219,7 +219,7 @@ the client pay page, in Paivo's own words and existing visual style.
 
 **Notes (U1):** Changes (before -> after): (1) hero: added a plain 'no per-payment fee' line; (2) landing: new side-by-side 'Paivo vs a typical payment link' table (general, names no company) and 3 FAQs (payment link, 'I paid' dispute, sharing UPI ID); (3) final CTA: added 'see what your client sees' demo link; (4) pricing: states the free plan limits in the intro and the 'Most popular' badge on Pro became 'Recommended' because there are no usage numbers to back 'popular' (prices and plan contents untouched); (5) pay page: new 'You are paying X / money goes straight to them / what a UTR is / what happens next' block above the payment tabs; (6) pay page mobile: 'Pay with UPI app' button now first and mobile-only (sm:hidden), 48px tap target, plus a UPI ID row with a 44px copy button; QR stays below. UPI link builder moved to src/upi.ts and unit-tested (npm run test:web, 3 tests; not in CI). Amounts still come from the server's outstanding amount. No testimonials, counts or ratings added. DoD: typecheck pass; backend tests 54/54, 0 skip; build pass.
 
-## [ ] G2. Measure where users come from
+## [x] G2. Measure where users come from
 
 1. Capture `utm_source`, `utm_medium`, `utm_campaign` and `ref` from the landing URL on first visit (first-party
    only, no cookies beyond what exists; store in `localStorage` with try/catch) and send them with the existing
@@ -229,6 +229,8 @@ the client pay page, in Paivo's own words and existing visual style.
 3. Add to `docs/gtm/MESSAGES.md` how to tag links per channel (e.g. `https://paivo.in/?utm_source=linkedin&utm_medium=dm`).
 4. Respect existing consent and privacy pages; update the privacy page text only if it would otherwise be inaccurate.
 5. Tests for the parsing and storage helpers.
+
+**Notes (G2):** src/attribution.ts stores first-touch utm_source/medium/campaign/ref in localStorage (try/catch, skipped under Do Not Track/GPC because capture happens after that check); analytics.ts sends one 'attribution' event per tab session; register sends the tags; backend sanitises them (lib/attribution.ts) and stores 'source|medium|campaign|ref' in analytics_events.path under events 'attribution' and 'signup_attr', so NO schema change and nothing to run on production. Admin Growth shows visits and sign-ups per campaign link plus the existing 'how did you hear' answers. Also fixed existing admin queries to count only event='pageview' (previously consent/source events inflated page views and top pages). MESSAGES.md already documents tagged links. Privacy page does not describe analytics storage at all and no personal data is added, so no text change. Tests: tests/attribution.test.ts (4), backend attribution unit tests (3), extended ANALYTICS integration test. DoD: typecheck pass; backend 57 run/57 pass/0 skip; build pass; test:web 7 pass.
 
 ## [ ] G3. Screenshots and demo assets
 
