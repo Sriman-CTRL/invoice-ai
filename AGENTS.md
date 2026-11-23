@@ -17,6 +17,7 @@ Project history, decisions and roadmap: [docs/PROJECT-HISTORY.md](docs/PROJECT-H
 cd backend && npm install && npx prisma db push && npm run seed && npm run dev   # API :5000
 cd backend && npm test          # node:test via tsx; integration tests need a LOCAL DATABASE_URL
 cd backend && npm run typecheck
+npm run test:web      # frontend unit tests in tests/ (UPI link, campaign tags); not run in CI yet
 
 # Frontend (repo root)
 npm install && npm run dev      # UI :5173, proxies /api to the backend
@@ -80,7 +81,6 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
   runtime deps to both `package.json` files.
 - **`DEPLOYMENT_SECURITY.md` is an aspirational blueprint**, partly written before the code (mentions AWS, Postmark,
   quiet hours, AI-Act footer). Verify against code before repeating any claim from it.
-- **The README is outdated** (says PDFs/payment links are unbuilt, uses old `ledgerlane` naming).
 - **Inbound webhook requires `x-inbound-timestamp`** (unix seconds, ±5 min) as well as `x-inbound-key`; the Cloudflare worker sends both.
 - **Public repo**: never commit audit/security notes (AUDIT.md, SECURITY-TODO.md are git-ignored).
 - **Shared rate limits** (`shared: true` in middleware/rateLimit.ts) use the `rate_limits` table, created by enable-rls.cjs.

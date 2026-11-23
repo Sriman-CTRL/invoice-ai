@@ -1,5 +1,7 @@
 # Enterprise FinTech Security & Regulatory Compliance Blueprint
 
+> Note: this is a target security blueprint, partly written before the code. Not every control listed here is implemented. Check the code and tests before relying on or repeating any claim in this file.
+
 > **System Scope:** Autonomous AI Accounts Receivable & Invoicing SaaS  
 > **Classification:** Confidential / Production Runbook & Architecture Specification  
 > **Compliance Standards:** PCI-DSS SAQ A, CAN-SPAM Act, CFPB Reg F (12 CFR Part 1006), FDCPA / State Commercial Debt Laws (e.g. CA SB 1286), EU AI Act (Article 50), GDPR (Articles 15, 17, 21), DPDP Act, and GST/VAT Accounting Immutability Standards.

@@ -245,7 +245,7 @@ the client pay page, in Paivo's own words and existing visual style.
 
 **Notes (G3):** Playwright (@playwright/test, dev dependency) + Chromium. The script refuses non-local URLs, seeds a fictional 'Sample Studio (demo)' with a fictional client via the API (register, settings, customer, 3 invoices, a UTR proof and the real one-click confirmation), then captures landing, pricing, sign-up, pay page locked and unlocked, dashboard, invoices, invoice detail and the create-invoice modal at 1440x900 and 390x844. All under 150 KB. PDF preview NOT captured (it is a client-side download, not a page). Observations for the owner: on the 390px pay page the header text 'Sample Studio (demo)' is clipped at the top, and the pay page footer/header carry '256-Bit Encrypted' and 'Secure Deliverables Vault' wording that predates this run and may need an honesty review under AGENTS.md rule 7. DoD: typecheck pass; backend 57/57, 0 skip; build pass.
 
-## [ ] T2. README and doc fixes
+## [x] T2. README and doc fixes
 
 1. Rewrite `README.md` for a visitor: intro (Paivo, paivo.in, who it's for, core loop), Features split Live /
    Coming soon (must match `docs/PROJECT-HISTORY.md` section 4), Stack, Local setup (commands from AGENTS.md incl.
@@ -258,6 +258,8 @@ the client pay page, in Paivo's own words and existing visual style.
    before the code. Not every control listed here is implemented. Check the code and tests before relying on or
    repeating any claim in this file." Change nothing else there.
 4. Remove "rewrite README" from PROJECT-HISTORY section 5 Housekeeping.
+
+**Notes (T2):** README rewritten (Live / Coming soon matching PROJECT-HISTORY section 4, stack, local setup incl. enable-rls.cjs, tests/CI, env pointers, inbound email contract checked against inbound.routes.ts: x-inbound-key + x-inbound-timestamp, 5 min window, 503 when unconfigured); no ledgerlane naming or credentials. cloudflare-worker/README.md now uses https://paivo.in/api/inbound/email. DEPLOYMENT_SECURITY.md got the blockquote note only. PROJECT-HISTORY section 5 housekeeping item 'rewrite README' removed; AGENTS.md 'README is outdated' pitfall removed and test:web documented. DoD: typecheck pass; backend 57/57, 0 skip; build pass.
 
 ## [ ] T3. Make `schema.prisma` match the real database
 

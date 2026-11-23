@@ -22,7 +22,7 @@ Route custom domain emails (e.g. `billing@youragency.com`) directly into Invoice
 2. Name it `invoice-ai-email-router`.
 3. Click **Quick Edit**, paste the code from `cloudflare-worker/email-router.js`, and click **Deploy**.
 4. In Worker **Settings** -> **Variables**, add:
-   - `INVOICE_AI_URL`: `https://invoice-ai-nine-beta.vercel.app/api/inbound/email`
+   - `INVOICE_AI_URL`: `https://paivo.in/api/inbound/email`
    - `INBOUND_WEBHOOK_SECRET`: (Your secret from your `.env` / Vercel environment variables)
 
 #### Step 3: Enable Email Routing
