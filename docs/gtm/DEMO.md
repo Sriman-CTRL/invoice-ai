@@ -2,7 +2,10 @@
 
 Demo pay page (works without signing in): `https://paivo.in` + the `DEMO_PAY_PATH` in `src/marketing.tsx`
 (currently `/pay/13144558-e5f1-49ca-b968-8e7fe361d86e`). Use only fictional demo data on screen; never a real client's.
-Screenshots from G3 (if generated) live in `docs/gtm/assets/`.
+Screenshots (fictional demo data, regenerate with `node scripts/screenshots.mjs` while the app runs locally) are in `docs/gtm/assets/`:
+`pay-locked-mobile.png` and `pay-locked-desktop.png` (what the client sees before paying), `pay-unlocked-desktop.png` (after you confirm),
+`invoice-create-desktop.png`, `invoice-detail-desktop.png`, `dashboard-desktop.png`, `landing-*.png`, `pricing-*.png`, `signup-*.png`.
+Use the locked/unlocked pair for the video thumbnail and steps 3 and 6 of the demo.
 
 ## 30-second pitch
 "You know how you deliver the work and then the client goes quiet? With Paivo you send an invoice link. The client sees a UPI

@@ -232,7 +232,7 @@ the client pay page, in Paivo's own words and existing visual style.
 
 **Notes (G2):** src/attribution.ts stores first-touch utm_source/medium/campaign/ref in localStorage (try/catch, skipped under Do Not Track/GPC because capture happens after that check); analytics.ts sends one 'attribution' event per tab session; register sends the tags; backend sanitises them (lib/attribution.ts) and stores 'source|medium|campaign|ref' in analytics_events.path under events 'attribution' and 'signup_attr', so NO schema change and nothing to run on production. Admin Growth shows visits and sign-ups per campaign link plus the existing 'how did you hear' answers. Also fixed existing admin queries to count only event='pageview' (previously consent/source events inflated page views and top pages). MESSAGES.md already documents tagged links. Privacy page does not describe analytics storage at all and no personal data is added, so no text change. Tests: tests/attribution.test.ts (4), backend attribution unit tests (3), extended ANALYTICS integration test. DoD: typecheck pass; backend 57 run/57 pass/0 skip; build pass; test:web 7 pass.
 
-## [ ] G3. Screenshots and demo assets
+## [x] G3. Screenshots and demo assets
 
 1. Install Playwright as a dev dependency (`@playwright/test`) and Chromium (`npx playwright install chromium`).
 2. Seed the local DB with clearly fictional demo data (a fictional studio, fictional clients; never real people).
@@ -242,6 +242,8 @@ the client pay page, in Paivo's own words and existing visual style.
    (files unlocked), PDF preview if reachable. Save to `docs/gtm/assets/` as PNG (each under 500 KB).
 4. Reference the images in `docs/gtm/DEMO.md` and `docs/gtm/CONTENT.md` where they fit.
 5. If Playwright can't be installed, mark `[!]` with the reason and continue.
+
+**Notes (G3):** Playwright (@playwright/test, dev dependency) + Chromium. The script refuses non-local URLs, seeds a fictional 'Sample Studio (demo)' with a fictional client via the API (register, settings, customer, 3 invoices, a UTR proof and the real one-click confirmation), then captures landing, pricing, sign-up, pay page locked and unlocked, dashboard, invoices, invoice detail and the create-invoice modal at 1440x900 and 390x844. All under 150 KB. PDF preview NOT captured (it is a client-side download, not a page). Observations for the owner: on the 390px pay page the header text 'Sample Studio (demo)' is clipped at the top, and the pay page footer/header carry '256-Bit Encrypted' and 'Secure Deliverables Vault' wording that predates this run and may need an honesty review under AGENTS.md rule 7. DoD: typecheck pass; backend 57/57, 0 skip; build pass.
 
 ## [ ] T2. README and doc fixes
 

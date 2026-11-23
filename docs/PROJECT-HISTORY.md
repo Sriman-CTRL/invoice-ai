@@ -44,6 +44,7 @@ Last updated: 24 Nov 2026.
 | 24 Nov (night build) | T1: SEO tags, link preview image (`og.png`), crawlable fallback, robots.txt and sitemap. |
 | 24 Nov (night build) | U1: conversion changes from the teardown (landing, pricing, pay page). |
 | 24 Nov (night build) | G2: first-party campaign attribution (utm_*, ref) and sign-ups by source in admin Growth. |
+| 24 Nov (night build) | G3: demo screenshots (`scripts/screenshots.mjs`, 16 PNGs in `docs/gtm/assets/`). |
 
 ## 3. Key decisions (and why)
 
