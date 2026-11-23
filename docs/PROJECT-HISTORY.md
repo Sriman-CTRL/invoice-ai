@@ -47,6 +47,7 @@ Last updated: 24 Nov 2026.
 | 24 Nov (night build) | G3: demo screenshots (`scripts/screenshots.mjs`, 16 PNGs in `docs/gtm/assets/`). |
 | 24 Nov (night build) | T2: README rewritten for visitors; docs fixes. |
 | 24 Nov (night build) | T3: `schema.prisma` now mirrors the real database. |
+| 24 Nov (night build) | T4: route code-splitting; first download cut from 632 kB to 251 kB (173 to 79 kB gzip). |
 
 ## 3. Key decisions (and why)
 

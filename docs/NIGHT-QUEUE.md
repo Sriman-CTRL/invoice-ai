@@ -279,7 +279,7 @@ the client pay page, in Paivo's own words and existing visual style.
 
 **Notes (T3):** Ran prisma db pull --print against the local DB and used it: existing models/fields/relations/maps/indexes unchanged (only column alignment and relation ordering differ); added organizations columns (upi_id, payee_name, bank_*, gstin, plan, brand_color, logo_data) and tables analytics_events, auth_failures, invoice_details, invoice_views, leads, payment_proof_images, plan_requests, rate_limits, recurring_invoices. No existing raw-SQL code was changed. prisma generate re-ran (src/generated is tracked and regenerated, not hand-edited). Round trip: dropped and recreated the local DB, ran only prisma db push, then enable-rls.cjs: both succeeded; a second db push reported in sync and the index count stayed at 51. DoD after round trip: typecheck pass; backend 57/57, 0 skip; build pass. AGENTS.md pitfall rewritten; PROJECT-HISTORY housekeeping item updated.
 
-## [ ] T4. Smaller first load (route code-splitting)
+## [x] T4. Smaller first load (route code-splitting)
 
 The build warns about chunks over 500 kB. Landing and `/pay/:id` (the client-facing page) must load fast on phones.
 
@@ -294,6 +294,8 @@ The build warns about chunks over 500 kB. Landing and `/pay/:id` (the client-fac
 5. Click-through check: `npm run dev` with the backend running against the local DB, seed (`npm run seed` in
    backend), then verify by HTTP that `/`, `/pricing`, `/login` return 200 and that the built `dist` has no runtime
    import errors (`npx vite preview` and fetch the routes). Note what was checked.
+
+**Notes (T4):** Before: one entry chunk index 632.82 kB raw / 172.26 kB gzip (plus invoicePdf 405.90/132.54, html2canvas 199.40/46.74, index.es 151.42/48.91 on demand), with the >500 kB warning. After: entry index 250.69 kB / 78.62 kB gzip (+ jsx-runtime 49.68/17.79 shared) so the landing route loads about 100 kB gzip, well under the 200 kB goal; no chunk is over 500 kB and the build warning is gone; largest is still invoicePdf 405.94 kB, loaded only when a PDF is generated. App.tsx now lazy-loads every page except LandingPage (pricing, auth, pay page, client portal, legal, playground, all signed-in pages, admin) with a dark 'Loading' fallback; Shell moved behind a lazy ProtectedRoute.tsx. jspdf was already a dynamic import; qrcode is used by the pay page and settings page chunks only, not the landing chunk. Checked with vite preview + Playwright: /, /pricing, /login, /register, /privacy, /terms return 200 and render their headings; /dashboard redirects to /login when signed out; no page or console errors (the demo pay page shows 'Invoice Not Found' because the API was not running in that check). Side observation: the terms page heading says 'Escrow Charter'; legal pages were not touched per ground rule 8. DoD: typecheck pass; backend 57/57, 0 skip; build pass.
 
 ## [ ] T5. Tests for the money paths
 
