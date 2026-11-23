@@ -23,11 +23,15 @@ import { publicApi } from "./api";
 import { compressImage } from "./imageUtil";
 import { TURNSTILE_SITE_KEY, TurnstileWidget } from "./TurnstileWidget";
 import type { PublicInvoiceDetail } from "./types";
+import { buildUpiUri } from "./upi";
 
-function buildUpiUri(d: PublicInvoiceDetail) {
-  const payee = (d.payment.payee_name || d.organization.name).replace(/[^a-zA-Z0-9 ]/g, "").slice(0, 25);
-  const inv = d.invoice_number.replace(/[^a-zA-Z0-9-]/g, "");
-  return `upi://pay?pa=${encodeURIComponent(d.payment.upi_id || "")}&pn=${encodeURIComponent(payee)}&am=${Number(d.outstanding_amount).toFixed(2)}&cu=INR&tn=${encodeURIComponent(`Invoice ${inv}`)}`;
+function upiLinkFor(d: PublicInvoiceDetail) {
+  return buildUpiUri({
+    upiId: d.payment.upi_id || "",
+    payeeName: d.payment.payee_name || d.organization.name,
+    amount: Number(d.outstanding_amount),
+    invoiceNumber: d.invoice_number,
+  });
 }
 
 function NotConfigured({ what }: { what: string }) {
@@ -87,7 +91,7 @@ export function PublicPayPage() {
   useEffect(() => {
     if (data && data.outstanding_amount > 0 && data.payment?.upi_id) {
       // Standard NPCI UPI URI Scheme, paying the invoice owner's own UPI ID
-      const upiUri = buildUpiUri(data);
+      const upiUri = upiLinkFor(data);
 
       QRCode.toDataURL(upiUri, {
         width: 256,
@@ -412,6 +416,11 @@ export function PublicPayPage() {
               </div>
             )}
             <div className={`rounded-2xl border border-white/10 bg-slate-900/90 p-6 backdrop-blur-md shadow-2xl sticky top-24 ${isPaid ? "hidden" : ""}`}>
+              <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-3.5 text-left text-xs leading-relaxed text-slate-300">
+                <p className="font-bold text-white">You're paying {data.organization.name}</p>
+                <p className="mt-1">Your payment goes straight to their UPI ID or bank account. Paivo never holds the money.</p>
+                <p className="mt-1">After you pay, enter the UTR (the transaction reference shown in your UPI or banking app). {data.organization.name} checks their bank and confirms{data.has_deliverable ? ", and then the files unlock on this page" : ""}.</p>
+              </div>
               <div className="border-b border-white/10 pb-4 mb-5">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   Select Settlement Method
@@ -462,6 +471,14 @@ export function PublicPayPage() {
               {activeTab === "upi" && !data.payment?.upi_id && <NotConfigured what="UPI" />}
               {activeTab === "upi" && data.payment?.upi_id && (
                 <div className="space-y-4 text-center">
+                  {/* Mobile only: open the UPI app directly (a QR can't be scanned on the same phone) */}
+                  <a
+                    href={upiLinkFor(data)}
+                    className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-glow transition-all hover:opacity-95 sm:hidden"
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    <span>Pay with UPI app</span>
+                  </a>
                   <div className="rounded-2xl bg-white p-4 inline-block mx-auto shadow-glow">
                     {qrDataUrl ? (
                       <img
@@ -490,15 +507,20 @@ export function PublicPayPage() {
                     )}
                   </div>
 
-                  {/* Direct Mobile UPI Intent Button */}
-                  <div className="pt-2">
-                    <a
-                      href={buildUpiUri(data)}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 px-4 py-3 text-xs font-bold text-white shadow-glow hover:opacity-95 transition-all"
+                  <div className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left">
+                    <div className="min-w-0">
+                      <span className="block text-[10px] font-bold uppercase text-slate-400">UPI ID</span>
+                      <span className="block truncate font-mono text-xs font-bold text-white">{data.payment.upi_id}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(data.payment!.upi_id!, "UPI ID")}
+                      className="grid h-11 w-11 shrink-0 place-items-center rounded-lg text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+                      title="Copy UPI ID"
+                      aria-label="Copy UPI ID"
                     >
-                      <CreditCard className="h-4 w-4" />
-                      <span>Tap to Open UPI App on Mobile</span>
-                    </a>
+                      {copiedField === "UPI ID" ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                    </button>
                   </div>
 
                   <div className="text-[11px] text-slate-400 border-t border-white/5 pt-3">

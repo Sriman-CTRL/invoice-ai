@@ -202,7 +202,7 @@ Problem: paivo.in is a client-rendered SPA; crawlers and WhatsApp/LinkedIn previ
 
 **Notes (T1):** Added meta/OG/Twitter/JSON-LD and a static fallback inside #root (createRoot replaces it on load). robots.txt and sitemap.xml in public/; scripts/make-og.mjs renders public/og.png (45 KB) with devDependency @resvg/resvg-js. vercel.json: catch-all rewrite now excludes robots.txt, sitemap.xml, og.png and .well-known/ (no header changed; Vercel serves files before rewrites anyway). dist has all tags and files. DoD: typecheck pass; tests 54 run/54 pass/0 skip; build pass.
 
-## [ ] U1. Conversion improvements from the teardown
+## [x] U1. Conversion improvements from the teardown
 
 Apply the best 4–6 "Patterns to adopt" from `docs/research/TEARDOWN.md` to the landing page, pricing page, signup and
 the client pay page, in Paivo's own words and existing visual style.
@@ -216,6 +216,8 @@ the client pay page, in Paivo's own words and existing visual style.
    invoice data per NPCI parameter names (pa, pn, am, cu=INR, tn). Never change amounts client-side.
 3. Keep everything typed and tested; add/adjust tests where logic changes (e.g. UPI link builder unit test).
 4. Record before/after notes per change in the task notes.
+
+**Notes (U1):** Changes (before -> after): (1) hero: added a plain 'no per-payment fee' line; (2) landing: new side-by-side 'Paivo vs a typical payment link' table (general, names no company) and 3 FAQs (payment link, 'I paid' dispute, sharing UPI ID); (3) final CTA: added 'see what your client sees' demo link; (4) pricing: states the free plan limits in the intro and the 'Most popular' badge on Pro became 'Recommended' because there are no usage numbers to back 'popular' (prices and plan contents untouched); (5) pay page: new 'You are paying X / money goes straight to them / what a UTR is / what happens next' block above the payment tabs; (6) pay page mobile: 'Pay with UPI app' button now first and mobile-only (sm:hidden), 48px tap target, plus a UPI ID row with a 44px copy button; QR stays below. UPI link builder moved to src/upi.ts and unit-tested (npm run test:web, 3 tests; not in CI). Amounts still come from the server's outstanding amount. No testimonials, counts or ratings added. DoD: typecheck pass; backend tests 54/54, 0 skip; build pass.
 
 ## [ ] G2. Measure where users come from
 

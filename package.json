@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test:web": "node backend/node_modules/tsx/dist/cli.mjs --test tests/*.test.ts",
     "build": "esbuild backend/src/server.ts --bundle --platform=node --target=node20 --format=esm --outfile=api/index.js --packages=external && tsc -b && vite build",
     "lint": "eslint . --max-warnings=0"
   },

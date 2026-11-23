@@ -32,6 +32,9 @@ const FAQ = [
   { q: "What is a UTR number?", a: "It's the transaction reference your client's UPI or banking app shows after paying (usually 12 digits). They type it in, and you match it against your bank statement before confirming." },
   { q: "Is there a limit on UPI payments?", a: "Most UPI apps allow up to about ₹1 lakh per payment to a personal UPI ID. For bigger invoices, add your bank details so clients can pay by NEFT/RTGS, or ask them to pay in parts." },
   { q: "Does it handle TDS and GST?", a: "Yes. You can record TDS deducted under Section 194C or 194J, and your GSTIN is printed on PDF invoices." },
+  { q: "Why not just use a payment link from a payment gateway?", a: "Gateways are a good choice if you want payments confirmed automatically; they usually take a percentage of each payment (often around 2% plus GST on that fee, check their current pricing). With Paivo the client pays you directly, so there is no per-payment cut and no gateway account to set up. The trade-off: you confirm each payment yourself after checking your bank." },
+  { q: "What if a client says they've paid but the money isn't there?", a: "Nothing unlocks on their word alone. The client submits the UTR (and an optional screenshot), you match it against your bank statement, and only when you click Confirm does the invoice become paid and the files appear." },
+  { q: "Is it safe to share my UPI ID?", a: "Your UPI ID only lets people send you money; it can't be used to take money out. It appears on your invoice's payment page (which has a long random link) and on your PDF invoices." },
   { q: "Is my data safe?", a: "Every request is checked against your account so one business can never see another's records, payment links use long random IDs that can't be guessed, and you can export or erase customer data at any time." },
 ];
 
@@ -54,6 +57,9 @@ export function LandingPage() {
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-400">
           Send an invoice, your client pays by UPI straight to your bank, and your final files unlock only after they've paid. Paivo keeps track of who owes you, and helps you chase politely.
+        </p>
+        <p className="mx-auto mt-3 max-w-2xl text-sm font-semibold text-emerald-300">
+          No per-payment fee: clients pay you directly, so nothing is taken from each payment.
         </p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <Link to="/register" className="inline-flex h-12 items-center gap-2 rounded-xl bg-indigo-500 px-7 text-sm font-bold text-white shadow-[0_10px_40px_-10px_rgba(99,102,241,0.9)] transition hover:bg-indigo-400">
@@ -151,6 +157,27 @@ export function LandingPage() {
         </p>
       </section>
 
+      {/* Comparison */}
+      <section className="mx-auto max-w-4xl px-5 py-12">
+        <h2 className="text-center text-2xl font-black tracking-tight text-white sm:text-3xl">Paivo and a payment link, side by side</h2>
+        <div className="mt-8 overflow-hidden rounded-2xl border border-white/10 text-sm">
+          <div className="grid grid-cols-3 bg-white/[0.06] px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-300">
+            <span /><span>Paivo</span><span>Typical payment link</span>
+          </div>
+          {[
+            ["Fee on each payment", "None. The client pays you directly.", "Usually a percentage of each payment."],
+            ["Who holds the money", "Nobody. It goes to your UPI ID or bank.", "The gateway, then it settles to you."],
+            ["Final files locked until paid", "Yes, you choose per invoice.", "Not part of a basic link."],
+            ["Payment confirmation", "You confirm after checking your bank.", "Usually automatic."],
+          ].map(([k, a, b]) => (
+            <div key={k} className="grid grid-cols-3 gap-3 border-t border-white/10 px-4 py-3.5 text-slate-300">
+              <span className="font-semibold text-white">{k}</span><span>{a}</span><span className="text-slate-400">{b}</span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-center text-xs text-slate-500">A general comparison, not about any one company. Check any provider's own pricing before deciding.</p>
+      </section>
+
       {/* FAQ */}
       <section id="faq" className="mx-auto max-w-3xl px-5 py-16">
         <h2 className="text-center text-3xl font-black tracking-tight text-white">Questions, answered</h2>
@@ -175,6 +202,7 @@ export function LandingPage() {
           <Link to="/register" className="mt-7 inline-flex h-12 items-center gap-2 rounded-xl bg-white px-8 text-sm font-bold text-slate-900 transition hover:bg-slate-200">
             Create your free account <ArrowRight className="h-4 w-4" />
           </Link>
+          <p className="mt-4 text-sm"><Link to={DEMO_PAY_PATH} className="font-semibold text-indigo-300 underline hover:text-indigo-200">Or see what your client sees first</Link></p>
         </div>
       </section>
     </MarketingShell>
