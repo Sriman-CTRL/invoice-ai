@@ -91,7 +91,7 @@ app.use(express.json({ limit: "1mb" }));
 
 // LAYER 5: Multi-Tier Rate Limiting
 // 1. Auth routes (login/register) - brute force defense
-app.use("/api/auth", systemContext, rateLimit({ windowMs: 60_000, max: 20, message: "Too many authentication attempts. Please wait 1 minute." }), authRoutes);
+app.use("/api/auth", systemContext, rateLimit({ windowMs: 60_000, max: Number(process.env.AUTH_RATE_LIMIT_MAX || 20), message: "Too many authentication attempts. Please wait 1 minute." }), authRoutes);
 
 // Privacy-friendly first-party analytics (page views only, no cookies/IPs stored)
 app.use("/api/events", systemContext, rateLimit({ windowMs: 60_000, max: 120, message: "Too many events." }), eventsRoutes);
