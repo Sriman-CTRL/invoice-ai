@@ -18,6 +18,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [accepted, setAccepted] = useState(false);
   const [humanToken, setHumanToken] = useState<string | null>(null);
   const [humanReset, setHumanReset] = useState(0);
 
@@ -36,6 +37,10 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
       return;
     }
 
+    if (mode === "register" && !accepted) {
+      setError("Please confirm you are 18 or older and accept the Terms and Privacy Policy.");
+      return;
+    }
     if (mode === "register" && TURNSTILE_SITE_KEY && !humanToken) {
       setError("Please complete the human check below.");
       return;
@@ -46,7 +51,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
         await login(form.email, form.password);
         navigate("/dashboard");
       } else {
-        await register({ ...form, turnstile_token: humanToken ?? undefined });
+        await register({ ...form, accepted_terms: accepted, turnstile_token: humanToken ?? undefined });
         navigate("/login", { state: { registered: true } });
       }
     } catch (err) {
@@ -299,6 +304,12 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
                 />
               </div>
 
+              {registering && (
+                <label className="flex items-start gap-2 text-xs leading-relaxed text-slate-400">
+                  <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5" />
+                  <span>I am 18 or older and I accept the <a href="/terms" target="_blank" rel="noreferrer" className="underline">Terms</a> and <a href="/privacy" target="_blank" rel="noreferrer" className="underline">Privacy Policy</a>.</span>
+                </label>
+              )}
               {registering && <TurnstileWidget onToken={setHumanToken} resetKey={humanReset} />}
 
               {error && (

@@ -20,7 +20,12 @@ function slugify(name: string): string {
 
 router.post("/register", turnstileGuard, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, name, organization_name } = req.body ?? {};
+    const { email, password, name, organization_name, accepted_terms } = req.body ?? {};
+
+    if (accepted_terms !== true) {
+      res.status(400).json({ error: "Please confirm you are 18 or older and accept the Terms and Privacy Policy." });
+      return;
+    }
 
     if (!email || !password || !organization_name) {
       res.status(400).json({ error: "email, password, and organization_name are required" });

@@ -4,6 +4,7 @@ import { getInvoiceDetails } from "../services/invoiceService";
 import { checkPlanLimit } from "../lib/orgSettings";
 import { safeDeliverableUrl } from "./public-invoice.routes";
 import { emailEnabled, sendMail } from "../lib/mailer";
+import { unsubscribeUrl } from "../lib/unsubscribe";
 
 const PUBLIC_APP_URL = (process.env.PUBLIC_APP_URL || "https://paivo.in").replace(/\/$/, "");
 const REMINDER_COOLDOWN_MS = 24 * 60 * 60 * 1000;
@@ -391,6 +392,7 @@ router.post("/:id/send-reminder", async (req, res) => {
 
 A friendly reminder that invoice ${invoice.invoice_number} is outstanding.`,
                     payUrl: `${PUBLIC_APP_URL}/pay/${invoice.id}`,
+                    unsubscribeUrl: unsubscribeUrl(PUBLIC_APP_URL, organization_id, invoice.customers.email),
                 });
                 deliveredId = sent.id;
             } catch (e) {

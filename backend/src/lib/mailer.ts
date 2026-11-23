@@ -27,6 +27,7 @@ export interface MailInput {
   subject: string;
   text: string;
   payUrl?: string;
+  unsubscribeUrl?: string;
 }
 
 export async function sendMail(input: MailInput): Promise<{ id: string }> {
@@ -35,13 +36,13 @@ export async function sendMail(input: MailInput): Promise<{ id: string }> {
 
   const footer =
     `\n\n--\nSent by ${cleanName(input.fromName)} using Paivo. Reply to this email to reach ${cleanName(input.fromName)} directly.`;
-  const text = input.text + (input.payUrl ? `\n\nView and pay online: ${input.payUrl}` : "") + footer;
+  const text = input.text + (input.payUrl ? `\n\nView and pay online: ${input.payUrl}` : "") + footer + (input.unsubscribeUrl ? `\nDon't want these emails? Unsubscribe: ${input.unsubscribeUrl}` : "");
   const html =
     `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#0f172a;white-space:pre-wrap">${esc(input.text)}</div>` +
     (input.payUrl
       ? `<p style="margin:20px 0"><a href="${esc(input.payUrl)}" style="background:#4f46e5;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-family:Arial,sans-serif;font-size:14px;font-weight:bold">View and pay online</a></p>`
       : "") +
-    `<p style="font-family:Arial,sans-serif;font-size:12px;color:#64748b">Sent by ${esc(cleanName(input.fromName))} using Paivo. Reply to this email to reach ${esc(cleanName(input.fromName))} directly.</p>`;
+    `<p style="font-family:Arial,sans-serif;font-size:12px;color:#64748b">Sent by ${esc(cleanName(input.fromName))} using Paivo. Reply to this email to reach ${esc(cleanName(input.fromName))} directly. ${input.unsubscribeUrl ? `<a href="${esc(input.unsubscribeUrl)}" style="color:#64748b">Unsubscribe</a>` : ""}</p>`;
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -51,6 +52,9 @@ export async function sendMail(input: MailInput): Promise<{ id: string }> {
       to: [input.to],
       reply_to: input.replyTo ? [input.replyTo] : undefined,
       subject: cleanSubject(input.subject),
+      headers: input.unsubscribeUrl
+        ? { "List-Unsubscribe": `<${input.unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" }
+        : undefined,
       text,
       html,
     }),

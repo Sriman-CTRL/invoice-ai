@@ -20,6 +20,7 @@ import publicInvoiceRoutes from "./routes/public-invoice.routes";
 import adminRoutes from "./routes/admin.routes";
 import eventsRoutes from "./routes/events.routes";
 import leadsRoutes from "./routes/leads.routes";
+import unsubscribeRoutes from "./routes/unsubscribe.routes";
 import { authMiddleware } from "./middleware/auth.middleware";
 import { rateLimit } from "./middleware/rateLimit";
 
@@ -94,6 +95,7 @@ app.use("/api/auth", systemContext, rateLimit({ windowMs: 60_000, max: 20, messa
 app.use("/api/events", systemContext, rateLimit({ windowMs: 60_000, max: 120, message: "Too many events." }), eventsRoutes);
 
 // Public waitlist + feedback (strict rate limit; honeypot inside the route)
+app.use("/api/unsubscribe", systemContext, rateLimit({ windowMs: 60_000, max: 30, message: "Too many requests." }), unsubscribeRoutes);
 app.use("/api/leads", systemContext, rateLimit({ windowMs: 60_000, max: 8, message: "Too many submissions. Please try again in a minute." }), leadsRoutes);
 
 // 2. Inbound webhook endpoint

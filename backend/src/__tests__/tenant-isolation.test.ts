@@ -30,7 +30,7 @@ async function call(method: string, path: string, body?: unknown, token?: string
 async function makeTenant(label: string, invoiceNumber: string): Promise<Tenant> {
   const email = `iso-${label}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
   const password = "Isolate-Tenant-7391";
-  const reg = await call("POST", "/api/auth/register", { email, password, organization_name: `Iso ${label}` });
+  const reg = await call("POST", "/api/auth/register", { email, password, organization_name: `Iso ${label}`, accepted_terms: true });
   assert.equal(reg.status, 201, "register");
   const login = await call("POST", "/api/auth/login", { email, password });
   assert.equal(login.status, 200, "login");
@@ -174,7 +174,7 @@ test("INPUT: deliverable links must be plain http(s) URLs", opts, async () => {
 test("AUTH: weak passwords are rejected and repeated bad logins are locked out", opts, async () => {
   assert.equal((await call("POST", "/api/auth/register", { email: `weak-${Date.now()}@example.com`, password: "password", organization_name: "Weak" })).status, 400);
   const email = `lock-${Date.now()}@example.com`;
-  const reg = await call("POST", "/api/auth/register", { email, password: "Lockout-Tenant-7391", organization_name: "Lock" });
+  const reg = await call("POST", "/api/auth/register", { email, password: "Lockout-Tenant-7391", organization_name: "Lock", accepted_terms: true });
   assert.equal(reg.status, 201);
   const lockedOrg = (await call("POST", "/api/auth/login", { email, password: "Lockout-Tenant-7391" })).json.user.organization_id;
   created.orgIds.push(lockedOrg);
@@ -246,7 +246,7 @@ test("ANALYTICS: page views are recorded without personal data and the report is
 test("PASSWORD: changing a password needs the current one, enforces strength, and replaces the old one", opts, async () => {
   const email = `pw-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
   const first = "OriginalPass2468";
-  const reg = await call("POST", "/api/auth/register", { email, password: first, organization_name: "PW Org" });
+  const reg = await call("POST", "/api/auth/register", { email, password: first, organization_name: "PW Org", accepted_terms: true });
   assert.equal(reg.status, 201);
   const login = await call("POST", "/api/auth/login", { email, password: first });
   created.orgIds.push(login.json.user.organization_id);

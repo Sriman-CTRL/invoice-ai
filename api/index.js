@@ -1027,8 +1027,9 @@ async function sendMail(input) {
 Sent by ${cleanName(input.fromName)} using Paivo. Reply to this email to reach ${cleanName(input.fromName)} directly.`;
   const text = input.text + (input.payUrl ? `
 
-View and pay online: ${input.payUrl}` : "") + footer;
-  const html = `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#0f172a;white-space:pre-wrap">${esc(input.text)}</div>` + (input.payUrl ? `<p style="margin:20px 0"><a href="${esc(input.payUrl)}" style="background:#4f46e5;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-family:Arial,sans-serif;font-size:14px;font-weight:bold">View and pay online</a></p>` : "") + `<p style="font-family:Arial,sans-serif;font-size:12px;color:#64748b">Sent by ${esc(cleanName(input.fromName))} using Paivo. Reply to this email to reach ${esc(cleanName(input.fromName))} directly.</p>`;
+View and pay online: ${input.payUrl}` : "") + footer + (input.unsubscribeUrl ? `
+Don't want these emails? Unsubscribe: ${input.unsubscribeUrl}` : "");
+  const html = `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#0f172a;white-space:pre-wrap">${esc(input.text)}</div>` + (input.payUrl ? `<p style="margin:20px 0"><a href="${esc(input.payUrl)}" style="background:#4f46e5;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-family:Arial,sans-serif;font-size:14px;font-weight:bold">View and pay online</a></p>` : "") + `<p style="font-family:Arial,sans-serif;font-size:12px;color:#64748b">Sent by ${esc(cleanName(input.fromName))} using Paivo. Reply to this email to reach ${esc(cleanName(input.fromName))} directly. ${input.unsubscribeUrl ? `<a href="${esc(input.unsubscribeUrl)}" style="color:#64748b">Unsubscribe</a>` : ""}</p>`;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -1037,6 +1038,7 @@ View and pay online: ${input.payUrl}` : "") + footer;
       to: [input.to],
       reply_to: input.replyTo ? [input.replyTo] : void 0,
       subject: cleanSubject(input.subject),
+      headers: input.unsubscribeUrl ? { "List-Unsubscribe": `<${input.unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } : void 0,
       text,
       html
     }),
@@ -1045,6 +1047,38 @@ View and pay online: ${input.payUrl}` : "") + footer;
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data?.message || `Email provider error (${res.status})`);
   return { id: String(data.id || "") };
+}
+
+// backend/src/lib/unsubscribe.ts
+import crypto from "crypto";
+
+// backend/src/lib/config.ts
+import "dotenv/config";
+function requireSecret(name) {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV !== "test") {
+    throw new Error(`${name} must be set. See backend/.env.example`);
+  }
+  return value || "";
+}
+var JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === "test" ? "test_secret_do_not_use" : requireSecret("JWT_SECRET"));
+var JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+var INBOUND_DOMAIN = process.env.INBOUND_DOMAIN || "in.ar.ledgerlane.local";
+var INBOUND_WEBHOOK_SECRET = process.env.INBOUND_WEBHOOK_SECRET || "";
+var AI_CONFIDENCE_THRESHOLD = Number(process.env.AI_CONFIDENCE_THRESHOLD ?? "0.75");
+
+// backend/src/lib/unsubscribe.ts
+function unsubscribeToken(orgId, email) {
+  return crypto.createHmac("sha256", JWT_SECRET).update(`unsub:${orgId}:${email.toLowerCase()}`).digest("hex").slice(0, 32);
+}
+function verifyUnsubscribeToken(orgId, email, token) {
+  const expected = Buffer.from(unsubscribeToken(orgId, email));
+  const given = Buffer.from(String(token || ""));
+  return expected.length === given.length && crypto.timingSafeEqual(expected, given);
+}
+function unsubscribeUrl(baseUrl, orgId, email) {
+  const q = new URLSearchParams({ o: orgId, e: email.toLowerCase(), t: unsubscribeToken(orgId, email) });
+  return `${baseUrl}/api/unsubscribe?${q.toString()}`;
 }
 
 // backend/src/routes/invoice.routes.ts
@@ -1362,7 +1396,8 @@ router4.post("/:id/send-reminder", async (req, res) => {
           text: String(body || "").slice(0, 5e3) || `Hello ${invoice.customers.name},
 
 A friendly reminder that invoice ${invoice.invoice_number} is outstanding.`,
-          payUrl: `${PUBLIC_APP_URL}/pay/${invoice.id}`
+          payUrl: `${PUBLIC_APP_URL}/pay/${invoice.id}`,
+          unsubscribeUrl: unsubscribeUrl(PUBLIC_APP_URL, organization_id, invoice.customers.email)
         });
         deliveredId = sent.id;
       } catch (e) {
@@ -1443,11 +1478,11 @@ var invoice_routes_default = router4;
 import { Router as Router5 } from "express";
 
 // backend/src/lib/auditLogger.ts
-import crypto from "crypto";
+import crypto2 from "crypto";
 var AuditLogger = class {
   log(event) {
     const record = {
-      event_id: crypto.randomUUID(),
+      event_id: crypto2.randomUUID(),
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       ...event,
       metadata: this.sanitizeMetadata(event.metadata)
@@ -2037,21 +2072,6 @@ function getIntentClassifier() {
     `Unknown CLASSIFIER provider "${provider}". Supported values: "mock", "ollama", "gemini".`
   );
 }
-
-// backend/src/lib/config.ts
-import "dotenv/config";
-function requireSecret(name) {
-  const value = process.env[name];
-  if (!value && process.env.NODE_ENV !== "test") {
-    throw new Error(`${name} must be set. See backend/.env.example`);
-  }
-  return value || "";
-}
-var JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === "test" ? "test_secret_do_not_use" : requireSecret("JWT_SECRET"));
-var JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
-var INBOUND_DOMAIN = process.env.INBOUND_DOMAIN || "in.ar.ledgerlane.local";
-var INBOUND_WEBHOOK_SECRET = process.env.INBOUND_WEBHOOK_SECRET || "";
-var AI_CONFIDENCE_THRESHOLD = Number(process.env.AI_CONFIDENCE_THRESHOLD ?? "0.75");
 
 // backend/src/services/collectionActionEngine.ts
 var DUPLICATE_WINDOW_STATUSES = ["PENDING", "PROCESSING"];
@@ -3850,7 +3870,11 @@ function slugify(name) {
 }
 router11.post("/register", turnstileGuard, async (req, res) => {
   try {
-    const { email, password, name, organization_name } = req.body ?? {};
+    const { email, password, name, organization_name, accepted_terms } = req.body ?? {};
+    if (accepted_terms !== true) {
+      res.status(400).json({ error: "Please confirm you are 18 or older and accept the Terms and Privacy Policy." });
+      return;
+    }
     if (!email || !password || !organization_name) {
       res.status(400).json({ error: "email, password, and organization_name are required" });
       return;
@@ -3982,7 +4006,7 @@ var auth_routes_default = router11;
 
 // backend/src/routes/inbound.routes.ts
 import { Router as Router12 } from "express";
-import crypto2 from "crypto";
+import crypto3 from "crypto";
 
 // backend/src/middleware/rateLimit.ts
 var buckets = /* @__PURE__ */ new Map();
@@ -4021,7 +4045,7 @@ function safeCompare(a, b) {
   const bufA = Buffer.from(a);
   const bufB = Buffer.from(b);
   if (bufA.length !== bufB.length) return false;
-  return crypto2.timingSafeEqual(bufA, bufB);
+  return crypto3.timingSafeEqual(bufA, bufB);
 }
 router12.post(
   "/email",
@@ -4477,6 +4501,47 @@ router17.post("/", async (req, res) => {
 });
 var leads_routes_default = router17;
 
+// backend/src/routes/unsubscribe.routes.ts
+import { Router as Router18 } from "express";
+var router18 = Router18();
+var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var esc2 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+var page = (res, status, title, body) => res.status(status).type("html").send(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc2(title)}</title></head><body style="font-family:Arial,sans-serif;max-width:440px;margin:15vh auto;padding:0 20px;color:#0f172a;line-height:1.6"><h1 style="font-size:22px">${esc2(title)}</h1>${body}</body></html>`);
+function parse(req) {
+  const o = String(req.query.o || "");
+  const e = String(req.query.e || "").toLowerCase().trim();
+  const t = String(req.query.t || "");
+  if (!UUID.test(o) || !e || e.length > 320 || !verifyUnsubscribeToken(o, e, t)) return null;
+  return { o, e, t };
+}
+router18.get("/", (req, res) => {
+  const p = parse(req);
+  if (!p) return page(res, 400, "Link not valid", "<p>This unsubscribe link is invalid or incomplete.</p>");
+  const q = new URLSearchParams({ o: p.o, e: p.e, t: p.t }).toString();
+  return page(
+    res,
+    200,
+    "Unsubscribe",
+    `<p>Stop payment reminder emails sent to <b>${esc2(p.e)}</b> through Paivo?</p><form method="post" action="/api/unsubscribe?${esc2(q)}"><button style="background:#4f46e5;color:#fff;border:0;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer">Yes, unsubscribe me</button></form>`
+  );
+});
+router18.post("/", async (req, res) => {
+  const p = parse(req);
+  if (!p) return page(res, 400, "Link not valid", "<p>This unsubscribe link is invalid or incomplete.</p>");
+  try {
+    await prisma_default.suppressions.upsert({
+      where: { organization_id_address: { organization_id: p.o, address: p.e } },
+      create: { organization_id: p.o, channel: "EMAIL", address: p.e, reason: "Recipient unsubscribed via email link" },
+      update: {}
+    });
+    return page(res, 200, "You're unsubscribed", "<p>You won't receive further reminder emails from this sender through Paivo.</p>");
+  } catch (e) {
+    console.error("unsubscribe failed", e);
+    return page(res, 500, "Something went wrong", "<p>Please try again in a moment.</p>");
+  }
+});
+var unsubscribe_routes_default = router18;
+
 // backend/src/server.ts
 var app = express();
 app.set("trust proxy", 1);
@@ -4527,6 +4592,7 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 app.use("/api/auth", systemContext, rateLimit({ windowMs: 6e4, max: 20, message: "Too many authentication attempts. Please wait 1 minute." }), auth_routes_default);
 app.use("/api/events", systemContext, rateLimit({ windowMs: 6e4, max: 120, message: "Too many events." }), events_routes_default);
+app.use("/api/unsubscribe", systemContext, rateLimit({ windowMs: 6e4, max: 30, message: "Too many requests." }), unsubscribe_routes_default);
 app.use("/api/leads", systemContext, rateLimit({ windowMs: 6e4, max: 8, message: "Too many submissions. Please try again in a minute." }), leads_routes_default);
 app.use("/api/inbound", systemContext, inbound_routes_default);
 app.use(
