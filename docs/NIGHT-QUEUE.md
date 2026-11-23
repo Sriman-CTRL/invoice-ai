@@ -328,11 +328,13 @@ in the notes.
 
 **Notes (B1):** backend/src/lib/gstin.ts (own code, no dependency: R2 found gstin-validator stale): shape + state code (01-38, 97, 99) + base-36 check digit; used by the settings API. Existing saved data is not broken: a format-valid GSTIN already stored is still accepted when saved again unchanged (new or changed values must pass the check digit). IFSC: format check (4 letters, 0, 6 alphanumerics) with a clear message; bank/branch lookup NOT added because the ifsc package is 1.5 MB unpacked and depends on the deprecated 'request' library, so format only as the queue allows. Settings page shows inline red messages under GSTIN and IFSC while typing (src/gstin.ts mirrors the server file; both tested with the same vectors); GSTIN placeholder changed to a check-digit-valid example 29ABCDE1234F1ZW. Tests: backend gstin.test.ts (5), tests/gstin.test.ts (2). DoD: typecheck pass; backend 79 run/79 pass/0 skip; build pass; test:web 9 pass.
 
-## [ ] B2. Amount in words on invoices
+## [x] B2. Amount in words on invoices
 
 Indian numbering (lakh/crore), e.g. "Rupees Forty-Five Thousand Only", with paise when present. Pure function with
 unit tests (0, 1, 99.50, 1,00,000, 1,23,45,678.90, 99,99,99,999). Show it on the PDF invoice (`src/invoicePdf.ts`) under
 the total and on the pay page. Use an R2-vetted package only if clearly better than ~40 lines of tested code.
+
+**Notes (B2):** src/amountInWords.ts (about 40 lines, own code per R2): lakh/crore, paise, e.g. 'Rupees Ninety-Nine and Fifty Paise Only'; null for invalid input. Shown under the totals on the PDF (italic 'Invoice total in words', right-aligned, INR invoices only; verified the text is present in a generated PDF) and under the totals box on the pay page (INR only). Shows the invoice total, not the balance. Tests (tests/amountInWords.test.ts, 3): 0, 1, 99.50, 1,00,000, 1,23,45,678.90, 99,99,99,999 plus teens, rounding, 10 and 100 crore and invalid input. DoD: typecheck pass; backend 79/79, 0 skip; build pass; test:web 12 pass.
 
 ## [ ] T6. Automatic overdue reminders (off by default)
 

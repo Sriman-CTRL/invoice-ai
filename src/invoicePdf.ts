@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
 import type { InvoiceDetail, OrgSettings } from "./types";
+import { amountInWords } from "./amountInWords";
 
 export const PUBLIC_BASE_URL = "https://paivo.in";
 
@@ -184,6 +185,15 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   doc.line(tx, y - 3, W - M, y - 3);
   y += 2;
   row("Balance due", inr(fin.outstanding_amount, currency), true, paid ? GREEN : INK);
+
+  // Invoice total in words (Indian numbering). Only for rupee invoices.
+  const totalWords = currency === "INR" ? amountInWords(Number(dt ? dt.total : fin.invoice_amount)) : null;
+  if (totalWords) {
+    doc.setFont("helvetica", "italic"); doc.setFontSize(8.5); set(MUTED);
+    const wordLines = doc.splitTextToSize(`Invoice total in words: ${totalWords}`, W - 2 * M) as string[];
+    doc.text(wordLines, W - M - 3, y, { align: "right" });
+    y += wordLines.length * 4 + 2;
+  }
 
   if (data.details?.notes) {
     y += 2;

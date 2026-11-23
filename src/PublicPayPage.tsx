@@ -24,6 +24,7 @@ import { compressImage } from "./imageUtil";
 import { TURNSTILE_SITE_KEY, TurnstileWidget } from "./TurnstileWidget";
 import type { PublicInvoiceDetail } from "./types";
 import { buildUpiUri } from "./upi";
+import { amountInWords } from "./amountInWords";
 
 function upiLinkFor(d: PublicInvoiceDetail) {
   return buildUpiUri({
@@ -343,6 +344,9 @@ export function PublicPayPage() {
                     </p>
                   </div>
                 </div>
+                {data.currency === "INR" && amountInWords(totalAmount) && (
+                  <p className="mt-3 border-t border-white/5 pt-3 text-center text-[11px] italic text-slate-400">{amountInWords(totalAmount)}</p>
+                )}
               </div>
             </div>
 
