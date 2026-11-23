@@ -3611,7 +3611,89 @@ var dashboard_routes_default = router10;
 // backend/src/routes/auth.routes.ts
 import { Router as Router11 } from "express";
 import bcrypt from "bcryptjs";
+import jwt2 from "jsonwebtoken";
+
+// backend/src/middleware/auth.middleware.ts
 import jwt from "jsonwebtoken";
+function authMiddleware(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const token = authHeader.split(" ")[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
+    if (!decoded.organization_id) {
+      res.status(401).json({ error: "Invalid token" });
+      return;
+    }
+    req.user = decoded;
+    enterTenant(decoded.organization_id);
+    const reqOrgId = req.query.organization_id || req.body?.organization_id;
+    if (reqOrgId && reqOrgId !== decoded.organization_id) {
+      auditLogger.log({
+        organization_id: decoded.organization_id,
+        actor: { type: "USER", id: decoded.id },
+        action: "CROSS_TENANT_ACCESS_BLOCKED",
+        resource_type: "ORGANIZATION",
+        resource_id: String(reqOrgId),
+        outcome: "DENIED",
+        ip_address: req.ip,
+        metadata: { path: req.originalUrl || req.url, method: req.method }
+      });
+      res.status(403).json({ error: "Access denied. Cross-tenant request rejected." });
+      return;
+    }
+    if (!req.query.organization_id) {
+      const [path, queryString = ""] = req.url.split("?");
+      const query = new URLSearchParams(queryString);
+      query.set("organization_id", decoded.organization_id);
+      req.url = `${path}?${query.toString()}`;
+    }
+    if (req.method !== "GET" && typeof req.body === "object" && req.body !== null && !req.body.organization_id) {
+      req.body.organization_id = decoded.organization_id;
+    }
+    next();
+  } catch {
+    res.status(401).json({ error: "Invalid token" });
+  }
+}
+
+// backend/src/lib/passwordPolicy.ts
+var COMMON = [
+  "password",
+  "passw0rd",
+  "qwerty",
+  "letmein",
+  "welcome",
+  "admin",
+  "iloveyou",
+  "abc123",
+  "1q2w3e",
+  "monkey",
+  "dragon",
+  "football",
+  "login",
+  "master",
+  "sunshine",
+  "princess",
+  "changeme",
+  "ledgerlane",
+  "invoice"
+];
+function passwordProblem(password, email, minLength = 10) {
+  if (typeof password !== "string") return "Password is required";
+  if (password.length < minLength || password.length > 72) return `Password must be ${minLength}-72 characters`;
+  if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) return "Password must include at least one letter and one number";
+  const lower = password.toLowerCase();
+  if (COMMON.some((w) => lower.includes(w))) return "That password contains a very common word. Please choose something less guessable";
+  if (/(.)\1{3,}/.test(password)) return "Avoid repeating the same character many times";
+  if (/(0123|1234|2345|3456|4567|5678|6789|abcd|bcde|cdef|qwer|asdf|zxcv)/i.test(password)) return "Avoid simple sequences like 1234 or abcd";
+  const local = (email || "").split("@")[0].toLowerCase();
+  if (local.length >= 4 && lower.includes(local)) return "Password must not contain your email name";
+  return null;
+}
 
 // backend/src/lib/loginThrottle.ts
 var WINDOW_MINUTES = 15;
@@ -3681,8 +3763,9 @@ router11.post("/register", turnstileGuard, async (req, res) => {
       res.status(400).json({ error: "A valid email is required" });
       return;
     }
-    if (typeof password !== "string" || password.length < 10 || password.length > 72 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-      res.status(400).json({ error: "Password must be 10-72 characters and include at least one letter and one number" });
+    const weak = passwordProblem(password, emailTrimmed, 10);
+    if (weak) {
+      res.status(400).json({ error: weak });
       return;
     }
     const existingUser = await prisma_default.users.findFirst({ where: { email: emailTrimmed } });
@@ -3740,7 +3823,7 @@ router11.post("/login", async (req, res) => {
       return;
     }
     await clearLoginFailures(emailTrimmed);
-    const token = jwt.sign(
+    const token = jwt2.sign(
       { id: user.id, organization_id: user.organization_id },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
@@ -3751,6 +3834,50 @@ router11.post("/login", async (req, res) => {
     });
   } catch (error) {
     console.error("Login error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router11.put("/password", authMiddleware, async (req, res) => {
+  try {
+    const { current_password, new_password } = req.body ?? {};
+    const userId = req.user?.id;
+    if (!userId || typeof current_password !== "string" || typeof new_password !== "string") {
+      res.status(400).json({ error: "current_password and new_password are required" });
+      return;
+    }
+    const user = await prisma_default.users.findFirst({ where: { id: userId } });
+    if (!user) {
+      res.status(404).json({ error: "Account not found" });
+      return;
+    }
+    const throttleKey = `pwchange:${user.email}`.slice(0, 255);
+    const ip = String(req.ip || "unknown");
+    const wait = await loginLockoutSeconds(throttleKey, ip);
+    if (wait > 0) {
+      res.setHeader("Retry-After", String(wait));
+      res.status(429).json({ error: "Too many failed attempts. Please wait 15 minutes and try again." });
+      return;
+    }
+    if (!user.password_hash || !await bcrypt.compare(current_password, user.password_hash)) {
+      await recordLoginFailure(throttleKey, ip);
+      res.status(400).json({ error: "Your current password is incorrect" });
+      return;
+    }
+    const problem = passwordProblem(new_password, user.email, 12);
+    if (problem) {
+      res.status(400).json({ error: problem });
+      return;
+    }
+    if (new_password === current_password) {
+      res.status(400).json({ error: "Your new password must be different from the current one" });
+      return;
+    }
+    await prisma_default.users.update({ where: { id: user.id }, data: { password_hash: await bcrypt.hash(new_password, 12) } });
+    await clearLoginFailures(throttleKey);
+    await clearLoginFailures(user.email);
+    res.json({ success: true, message: "Password updated. Use your new password the next time you sign in." });
+  } catch (error) {
+    console.error("Change password error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -4181,53 +4308,6 @@ router16.post("/", async (req, res) => {
   }
 });
 var events_routes_default = router16;
-
-// backend/src/middleware/auth.middleware.ts
-import jwt2 from "jsonwebtoken";
-function authMiddleware(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  const token = authHeader.split(" ")[1];
-  try {
-    const decoded = jwt2.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
-    if (!decoded.organization_id) {
-      res.status(401).json({ error: "Invalid token" });
-      return;
-    }
-    req.user = decoded;
-    enterTenant(decoded.organization_id);
-    const reqOrgId = req.query.organization_id || req.body?.organization_id;
-    if (reqOrgId && reqOrgId !== decoded.organization_id) {
-      auditLogger.log({
-        organization_id: decoded.organization_id,
-        actor: { type: "USER", id: decoded.id },
-        action: "CROSS_TENANT_ACCESS_BLOCKED",
-        resource_type: "ORGANIZATION",
-        resource_id: String(reqOrgId),
-        outcome: "DENIED",
-        ip_address: req.ip,
-        metadata: { path: req.originalUrl || req.url, method: req.method }
-      });
-      res.status(403).json({ error: "Access denied. Cross-tenant request rejected." });
-      return;
-    }
-    if (!req.query.organization_id) {
-      const [path, queryString = ""] = req.url.split("?");
-      const query = new URLSearchParams(queryString);
-      query.set("organization_id", decoded.organization_id);
-      req.url = `${path}?${query.toString()}`;
-    }
-    if (req.method !== "GET" && typeof req.body === "object" && req.body !== null && !req.body.organization_id) {
-      req.body.organization_id = decoded.organization_id;
-    }
-    next();
-  } catch {
-    res.status(401).json({ error: "Invalid token" });
-  }
-}
 
 // backend/src/server.ts
 var app = express();

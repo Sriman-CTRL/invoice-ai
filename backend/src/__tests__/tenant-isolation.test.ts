@@ -29,7 +29,7 @@ async function call(method: string, path: string, body?: unknown, token?: string
 
 async function makeTenant(label: string, invoiceNumber: string): Promise<Tenant> {
   const email = `iso-${label}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
-  const password = "Isolation12345";
+  const password = "Isolate-Tenant-7391";
   const reg = await call("POST", "/api/auth/register", { email, password, organization_name: `Iso ${label}` });
   assert.equal(reg.status, 201, "register");
   const login = await call("POST", "/api/auth/login", { email, password });
@@ -174,14 +174,14 @@ test("INPUT: deliverable links must be plain http(s) URLs", opts, async () => {
 test("AUTH: weak passwords are rejected and repeated bad logins are locked out", opts, async () => {
   assert.equal((await call("POST", "/api/auth/register", { email: `weak-${Date.now()}@example.com`, password: "password", organization_name: "Weak" })).status, 400);
   const email = `lock-${Date.now()}@example.com`;
-  const reg = await call("POST", "/api/auth/register", { email, password: "Lockout12345", organization_name: "Lock" });
+  const reg = await call("POST", "/api/auth/register", { email, password: "Lockout-Tenant-7391", organization_name: "Lock" });
   assert.equal(reg.status, 201);
-  const lockedOrg = (await call("POST", "/api/auth/login", { email, password: "Lockout12345" })).json.user.organization_id;
+  const lockedOrg = (await call("POST", "/api/auth/login", { email, password: "Lockout-Tenant-7391" })).json.user.organization_id;
   created.orgIds.push(lockedOrg);
   const codes: number[] = [];
   for (let i = 0; i < 10; i++) codes.push((await call("POST", "/api/auth/login", { email, password: `wrong-${i}` }, undefined, { "x-test": String(i) })).status);
   assert.ok(codes.includes(429), `expected a lockout, got ${codes.join(",")}`);
-  assert.equal((await call("POST", "/api/auth/login", { email, password: "Lockout12345" })).status, 429, "correct password is refused while locked");
+  assert.equal((await call("POST", "/api/auth/login", { email, password: "Lockout-Tenant-7391" })).status, 429, "correct password is refused while locked");
 });
 
 test("CORS: arbitrary *.vercel.app origins are not trusted", opts, async () => {
@@ -241,4 +241,30 @@ test("ANALYTICS: page views are recorded without personal data and the report is
   } finally {
     if (previous === undefined) delete process.env.PLATFORM_ADMIN_EMAILS; else process.env.PLATFORM_ADMIN_EMAILS = previous;
   }
+});
+
+test("PASSWORD: changing a password needs the current one, enforces strength, and replaces the old one", opts, async () => {
+  const email = `pw-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
+  const first = "OriginalPass2468";
+  const reg = await call("POST", "/api/auth/register", { email, password: first, organization_name: "PW Org" });
+  assert.equal(reg.status, 201);
+  const login = await call("POST", "/api/auth/login", { email, password: first });
+  created.orgIds.push(login.json.user.organization_id);
+  const token = login.json.token as string;
+
+  assert.equal((await call("PUT", "/api/auth/password", { current_password: first, new_password: "Brand-New-Pass-9051" })).status, 401, "must be signed in");
+  const wrong = await call("PUT", "/api/auth/password", { current_password: "not-my-password", new_password: "Brand-New-Pass-9051" }, token);
+  assert.equal(wrong.status, 400);
+  assert.match(wrong.json.error, /current password/i);
+
+  for (const weak of ["short1A", "onlyletterslongpassword", "Password123456789", "Mypassword-1234567", email.split("@")[0] + "9"]) {
+    const r = await call("PUT", "/api/auth/password", { current_password: first, new_password: weak }, token);
+    assert.equal(r.status, 400, `weak password should be rejected: ${weak}`);
+  }
+  assert.equal((await call("PUT", "/api/auth/password", { current_password: first, new_password: first }, token)).status, 400, "same password refused");
+
+  const ok = await call("PUT", "/api/auth/password", { current_password: first, new_password: "Brand-New-Pass-9051" }, token);
+  assert.equal(ok.status, 200);
+  assert.equal((await call("POST", "/api/auth/login", { email, password: first })).status, 401, "old password no longer works");
+  assert.equal((await call("POST", "/api/auth/login", { email, password: "Brand-New-Pass-9051" })).status, 200, "new password works");
 });

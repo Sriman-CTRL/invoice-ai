@@ -4,6 +4,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET, JWT_EXPIRES_IN } from "../lib/config";
 import { turnstileGuard } from "../lib/turnstile";
+import { authMiddleware } from "../middleware/auth.middleware";
+import { passwordProblem } from "../lib/passwordPolicy";
 import { clearLoginFailures, loginLockoutSeconds, recordLoginFailure } from "../lib/loginThrottle";
 
 const router = Router();
@@ -30,8 +32,9 @@ router.post("/register", turnstileGuard, async (req: Request, res: Response): Pr
       res.status(400).json({ error: "A valid email is required" });
       return;
     }
-    if (typeof password !== "string" || password.length < 10 || password.length > 72 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-      res.status(400).json({ error: "Password must be 10-72 characters and include at least one letter and one number" });
+    const weak = passwordProblem(password, emailTrimmed, 10);
+    if (weak) {
+      res.status(400).json({ error: weak });
       return;
     }
 
@@ -118,6 +121,60 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     console.error("Login error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
+ * PUT /api/auth/password: change your own password. Requires the current password,
+ * is brute-force throttled, and enforces the stronger 12+ character policy.
+ */
+router.put("/password", authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { current_password, new_password } = req.body ?? {};
+    const userId = req.user?.id;
+    if (!userId || typeof current_password !== "string" || typeof new_password !== "string") {
+      res.status(400).json({ error: "current_password and new_password are required" });
+      return;
+    }
+
+    const user = await prisma.users.findFirst({ where: { id: userId } });
+    if (!user) {
+      res.status(404).json({ error: "Account not found" });
+      return;
+    }
+
+    const throttleKey = `pwchange:${user.email}`.slice(0, 255);
+    const ip = String(req.ip || "unknown");
+    const wait = await loginLockoutSeconds(throttleKey, ip);
+    if (wait > 0) {
+      res.setHeader("Retry-After", String(wait));
+      res.status(429).json({ error: "Too many failed attempts. Please wait 15 minutes and try again." });
+      return;
+    }
+
+    if (!user.password_hash || !(await bcrypt.compare(current_password, user.password_hash))) {
+      await recordLoginFailure(throttleKey, ip);
+      res.status(400).json({ error: "Your current password is incorrect" });
+      return;
+    }
+
+    const problem = passwordProblem(new_password, user.email, 12);
+    if (problem) {
+      res.status(400).json({ error: problem });
+      return;
+    }
+    if (new_password === current_password) {
+      res.status(400).json({ error: "Your new password must be different from the current one" });
+      return;
+    }
+
+    await prisma.users.update({ where: { id: user.id }, data: { password_hash: await bcrypt.hash(new_password, 12) } });
+    await clearLoginFailures(throttleKey);
+    await clearLoginFailures(user.email);
+    res.json({ success: true, message: "Password updated. Use your new password the next time you sign in." });
+  } catch (error) {
+    console.error("Change password error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

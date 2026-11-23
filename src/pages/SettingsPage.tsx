@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { Banknote, Check, CreditCard, Crown, Landmark, ShieldCheck } from "lucide-react";
-import { settingsApi } from "../api";
+import { accountApi, settingsApi } from "../api";
 import { PageHeader, TableSkeleton, ErrorState } from "../components";
 import { PLANS, PLATFORM_UPI_ID, SUPPORT_EMAIL, inrPlain, type Plan } from "../plans";
 import { useToast } from "../toast";
@@ -78,6 +78,74 @@ function UpgradePanel({ plan, onClose, current }: { plan: Plan; onClose: () => v
         )}
       </div>
     </div>
+  );
+}
+
+function ChangePasswordCard() {
+  const toast = useToast();
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const checks = [
+    { ok: next.length >= 12, label: "At least 12 characters" },
+    { ok: /[A-Za-z]/.test(next) && /[0-9]/.test(next), label: "Letters and numbers" },
+    { ok: next.length > 0 && next === confirm, label: "Both entries match" },
+  ];
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!checks.every((c) => c.ok)) {
+      setError("Please meet all the requirements below.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await accountApi.changePassword({ current_password: current, new_password: next });
+      toast.success("Password updated", "Use your new password next time you sign in.");
+      setCurrent(""); setNext(""); setConfirm("");
+    } catch (err: any) {
+      setError(err?.message || "Could not change password.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="panel mt-6 p-6" autoComplete="off">
+      <div className="mb-4 flex items-center gap-2.5">
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-rose-50 text-rose-600"><ShieldCheck className="h-4.5 w-4.5" /></span>
+        <div>
+          <h2 className="text-base font-bold text-slate-900">Change password</h2>
+          <p className="text-xs text-slate-500">Use a long, unique password. A password manager helps.</p>
+        </div>
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <label className="block"><span className="label">Current password</span>
+          <input className="input" type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} />
+        </label>
+        <label className="block"><span className="label">New password</span>
+          <input className="input" type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} />
+        </label>
+        <label className="block"><span className="label">Repeat new password</span>
+          <input className="input" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+        </label>
+      </div>
+      <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs">
+        {checks.map((c) => (
+          <li key={c.label} className={`inline-flex items-center gap-1.5 ${c.ok ? "text-emerald-600" : "text-slate-400"}`}>
+            <Check className="h-3.5 w-3.5" /> {c.label}
+          </li>
+        ))}
+      </ul>
+      {error && <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700" role="alert">{error}</p>}
+      <div className="mt-4 flex justify-end">
+        <button className="btn-primary" disabled={busy || !current || !next}>{busy ? "Updating…" : "Update password"}</button>
+      </div>
+    </form>
   );
 }
 
@@ -192,6 +260,8 @@ export function SettingsPage() {
           </ul>
         </aside>
       </div>
+
+      <ChangePasswordCard />
 
       {upgrade && <UpgradePanel plan={upgrade} current={plan} onClose={() => setUpgrade(null)} />}
     </>

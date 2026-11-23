@@ -44,7 +44,7 @@ const register = async (token?: string) => {
   const res = await fetch(`${base}/api/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: `ts-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`, password: "Turnstile12345", organization_name: "TS Org", turnstile_token: token }),
+    body: JSON.stringify({ email: `ts-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`, password: "Turnstile-Check-7391", organization_name: "TS Org", turnstile_token: token }),
   });
   const json: any = await res.json().catch(() => ({}));
   if (json?.organization?.id) orgIds.push(json.organization.id);
