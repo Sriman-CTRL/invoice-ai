@@ -54,7 +54,7 @@ export type organizations = Prisma.organizationsModel
 export type payments = Prisma.paymentsModel
 /**
  * Model users
- * 
+ * This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
  */
 export type users = Prisma.usersModel
 /**
@@ -67,3 +67,48 @@ export type suppressions = Prisma.suppressionsModel
  * 
  */
 export type credit_notes = Prisma.credit_notesModel
+/**
+ * Model analytics_events
+ * 
+ */
+export type analytics_events = Prisma.analytics_eventsModel
+/**
+ * Model auth_failures
+ * 
+ */
+export type auth_failures = Prisma.auth_failuresModel
+/**
+ * Model invoice_details
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type invoice_details = Prisma.invoice_detailsModel
+/**
+ * Model invoice_views
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type invoice_views = Prisma.invoice_viewsModel
+/**
+ * Model leads
+ * 
+ */
+export type leads = Prisma.leadsModel
+/**
+ * Model payment_proof_images
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type payment_proof_images = Prisma.payment_proof_imagesModel
+/**
+ * Model plan_requests
+ * 
+ */
+export type plan_requests = Prisma.plan_requestsModel
+/**
+ * Model rate_limits
+ * 
+ */
+export type rate_limits = Prisma.rate_limitsModel
+/**
+ * Model recurring_invoices
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type recurring_invoices = Prisma.recurring_invoicesModel

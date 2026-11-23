@@ -261,7 +261,7 @@ the client pay page, in Paivo's own words and existing visual style.
 
 **Notes (T2):** README rewritten (Live / Coming soon matching PROJECT-HISTORY section 4, stack, local setup incl. enable-rls.cjs, tests/CI, env pointers, inbound email contract checked against inbound.routes.ts: x-inbound-key + x-inbound-timestamp, 5 min window, 503 when unconfigured); no ledgerlane naming or credentials. cloudflare-worker/README.md now uses https://paivo.in/api/inbound/email. DEPLOYMENT_SECURITY.md got the blockquote note only. PROJECT-HISTORY section 5 housekeeping item 'rewrite README' removed; AGENTS.md 'README is outdated' pitfall removed and test:web documented. DoD: typecheck pass; backend 57/57, 0 skip; build pass.
 
-## [ ] T3. Make `schema.prisma` match the real database
+## [x] T3. Make `schema.prisma` match the real database
 
 1. Copy the current `schema.prisma`. Against the local DB (already set up by T0), run `npx prisma db pull`.
 2. Keep every existing model, field name, relation name, map and index unchanged. Accept only additions: the extra
@@ -276,6 +276,8 @@ the client pay page, in Paivo's own words and existing visual style.
 6. AGENTS.md: rewrite the "Schema lives in two places" pitfall: schema.prisma now mirrors the database, but
    `enable-rls.cjs` is what applies changes in production, so every new table/column must be added to both.
    Remove the schema item from PROJECT-HISTORY section 5.
+
+**Notes (T3):** Ran prisma db pull --print against the local DB and used it: existing models/fields/relations/maps/indexes unchanged (only column alignment and relation ordering differ); added organizations columns (upi_id, payee_name, bank_*, gstin, plan, brand_color, logo_data) and tables analytics_events, auth_failures, invoice_details, invoice_views, leads, payment_proof_images, plan_requests, rate_limits, recurring_invoices. No existing raw-SQL code was changed. prisma generate re-ran (src/generated is tracked and regenerated, not hand-edited). Round trip: dropped and recreated the local DB, ran only prisma db push, then enable-rls.cjs: both succeeded; a second db push reported in sync and the index count stayed at 51. DoD after round trip: typecheck pass; backend 57/57, 0 skip; build pass. AGENTS.md pitfall rewritten; PROJECT-HISTORY housekeeping item updated.
 
 ## [ ] T4. Smaller first load (route code-splitting)
 

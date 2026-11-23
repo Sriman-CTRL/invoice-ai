@@ -46,6 +46,7 @@ Last updated: 24 Nov 2026.
 | 24 Nov (night build) | G2: first-party campaign attribution (utm_*, ref) and sign-ups by source in admin Growth. |
 | 24 Nov (night build) | G3: demo screenshots (`scripts/screenshots.mjs`, 16 PNGs in `docs/gtm/assets/`). |
 | 24 Nov (night build) | T2: README rewritten for visitors; docs fixes. |
+| 24 Nov (night build) | T3: `schema.prisma` now mirrors the real database. |
 
 ## 3. Key decisions (and why)
 
@@ -86,6 +87,6 @@ Ranked from `docs/COMPETITOR-KWILL.md`, minus what's done. Let the interviews de
 4. Google sign-in; "What's new" changelog; locked-feature previews once paid plans open.
 5. Quotes that turn into invoices; lead/enquiry form; custom domain per seller (paid tier).
 6. Reconsider Pro price (₹399–499) until automation works; add yearly pricing.
-7. Housekeeping: bring `schema.prisma` in line with `enable-rls.cjs`; add pre-rendered/meta tags so Google and link previews can read the landing page.
+7. Housekeeping: add pre-rendered/meta tags so Google and link previews can read the landing page (meta tags and a static fallback are done in the night build; real pre-rendering is not).
 
 **Not building for now:** e-signed contracts, CRM/pipeline, projects/time tracking, team seats, per-client chat.

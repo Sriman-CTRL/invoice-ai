@@ -64,10 +64,11 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
 
 ## Known pitfalls
 
-- **Schema lives in two places**: `prisma/schema.prisma` has only the core 9 tables. Org settings columns (`upi_id`,
-  `gstin`, `plan`, `brand_color`, `logo_data`, bank fields) and tables `invoice_details`, `invoice_views`,
-  `recurring_invoices`, `plan_requests`, `payment_proof_images`, `auth_failures`, `analytics_events`, `leads` exist only
-  in `enable-rls.cjs`. Query them with raw SQL (see `lib/orgSettings.ts`).
+- **Schema lives in two places, keep them in sync**: `prisma/schema.prisma` now mirrors the whole database (org settings
+  columns, `invoice_details`, `invoice_views`, `recurring_invoices`, `plan_requests`, `payment_proof_images`,
+  `auth_failures`, `analytics_events`, `leads`, `rate_limits`), but `enable-rls.cjs` is what applies changes in
+  production (the app role has no DDL). Every new table or column must be added to **both**. Existing code still reads the
+  extra tables with raw SQL (see `lib/orgSettings.ts`); regenerate the client with `npx prisma generate` after schema edits.
 - **Deliverable link is stored in `invoices.external_invoice_id` with a `vault:` prefix.** Only plain http(s) URLs are
   shown (`safeDeliverableUrl` in `public-invoice.routes.ts`).
 - **CORS**: allowed = `CORS_ORIGIN` env + hard-coded `paivo.in`/`www.paivo.in` + this project's Vercel preview URLs

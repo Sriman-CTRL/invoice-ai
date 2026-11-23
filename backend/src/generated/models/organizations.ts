@@ -30,6 +30,16 @@ export type OrganizationsMinAggregateOutputType = {
   slug: string | null
   created_at: Date | null
   updated_at: Date | null
+  upi_id: string | null
+  payee_name: string | null
+  bank_account_name: string | null
+  bank_account_number: string | null
+  bank_ifsc: string | null
+  bank_name: string | null
+  gstin: string | null
+  plan: string | null
+  brand_color: string | null
+  logo_data: string | null
 }
 
 export type OrganizationsMaxAggregateOutputType = {
@@ -38,6 +48,16 @@ export type OrganizationsMaxAggregateOutputType = {
   slug: string | null
   created_at: Date | null
   updated_at: Date | null
+  upi_id: string | null
+  payee_name: string | null
+  bank_account_name: string | null
+  bank_account_number: string | null
+  bank_ifsc: string | null
+  bank_name: string | null
+  gstin: string | null
+  plan: string | null
+  brand_color: string | null
+  logo_data: string | null
 }
 
 export type OrganizationsCountAggregateOutputType = {
@@ -46,6 +66,16 @@ export type OrganizationsCountAggregateOutputType = {
   slug: number
   created_at: number
   updated_at: number
+  upi_id: number
+  payee_name: number
+  bank_account_name: number
+  bank_account_number: number
+  bank_ifsc: number
+  bank_name: number
+  gstin: number
+  plan: number
+  brand_color: number
+  logo_data: number
   _all: number
 }
 
@@ -56,6 +86,16 @@ export type OrganizationsMinAggregateInputType = {
   slug?: true
   created_at?: true
   updated_at?: true
+  upi_id?: true
+  payee_name?: true
+  bank_account_name?: true
+  bank_account_number?: true
+  bank_ifsc?: true
+  bank_name?: true
+  gstin?: true
+  plan?: true
+  brand_color?: true
+  logo_data?: true
 }
 
 export type OrganizationsMaxAggregateInputType = {
@@ -64,6 +104,16 @@ export type OrganizationsMaxAggregateInputType = {
   slug?: true
   created_at?: true
   updated_at?: true
+  upi_id?: true
+  payee_name?: true
+  bank_account_name?: true
+  bank_account_number?: true
+  bank_ifsc?: true
+  bank_name?: true
+  gstin?: true
+  plan?: true
+  brand_color?: true
+  logo_data?: true
 }
 
 export type OrganizationsCountAggregateInputType = {
@@ -72,6 +122,16 @@ export type OrganizationsCountAggregateInputType = {
   slug?: true
   created_at?: true
   updated_at?: true
+  upi_id?: true
+  payee_name?: true
+  bank_account_name?: true
+  bank_account_number?: true
+  bank_ifsc?: true
+  bank_name?: true
+  gstin?: true
+  plan?: true
+  brand_color?: true
+  logo_data?: true
   _all?: true
 }
 
@@ -153,6 +213,16 @@ export type OrganizationsGroupByOutputType = {
   slug: string
   created_at: Date
   updated_at: Date
+  upi_id: string | null
+  payee_name: string | null
+  bank_account_name: string | null
+  bank_account_number: string | null
+  bank_ifsc: string | null
+  bank_name: string | null
+  gstin: string | null
+  plan: string
+  brand_color: string | null
+  logo_data: string | null
   _count: OrganizationsCountAggregateOutputType | null
   _min: OrganizationsMinAggregateOutputType | null
   _max: OrganizationsMaxAggregateOutputType | null
@@ -182,14 +252,24 @@ export type organizationsWhereInput = {
   slug?: Prisma.StringFilter<"organizations"> | string
   created_at?: Prisma.DateTimeFilter<"organizations"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"organizations"> | Date | string
+  upi_id?: Prisma.StringNullableFilter<"organizations"> | string | null
+  payee_name?: Prisma.StringNullableFilter<"organizations"> | string | null
+  bank_account_name?: Prisma.StringNullableFilter<"organizations"> | string | null
+  bank_account_number?: Prisma.StringNullableFilter<"organizations"> | string | null
+  bank_ifsc?: Prisma.StringNullableFilter<"organizations"> | string | null
+  bank_name?: Prisma.StringNullableFilter<"organizations"> | string | null
+  gstin?: Prisma.StringNullableFilter<"organizations"> | string | null
+  plan?: Prisma.StringFilter<"organizations"> | string
+  brand_color?: Prisma.StringNullableFilter<"organizations"> | string | null
+  logo_data?: Prisma.StringNullableFilter<"organizations"> | string | null
   collection_actions?: Prisma.Collection_actionsListRelationFilter
   conversations?: Prisma.ConversationsListRelationFilter
+  credit_notes?: Prisma.Credit_notesListRelationFilter
   customers?: Prisma.CustomersListRelationFilter
   invoices?: Prisma.InvoicesListRelationFilter
   messages?: Prisma.MessagesListRelationFilter
   payments?: Prisma.PaymentsListRelationFilter
   suppressions?: Prisma.SuppressionsListRelationFilter
-  credit_notes?: Prisma.Credit_notesListRelationFilter
   users?: Prisma.UsersListRelationFilter
 }
 
@@ -199,14 +279,24 @@ export type organizationsOrderByWithRelationInput = {
   slug?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
+  upi_id?: Prisma.SortOrderInput | Prisma.SortOrder
+  payee_name?: Prisma.SortOrderInput | Prisma.SortOrder
+  bank_account_name?: Prisma.SortOrderInput | Prisma.SortOrder
+  bank_account_number?: Prisma.SortOrderInput | Prisma.SortOrder
+  bank_ifsc?: Prisma.SortOrderInput | Prisma.SortOrder
+  bank_name?: Prisma.SortOrderInput | Prisma.SortOrder
+  gstin?: Prisma.SortOrderInput | Prisma.SortOrder
+  plan?: Prisma.SortOrder
+  brand_color?: Prisma.SortOrderInput | Prisma.SortOrder
+  logo_data?: Prisma.SortOrderInput | Prisma.SortOrder
   collection_actions?: Prisma.collection_actionsOrderByRelationAggregateInput
   conversations?: Prisma.conversationsOrderByRelationAggregateInput
+  credit_notes?: Prisma.credit_notesOrderByRelationAggregateInput
   customers?: Prisma.customersOrderByRelationAggregateInput
   invoices?: Prisma.invoicesOrderByRelationAggregateInput
   messages?: Prisma.messagesOrderByRelationAggregateInput
   payments?: Prisma.paymentsOrderByRelationAggregateInput
   suppressions?: Prisma.suppressionsOrderByRelationAggregateInput
-  credit_notes?: Prisma.credit_notesOrderByRelationAggregateInput
   users?: Prisma.usersOrderByRelationAggregateInput
 }
 
@@ -219,14 +309,24 @@ export type organizationsWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"organizations"> | string
   created_at?: Prisma.DateTimeFilter<"organizations"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"organizations"> | Date | string
+  upi_id?: Prisma.StringNullableFilter<"organizations"> | string | null
+  payee_name?: Prisma.StringNullableFilter<"organizations"> | string | null
+  bank_account_name?: Prisma.StringNullableFilter<"organizations"> | string | null
+  bank_account_number?: Prisma.StringNullableFilter<"organizations"> | string | null
+  bank_ifsc?: Prisma.StringNullableFilter<"organizations"> | string | null
+  bank_name?: Prisma.StringNullableFilter<"organizations"> | string | null
+  gstin?: Prisma.StringNullableFilter<"organizations"> | string | null
+  plan?: Prisma.StringFilter<"organizations"> | string
+  brand_color?: Prisma.StringNullableFilter<"organizations"> | string | null
+  logo_data?: Prisma.StringNullableFilter<"organizations"> | string | null
   collection_actions?: Prisma.Collection_actionsListRelationFilter
   conversations?: Prisma.ConversationsListRelationFilter
+  credit_notes?: Prisma.Credit_notesListRelationFilter
   customers?: Prisma.CustomersListRelationFilter
   invoices?: Prisma.InvoicesListRelationFilter
   messages?: Prisma.MessagesListRelationFilter
   payments?: Prisma.PaymentsListRelationFilter
   suppressions?: Prisma.SuppressionsListRelationFilter
-  credit_notes?: Prisma.Credit_notesListRelationFilter
   users?: Prisma.UsersListRelationFilter
 }, "id" | "slug">
 
@@ -236,6 +336,16 @@ export type organizationsOrderByWithAggregationInput = {
   slug?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
+  upi_id?: Prisma.SortOrderInput | Prisma.SortOrder
+  payee_name?: Prisma.SortOrderInput | Prisma.SortOrder
+  bank_account_name?: Prisma.SortOrderInput | Prisma.SortOrder
+  bank_account_number?: Prisma.SortOrderInput | Prisma.SortOrder
+  bank_ifsc?: Prisma.SortOrderInput | Prisma.SortOrder
+  bank_name?: Prisma.SortOrderInput | Prisma.SortOrder
+  gstin?: Prisma.SortOrderInput | Prisma.SortOrder
+  plan?: Prisma.SortOrder
+  brand_color?: Prisma.SortOrderInput | Prisma.SortOrder
+  logo_data?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.organizationsCountOrderByAggregateInput
   _max?: Prisma.organizationsMaxOrderByAggregateInput
   _min?: Prisma.organizationsMinOrderByAggregateInput
@@ -250,6 +360,16 @@ export type organizationsScalarWhereWithAggregatesInput = {
   slug?: Prisma.StringWithAggregatesFilter<"organizations"> | string
   created_at?: Prisma.DateTimeWithAggregatesFilter<"organizations"> | Date | string
   updated_at?: Prisma.DateTimeWithAggregatesFilter<"organizations"> | Date | string
+  upi_id?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
+  payee_name?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
+  bank_account_name?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
+  bank_account_number?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
+  bank_ifsc?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
+  bank_name?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
+  gstin?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
+  plan?: Prisma.StringWithAggregatesFilter<"organizations"> | string
+  brand_color?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
+  logo_data?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
 }
 
 export type organizationsCreateInput = {
@@ -258,14 +378,24 @@ export type organizationsCreateInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsCreateNestedManyWithoutOrganizationsInput
   suppressions?: Prisma.suppressionsCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -275,14 +405,24 @@ export type organizationsUncheckedCreateInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersUncheckedCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesUncheckedCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsUncheckedCreateNestedManyWithoutOrganizationsInput
   suppressions?: Prisma.suppressionsUncheckedCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersUncheckedCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -292,14 +432,24 @@ export type organizationsUpdateInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUpdateManyWithoutOrganizationsNestedInput
   suppressions?: Prisma.suppressionsUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -309,14 +459,24 @@ export type organizationsUncheckedUpdateInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUncheckedUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUncheckedUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUncheckedUpdateManyWithoutOrganizationsNestedInput
   suppressions?: Prisma.suppressionsUncheckedUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUncheckedUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -326,6 +486,16 @@ export type organizationsCreateManyInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
 }
 
 export type organizationsUpdateManyMutationInput = {
@@ -334,6 +504,16 @@ export type organizationsUpdateManyMutationInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type organizationsUncheckedUpdateManyInput = {
@@ -342,6 +522,16 @@ export type organizationsUncheckedUpdateManyInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type OrganizationsScalarRelationFilter = {
@@ -355,6 +545,16 @@ export type organizationsCountOrderByAggregateInput = {
   slug?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
+  upi_id?: Prisma.SortOrder
+  payee_name?: Prisma.SortOrder
+  bank_account_name?: Prisma.SortOrder
+  bank_account_number?: Prisma.SortOrder
+  bank_ifsc?: Prisma.SortOrder
+  bank_name?: Prisma.SortOrder
+  gstin?: Prisma.SortOrder
+  plan?: Prisma.SortOrder
+  brand_color?: Prisma.SortOrder
+  logo_data?: Prisma.SortOrder
 }
 
 export type organizationsMaxOrderByAggregateInput = {
@@ -363,6 +563,16 @@ export type organizationsMaxOrderByAggregateInput = {
   slug?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
+  upi_id?: Prisma.SortOrder
+  payee_name?: Prisma.SortOrder
+  bank_account_name?: Prisma.SortOrder
+  bank_account_number?: Prisma.SortOrder
+  bank_ifsc?: Prisma.SortOrder
+  bank_name?: Prisma.SortOrder
+  gstin?: Prisma.SortOrder
+  plan?: Prisma.SortOrder
+  brand_color?: Prisma.SortOrder
+  logo_data?: Prisma.SortOrder
 }
 
 export type organizationsMinOrderByAggregateInput = {
@@ -371,6 +581,16 @@ export type organizationsMinOrderByAggregateInput = {
   slug?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
+  upi_id?: Prisma.SortOrder
+  payee_name?: Prisma.SortOrder
+  bank_account_name?: Prisma.SortOrder
+  bank_account_number?: Prisma.SortOrder
+  bank_ifsc?: Prisma.SortOrder
+  bank_name?: Prisma.SortOrder
+  gstin?: Prisma.SortOrder
+  plan?: Prisma.SortOrder
+  brand_color?: Prisma.SortOrder
+  logo_data?: Prisma.SortOrder
 }
 
 export type organizationsCreateNestedOneWithoutCollection_actionsInput = {
@@ -505,13 +725,23 @@ export type organizationsCreateWithoutCollection_actionsInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsCreateNestedManyWithoutOrganizationsInput
   suppressions?: Prisma.suppressionsCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -521,13 +751,23 @@ export type organizationsUncheckedCreateWithoutCollection_actionsInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersUncheckedCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesUncheckedCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsUncheckedCreateNestedManyWithoutOrganizationsInput
   suppressions?: Prisma.suppressionsUncheckedCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersUncheckedCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -553,13 +793,23 @@ export type organizationsUpdateWithoutCollection_actionsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUpdateManyWithoutOrganizationsNestedInput
   suppressions?: Prisma.suppressionsUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -569,13 +819,23 @@ export type organizationsUncheckedUpdateWithoutCollection_actionsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUncheckedUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUncheckedUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUncheckedUpdateManyWithoutOrganizationsNestedInput
   suppressions?: Prisma.suppressionsUncheckedUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUncheckedUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -585,13 +845,23 @@ export type organizationsCreateWithoutConversationsInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsCreateNestedManyWithoutOrganizationsInput
   suppressions?: Prisma.suppressionsCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -601,13 +871,23 @@ export type organizationsUncheckedCreateWithoutConversationsInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersUncheckedCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesUncheckedCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsUncheckedCreateNestedManyWithoutOrganizationsInput
   suppressions?: Prisma.suppressionsUncheckedCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersUncheckedCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -633,13 +913,23 @@ export type organizationsUpdateWithoutConversationsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUpdateManyWithoutOrganizationsNestedInput
   suppressions?: Prisma.suppressionsUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -649,13 +939,23 @@ export type organizationsUncheckedUpdateWithoutConversationsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUncheckedUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUncheckedUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUncheckedUpdateManyWithoutOrganizationsNestedInput
   suppressions?: Prisma.suppressionsUncheckedUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUncheckedUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -665,13 +965,23 @@ export type organizationsCreateWithoutCustomersInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsCreateNestedManyWithoutOrganizationsInput
   suppressions?: Prisma.suppressionsCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -681,13 +991,23 @@ export type organizationsUncheckedCreateWithoutCustomersInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesUncheckedCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsUncheckedCreateNestedManyWithoutOrganizationsInput
   suppressions?: Prisma.suppressionsUncheckedCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersUncheckedCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -713,13 +1033,23 @@ export type organizationsUpdateWithoutCustomersInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUpdateManyWithoutOrganizationsNestedInput
   suppressions?: Prisma.suppressionsUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -729,13 +1059,23 @@ export type organizationsUncheckedUpdateWithoutCustomersInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUncheckedUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUncheckedUpdateManyWithoutOrganizationsNestedInput
   suppressions?: Prisma.suppressionsUncheckedUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUncheckedUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -745,13 +1085,23 @@ export type organizationsCreateWithoutInvoicesInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsCreateNestedManyWithoutOrganizationsInput
   suppressions?: Prisma.suppressionsCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -761,13 +1111,23 @@ export type organizationsUncheckedCreateWithoutInvoicesInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersUncheckedCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesUncheckedCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsUncheckedCreateNestedManyWithoutOrganizationsInput
   suppressions?: Prisma.suppressionsUncheckedCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersUncheckedCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -793,13 +1153,23 @@ export type organizationsUpdateWithoutInvoicesInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUpdateManyWithoutOrganizationsNestedInput
   suppressions?: Prisma.suppressionsUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -809,13 +1179,23 @@ export type organizationsUncheckedUpdateWithoutInvoicesInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUncheckedUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUncheckedUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUncheckedUpdateManyWithoutOrganizationsNestedInput
   suppressions?: Prisma.suppressionsUncheckedUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUncheckedUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -825,13 +1205,23 @@ export type organizationsCreateWithoutMessagesInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsCreateNestedManyWithoutOrganizationsInput
   suppressions?: Prisma.suppressionsCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -841,13 +1231,23 @@ export type organizationsUncheckedCreateWithoutMessagesInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersUncheckedCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsUncheckedCreateNestedManyWithoutOrganizationsInput
   suppressions?: Prisma.suppressionsUncheckedCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersUncheckedCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -873,13 +1273,23 @@ export type organizationsUpdateWithoutMessagesInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUpdateManyWithoutOrganizationsNestedInput
   suppressions?: Prisma.suppressionsUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -889,13 +1299,23 @@ export type organizationsUncheckedUpdateWithoutMessagesInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUncheckedUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUncheckedUpdateManyWithoutOrganizationsNestedInput
   suppressions?: Prisma.suppressionsUncheckedUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUncheckedUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -905,13 +1325,23 @@ export type organizationsCreateWithoutPaymentsInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesCreateNestedManyWithoutOrganizationsInput
   suppressions?: Prisma.suppressionsCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -921,13 +1351,23 @@ export type organizationsUncheckedCreateWithoutPaymentsInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersUncheckedCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesUncheckedCreateNestedManyWithoutOrganizationsInput
   suppressions?: Prisma.suppressionsUncheckedCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersUncheckedCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -953,13 +1393,23 @@ export type organizationsUpdateWithoutPaymentsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUpdateManyWithoutOrganizationsNestedInput
   suppressions?: Prisma.suppressionsUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -969,13 +1419,23 @@ export type organizationsUncheckedUpdateWithoutPaymentsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUncheckedUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUncheckedUpdateManyWithoutOrganizationsNestedInput
   suppressions?: Prisma.suppressionsUncheckedUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUncheckedUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -985,14 +1445,24 @@ export type organizationsCreateWithoutUsersInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsCreateNestedManyWithoutOrganizationsInput
   suppressions?: Prisma.suppressionsCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
 }
 
 export type organizationsUncheckedCreateWithoutUsersInput = {
@@ -1001,14 +1471,24 @@ export type organizationsUncheckedCreateWithoutUsersInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersUncheckedCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesUncheckedCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsUncheckedCreateNestedManyWithoutOrganizationsInput
   suppressions?: Prisma.suppressionsUncheckedCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
 }
 
 export type organizationsCreateOrConnectWithoutUsersInput = {
@@ -1033,14 +1513,24 @@ export type organizationsUpdateWithoutUsersInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUpdateManyWithoutOrganizationsNestedInput
   suppressions?: Prisma.suppressionsUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
 }
 
 export type organizationsUncheckedUpdateWithoutUsersInput = {
@@ -1049,14 +1539,24 @@ export type organizationsUncheckedUpdateWithoutUsersInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUncheckedUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUncheckedUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUncheckedUpdateManyWithoutOrganizationsNestedInput
   suppressions?: Prisma.suppressionsUncheckedUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
 }
 
 export type organizationsCreateWithoutSuppressionsInput = {
@@ -1065,13 +1565,23 @@ export type organizationsCreateWithoutSuppressionsInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -1081,13 +1591,23 @@ export type organizationsUncheckedCreateWithoutSuppressionsInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
+  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersUncheckedCreateNestedManyWithoutOrganizationsInput
   invoices?: Prisma.invoicesUncheckedCreateNestedManyWithoutOrganizationsInput
   messages?: Prisma.messagesUncheckedCreateNestedManyWithoutOrganizationsInput
   payments?: Prisma.paymentsUncheckedCreateNestedManyWithoutOrganizationsInput
-  credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   users?: Prisma.usersUncheckedCreateNestedManyWithoutOrganizationsInput
 }
 
@@ -1113,13 +1633,23 @@ export type organizationsUpdateWithoutSuppressionsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -1129,13 +1659,23 @@ export type organizationsUncheckedUpdateWithoutSuppressionsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
+  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUncheckedUpdateManyWithoutOrganizationsNestedInput
   invoices?: Prisma.invoicesUncheckedUpdateManyWithoutOrganizationsNestedInput
   messages?: Prisma.messagesUncheckedUpdateManyWithoutOrganizationsNestedInput
   payments?: Prisma.paymentsUncheckedUpdateManyWithoutOrganizationsNestedInput
-  credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   users?: Prisma.usersUncheckedUpdateManyWithoutOrganizationsNestedInput
 }
 
@@ -1145,6 +1685,16 @@ export type organizationsCreateWithoutCredit_notesInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersCreateNestedManyWithoutOrganizationsInput
@@ -1161,6 +1711,16 @@ export type organizationsUncheckedCreateWithoutCredit_notesInput = {
   slug: string
   created_at?: Date | string
   updated_at?: Date | string
+  upi_id?: string | null
+  payee_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  bank_ifsc?: string | null
+  bank_name?: string | null
+  gstin?: string | null
+  plan?: string
+  brand_color?: string | null
+  logo_data?: string | null
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersUncheckedCreateNestedManyWithoutOrganizationsInput
@@ -1193,6 +1753,16 @@ export type organizationsUpdateWithoutCredit_notesInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUpdateManyWithoutOrganizationsNestedInput
@@ -1209,6 +1779,16 @@ export type organizationsUncheckedUpdateWithoutCredit_notesInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bank_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstin?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUncheckedUpdateManyWithoutOrganizationsNestedInput
@@ -1227,24 +1807,24 @@ export type organizationsUncheckedUpdateWithoutCredit_notesInput = {
 export type OrganizationsCountOutputType = {
   collection_actions: number
   conversations: number
+  credit_notes: number
   customers: number
   invoices: number
   messages: number
   payments: number
   suppressions: number
-  credit_notes: number
   users: number
 }
 
 export type OrganizationsCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   collection_actions?: boolean | OrganizationsCountOutputTypeCountCollection_actionsArgs
   conversations?: boolean | OrganizationsCountOutputTypeCountConversationsArgs
+  credit_notes?: boolean | OrganizationsCountOutputTypeCountCredit_notesArgs
   customers?: boolean | OrganizationsCountOutputTypeCountCustomersArgs
   invoices?: boolean | OrganizationsCountOutputTypeCountInvoicesArgs
   messages?: boolean | OrganizationsCountOutputTypeCountMessagesArgs
   payments?: boolean | OrganizationsCountOutputTypeCountPaymentsArgs
   suppressions?: boolean | OrganizationsCountOutputTypeCountSuppressionsArgs
-  credit_notes?: boolean | OrganizationsCountOutputTypeCountCredit_notesArgs
   users?: boolean | OrganizationsCountOutputTypeCountUsersArgs
 }
 
@@ -1270,6 +1850,13 @@ export type OrganizationsCountOutputTypeCountCollection_actionsArgs<ExtArgs exte
  */
 export type OrganizationsCountOutputTypeCountConversationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.conversationsWhereInput
+}
+
+/**
+ * OrganizationsCountOutputType without action
+ */
+export type OrganizationsCountOutputTypeCountCredit_notesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.credit_notesWhereInput
 }
 
 /**
@@ -1310,13 +1897,6 @@ export type OrganizationsCountOutputTypeCountSuppressionsArgs<ExtArgs extends ru
 /**
  * OrganizationsCountOutputType without action
  */
-export type OrganizationsCountOutputTypeCountCredit_notesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.credit_notesWhereInput
-}
-
-/**
- * OrganizationsCountOutputType without action
- */
 export type OrganizationsCountOutputTypeCountUsersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.usersWhereInput
 }
@@ -1328,14 +1908,24 @@ export type organizationsSelect<ExtArgs extends runtime.Types.Extensions.Interna
   slug?: boolean
   created_at?: boolean
   updated_at?: boolean
+  upi_id?: boolean
+  payee_name?: boolean
+  bank_account_name?: boolean
+  bank_account_number?: boolean
+  bank_ifsc?: boolean
+  bank_name?: boolean
+  gstin?: boolean
+  plan?: boolean
+  brand_color?: boolean
+  logo_data?: boolean
   collection_actions?: boolean | Prisma.organizations$collection_actionsArgs<ExtArgs>
   conversations?: boolean | Prisma.organizations$conversationsArgs<ExtArgs>
+  credit_notes?: boolean | Prisma.organizations$credit_notesArgs<ExtArgs>
   customers?: boolean | Prisma.organizations$customersArgs<ExtArgs>
   invoices?: boolean | Prisma.organizations$invoicesArgs<ExtArgs>
   messages?: boolean | Prisma.organizations$messagesArgs<ExtArgs>
   payments?: boolean | Prisma.organizations$paymentsArgs<ExtArgs>
   suppressions?: boolean | Prisma.organizations$suppressionsArgs<ExtArgs>
-  credit_notes?: boolean | Prisma.organizations$credit_notesArgs<ExtArgs>
   users?: boolean | Prisma.organizations$usersArgs<ExtArgs>
   _count?: boolean | Prisma.OrganizationsCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["organizations"]>
@@ -1346,6 +1936,16 @@ export type organizationsSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   slug?: boolean
   created_at?: boolean
   updated_at?: boolean
+  upi_id?: boolean
+  payee_name?: boolean
+  bank_account_name?: boolean
+  bank_account_number?: boolean
+  bank_ifsc?: boolean
+  bank_name?: boolean
+  gstin?: boolean
+  plan?: boolean
+  brand_color?: boolean
+  logo_data?: boolean
 }, ExtArgs["result"]["organizations"]>
 
 export type organizationsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1354,6 +1954,16 @@ export type organizationsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   slug?: boolean
   created_at?: boolean
   updated_at?: boolean
+  upi_id?: boolean
+  payee_name?: boolean
+  bank_account_name?: boolean
+  bank_account_number?: boolean
+  bank_ifsc?: boolean
+  bank_name?: boolean
+  gstin?: boolean
+  plan?: boolean
+  brand_color?: boolean
+  logo_data?: boolean
 }, ExtArgs["result"]["organizations"]>
 
 export type organizationsSelectScalar = {
@@ -1362,18 +1972,28 @@ export type organizationsSelectScalar = {
   slug?: boolean
   created_at?: boolean
   updated_at?: boolean
+  upi_id?: boolean
+  payee_name?: boolean
+  bank_account_name?: boolean
+  bank_account_number?: boolean
+  bank_ifsc?: boolean
+  bank_name?: boolean
+  gstin?: boolean
+  plan?: boolean
+  brand_color?: boolean
+  logo_data?: boolean
 }
 
-export type organizationsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "created_at" | "updated_at", ExtArgs["result"]["organizations"]>
+export type organizationsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "created_at" | "updated_at" | "upi_id" | "payee_name" | "bank_account_name" | "bank_account_number" | "bank_ifsc" | "bank_name" | "gstin" | "plan" | "brand_color" | "logo_data", ExtArgs["result"]["organizations"]>
 export type organizationsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   collection_actions?: boolean | Prisma.organizations$collection_actionsArgs<ExtArgs>
   conversations?: boolean | Prisma.organizations$conversationsArgs<ExtArgs>
+  credit_notes?: boolean | Prisma.organizations$credit_notesArgs<ExtArgs>
   customers?: boolean | Prisma.organizations$customersArgs<ExtArgs>
   invoices?: boolean | Prisma.organizations$invoicesArgs<ExtArgs>
   messages?: boolean | Prisma.organizations$messagesArgs<ExtArgs>
   payments?: boolean | Prisma.organizations$paymentsArgs<ExtArgs>
   suppressions?: boolean | Prisma.organizations$suppressionsArgs<ExtArgs>
-  credit_notes?: boolean | Prisma.organizations$credit_notesArgs<ExtArgs>
   users?: boolean | Prisma.organizations$usersArgs<ExtArgs>
   _count?: boolean | Prisma.OrganizationsCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -1385,12 +2005,12 @@ export type $organizationsPayload<ExtArgs extends runtime.Types.Extensions.Inter
   objects: {
     collection_actions: Prisma.$collection_actionsPayload<ExtArgs>[]
     conversations: Prisma.$conversationsPayload<ExtArgs>[]
+    credit_notes: Prisma.$credit_notesPayload<ExtArgs>[]
     customers: Prisma.$customersPayload<ExtArgs>[]
     invoices: Prisma.$invoicesPayload<ExtArgs>[]
     messages: Prisma.$messagesPayload<ExtArgs>[]
     payments: Prisma.$paymentsPayload<ExtArgs>[]
     suppressions: Prisma.$suppressionsPayload<ExtArgs>[]
-    credit_notes: Prisma.$credit_notesPayload<ExtArgs>[]
     users: Prisma.$usersPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1399,6 +2019,16 @@ export type $organizationsPayload<ExtArgs extends runtime.Types.Extensions.Inter
     slug: string
     created_at: Date
     updated_at: Date
+    upi_id: string | null
+    payee_name: string | null
+    bank_account_name: string | null
+    bank_account_number: string | null
+    bank_ifsc: string | null
+    bank_name: string | null
+    gstin: string | null
+    plan: string
+    brand_color: string | null
+    logo_data: string | null
   }, ExtArgs["result"]["organizations"]>
   composites: {}
 }
@@ -1795,12 +2425,12 @@ export interface Prisma__organizationsClient<T, Null = never, ExtArgs extends ru
   readonly [Symbol.toStringTag]: "PrismaPromise"
   collection_actions<T extends Prisma.organizations$collection_actionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizations$collection_actionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$collection_actionsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   conversations<T extends Prisma.organizations$conversationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizations$conversationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$conversationsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  credit_notes<T extends Prisma.organizations$credit_notesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizations$credit_notesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$credit_notesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   customers<T extends Prisma.organizations$customersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizations$customersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$customersPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   invoices<T extends Prisma.organizations$invoicesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizations$invoicesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$invoicesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   messages<T extends Prisma.organizations$messagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizations$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$messagesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   payments<T extends Prisma.organizations$paymentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizations$paymentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$paymentsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   suppressions<T extends Prisma.organizations$suppressionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizations$suppressionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$suppressionsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  credit_notes<T extends Prisma.organizations$credit_notesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizations$credit_notesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$credit_notesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   users<T extends Prisma.organizations$usersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizations$usersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$usersPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1836,6 +2466,16 @@ export interface organizationsFieldRefs {
   readonly slug: Prisma.FieldRef<"organizations", 'String'>
   readonly created_at: Prisma.FieldRef<"organizations", 'DateTime'>
   readonly updated_at: Prisma.FieldRef<"organizations", 'DateTime'>
+  readonly upi_id: Prisma.FieldRef<"organizations", 'String'>
+  readonly payee_name: Prisma.FieldRef<"organizations", 'String'>
+  readonly bank_account_name: Prisma.FieldRef<"organizations", 'String'>
+  readonly bank_account_number: Prisma.FieldRef<"organizations", 'String'>
+  readonly bank_ifsc: Prisma.FieldRef<"organizations", 'String'>
+  readonly bank_name: Prisma.FieldRef<"organizations", 'String'>
+  readonly gstin: Prisma.FieldRef<"organizations", 'String'>
+  readonly plan: Prisma.FieldRef<"organizations", 'String'>
+  readonly brand_color: Prisma.FieldRef<"organizations", 'String'>
+  readonly logo_data: Prisma.FieldRef<"organizations", 'String'>
 }
     
 
@@ -2277,6 +2917,30 @@ export type organizations$conversationsArgs<ExtArgs extends runtime.Types.Extens
 }
 
 /**
+ * organizations.credit_notes
+ */
+export type organizations$credit_notesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the credit_notes
+   */
+  select?: Prisma.credit_notesSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the credit_notes
+   */
+  omit?: Prisma.credit_notesOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.credit_notesInclude<ExtArgs> | null
+  where?: Prisma.credit_notesWhereInput
+  orderBy?: Prisma.credit_notesOrderByWithRelationInput | Prisma.credit_notesOrderByWithRelationInput[]
+  cursor?: Prisma.credit_notesWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Credit_notesScalarFieldEnum | Prisma.Credit_notesScalarFieldEnum[]
+}
+
+/**
  * organizations.customers
  */
 export type organizations$customersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2394,30 +3058,6 @@ export type organizations$suppressionsArgs<ExtArgs extends runtime.Types.Extensi
   take?: number
   skip?: number
   distinct?: Prisma.SuppressionsScalarFieldEnum | Prisma.SuppressionsScalarFieldEnum[]
-}
-
-/**
- * organizations.credit_notes
- */
-export type organizations$credit_notesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the credit_notes
-   */
-  select?: Prisma.credit_notesSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the credit_notes
-   */
-  omit?: Prisma.credit_notesOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.credit_notesInclude<ExtArgs> | null
-  where?: Prisma.credit_notesWhereInput
-  orderBy?: Prisma.credit_notesOrderByWithRelationInput | Prisma.credit_notesOrderByWithRelationInput[]
-  cursor?: Prisma.credit_notesWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.Credit_notesScalarFieldEnum | Prisma.Credit_notesScalarFieldEnum[]
 }
 
 /**
