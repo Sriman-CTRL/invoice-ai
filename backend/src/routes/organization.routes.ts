@@ -88,7 +88,7 @@ router.get("/settings", async (req, res) => {
 
 router.put("/settings", async (req, res) => {
   try {
-    const checked = validateSettingsPatch(req.body ?? {});
+    const checked = validateSettingsPatch(req.body ?? {}, await getOrgSettings(req.user!.organization_id));
     if ("error" in checked) return res.status(400).json({ error: checked.error });
     res.json(await updateOrgSettings(req.user!.organization_id, checked.data));
   } catch (error) {

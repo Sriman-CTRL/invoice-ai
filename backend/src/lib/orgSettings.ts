@@ -1,3 +1,4 @@
+import { gstinProblem, ifscProblem } from "./gstin";
 import prisma from "./prisma";
 
 /**
@@ -60,8 +61,6 @@ export async function getOrgSettings(organizationId: string): Promise<OrgSetting
 }
 
 const UPI_RE = /^[a-zA-Z0-9._-]{2,64}@[a-zA-Z][a-zA-Z0-9]{1,31}$/;
-const IFSC_RE = /^[A-Z]{4}0[A-Z0-9]{6}$/;
-const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 const ACCT_RE = /^[0-9]{6,20}$/;
 
 /** A logo must be a small PNG/JPEG/WebP data URL whose bytes really are that format. */
@@ -79,7 +78,7 @@ function logoProblem(raw: unknown): string | null {
 }
 
 /** Validates & normalises a settings patch. Returns cleaned values or an error message. */
-export function validateSettingsPatch(body: Record<string, unknown>): { data: Partial<Record<Field, string | null>> } | { error: string } {
+export function validateSettingsPatch(body: Record<string, unknown>, existing: Partial<Record<Field, string | null>> = {}): { data: Partial<Record<Field, string | null>> } | { error: string } {
   const data: Partial<Record<Field, string | null>> = {};
   for (const field of SETTING_FIELDS) {
     if (!(field in body)) continue;
@@ -90,8 +89,14 @@ export function validateSettingsPatch(body: Record<string, unknown>): { data: Pa
     let v = raw.trim().slice(0, 255);
     if (field === "brand_color") { v = v.toLowerCase(); if (!/^#[0-9a-f]{6}$/.test(v)) return { error: "Pick a valid colour." }; }
     if (field === "upi_id") { v = v.toLowerCase(); if (!UPI_RE.test(v)) return { error: "Enter a valid UPI ID, e.g. yourname@okhdfcbank" }; }
-    if (field === "bank_ifsc") { v = v.toUpperCase(); if (!IFSC_RE.test(v)) return { error: "IFSC must look like HDFC0001234" }; }
-    if (field === "gstin") { v = v.toUpperCase(); if (!GSTIN_RE.test(v)) return { error: "GSTIN must be 15 characters, e.g. 29ABCDE1234F1Z5" }; }
+    if (field === "bank_ifsc") { v = v.toUpperCase(); const bad = ifscProblem(v); if (bad) return { error: bad }; }
+    if (field === "gstin") {
+      v = v.toUpperCase();
+      // A GSTIN already saved before the check-digit test existed stays accepted when it is saved again unchanged.
+      const unchanged = existing.gstin != null && existing.gstin.toUpperCase() === v;
+      const bad = unchanged ? (/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(v) ? null : gstinProblem(v)) : gstinProblem(v);
+      if (bad) return { error: bad };
+    }
     if (field === "bank_account_number") { v = v.replace(/\s+/g, ""); if (!ACCT_RE.test(v)) return { error: "Account number must be 6-20 digits" }; }
     data[field] = v;
   }

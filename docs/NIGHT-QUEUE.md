@@ -316,7 +316,7 @@ in the notes.
 
 **Notes (T5):** New backend/src/__tests__/money-paths.test.ts: payment status rules (PENDING/FAILED never move status, partial -> PARTIALLY_PAID, full -> PAID, overpayment/zero/negative rejected, concurrent overpayment: exactly one wins, cross-org 403/404); public pay page (bad id, DRAFT -> 404, deliverable hidden until fully paid and never leaked, only http(s) links accepted at creation); submit-proof validation (UTR, amount, screenshot type/magic bytes, duplicate UTR) and no status change by itself; verify-proof (other org 404, owner settles, partial proof keeps files locked); credit notes (cannot exceed open balance incl. payments, reason required, other org 404, concurrent credits); computeTotals unit tests (none/intra/inter GST, discount clamp, rounding) and parseScreenshot cases. BUGS FOUND AND FIXED: (1) POST /collection-actions/:id/verify-proof run twice recorded a second SUCCEEDED payment for the full invoice amount (double-counted money); it is now idempotent (action re-read under the invoice row lock; returns 'already confirmed' with no change; never invents a payment when nothing is outstanding). (2) Credit notes did not lock the invoice row despite the comment, so two concurrent credit notes could exceed the balance or fail with a 500; now FOR UPDATE, second gets 409. UNCERTAIN, NOT CHANGED: credit notes are ignored by the payment route and by the public page's outstanding amount (after a partial credit a client is still shown the full balance and paying only the remainder leaves PARTIALLY_PAID), and a credit note that zeroes the balance sets the invoice to PAID without a payment; both are product decisions for the owner. Test tenants are set to PRO on the local DB because the free plan caps 5 invoices a month. DoD: typecheck pass; backend 74 run/74 pass/0 skip; build pass.
 
-## [ ] B1. Validate GSTIN and IFSC properly (from R2 findings)
+## [x] B1. Validate GSTIN and IFSC properly (from R2 findings)
 
 1. GSTIN: format + checksum validation (pure function, unit-tested with valid/invalid samples). Use a vetted
    permissively-licensed package from R2 if one is good; otherwise write it (algorithm is public). Apply in the
@@ -325,6 +325,8 @@ in the notes.
    permissively licensed IFSC dataset/package of reasonable size, show the bank + branch name under the field after
    validation (server-side lookup, no new third-party calls from the browser, no CSP change). Otherwise format only.
 3. Tests for both. No behaviour change for already-saved valid data.
+
+**Notes (B1):** backend/src/lib/gstin.ts (own code, no dependency: R2 found gstin-validator stale): shape + state code (01-38, 97, 99) + base-36 check digit; used by the settings API. Existing saved data is not broken: a format-valid GSTIN already stored is still accepted when saved again unchanged (new or changed values must pass the check digit). IFSC: format check (4 letters, 0, 6 alphanumerics) with a clear message; bank/branch lookup NOT added because the ifsc package is 1.5 MB unpacked and depends on the deprecated 'request' library, so format only as the queue allows. Settings page shows inline red messages under GSTIN and IFSC while typing (src/gstin.ts mirrors the server file; both tested with the same vectors); GSTIN placeholder changed to a check-digit-valid example 29ABCDE1234F1ZW. Tests: backend gstin.test.ts (5), tests/gstin.test.ts (2). DoD: typecheck pass; backend 79 run/79 pass/0 skip; build pass; test:web 9 pass.
 
 ## [ ] B2. Amount in words on invoices
 

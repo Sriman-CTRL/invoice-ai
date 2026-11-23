@@ -1,3 +1,4 @@
+import { gstinProblem, ifscProblem } from "../gstin";
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { BrandingCard } from "./BrandingCard";
@@ -19,12 +20,12 @@ const toForm = (s: OrgSettings): Form => ({
   bank_account_number: s.bank_account_number ?? "", bank_ifsc: s.bank_ifsc ?? "", bank_name: s.bank_name ?? "", gstin: s.gstin ?? "",
 });
 
-function Field({ label, hint, value, onChange, placeholder, mono }: { label: string; hint?: string; value: string; onChange: (v: string) => void; placeholder?: string; mono?: boolean }) {
+function Field({ label, hint, value, onChange, placeholder, mono, problem }: { label: string; hint?: string; value: string; onChange: (v: string) => void; placeholder?: string; mono?: boolean; problem?: string | null }) {
   return (
     <label className="block">
       <span className="label">{label}</span>
-      <input className={`input ${mono ? "font-mono" : ""}`} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
-      {hint && <span className="mt-1 block text-[11px] text-slate-400">{hint}</span>}
+      <input className={`input ${mono ? "font-mono" : ""}`} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} aria-invalid={problem ? true : undefined} />
+      {problem ? <span className="mt-1 block text-[11px] font-semibold text-rose-600" role="alert">{problem}</span> : hint && <span className="mt-1 block text-[11px] text-slate-400">{hint}</span>}
     </label>
   );
 }
@@ -263,7 +264,7 @@ export function SettingsPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Account holder" value={form.bank_account_name} onChange={set("bank_account_name")} placeholder="As per bank records" />
               <Field label="Account number" value={form.bank_account_number} onChange={set("bank_account_number")} mono />
-              <Field label="IFSC" value={form.bank_ifsc} onChange={set("bank_ifsc")} placeholder="HDFC0001234" mono />
+              <Field label="IFSC" value={form.bank_ifsc} onChange={set("bank_ifsc")} placeholder="HDFC0001234" mono problem={form.bank_ifsc.trim() ? ifscProblem(form.bank_ifsc.trim().toUpperCase()) : null} />
               <Field label="Bank name" value={form.bank_name} onChange={set("bank_name")} placeholder="HDFC Bank" />
             </div>
           </section>
@@ -271,7 +272,7 @@ export function SettingsPage() {
           <section>
             <h2 className="mb-4 text-base font-bold text-slate-900">Tax details</h2>
             <div className="max-w-sm">
-              <Field label="Your GSTIN" value={form.gstin} onChange={set("gstin")} placeholder="29ABCDE1234F1Z5" hint="Printed on your PDF invoices." mono />
+              <Field label="Your GSTIN" value={form.gstin} onChange={set("gstin")} placeholder="29ABCDE1234F1ZW" hint="Printed on your PDF invoices." mono problem={form.gstin.trim() ? gstinProblem(form.gstin.trim().toUpperCase()) : null} />
             </div>
           </section>
 
