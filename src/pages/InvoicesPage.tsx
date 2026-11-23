@@ -58,15 +58,15 @@ function parseCSV(text: string) {
     return headers.findIndex((h) => names.some((n) => h.includes(n)));
   };
 
-  const nameIdx = findCol("customer name", "client name", "name");
+  const nameIdx = findCol("customer name", "client name", "party name", "billing name", "customer", "client", "name");
   const emailIdx = findCol("customer email", "email", "mail");
   const companyIdx = findCol("company", "organization");
-  const phoneIdx = findCol("phone", "mobile", "contact");
-  const invNumIdx = findCol("invoice number", "invoice #", "invoice_number", "inv #", "invoice");
-  const amountIdx = findCol("amount", "total", "balance", "price");
+  const phoneIdx = findCol("phone", "mobile", "contact no", "contact");
+  const invNumIdx = findCol("invoice number", "invoice no", "invoice #", "invoice_number", "inv #", "inv no", "bill no", "invoice");
+  const amountIdx = findCol("total amount", "amount", "total", "balance", "price");
   const currencyIdx = findCol("currency");
-  const dueIdx = findCol("due date", "due_date", "due_at", "due");
-  const issuedIdx = findCol("issue date", "issued_at", "issued", "issue");
+  const dueIdx = findCol("due date", "due_date", "due_at", "due on", "due");
+  const issuedIdx = findCol("issue date", "invoice date", "issued_at", "issued", "issue", "date");
   const statusIdx = findCol("status");
 
   const results = [];
@@ -534,7 +534,7 @@ function CreateInvoiceModal({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto py-5 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto py-5 pr-2 space-y-4">
           {error && (
             <div className="rounded-xl border border-rose-200 bg-rose-50/80 p-3 text-xs text-rose-700 font-medium">
               {error}
@@ -626,7 +626,7 @@ function CreateInvoiceModal({
           )}
 
           <div>
-            <label className="text-xs font-bold text-slate-700">Invoice Number</label>
+            <label className="block text-xs font-bold text-slate-700">Invoice Number</label>
             <input
               type="text"
               required

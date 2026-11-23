@@ -15,8 +15,8 @@ export function OnboardingChecklist({ customers, invoices }: { customers: number
 
   const steps = [
     { done: Boolean(settings.data.upi_id), title: "Add your UPI ID", detail: "So client payments land in your account, not ours.", to: "/settings", cta: "Add payment details" },
-    { done: customers > 0, title: "Add your first customer", detail: "Name, email and phone for WhatsApp reminders.", to: "/customers", cta: "Add customer" },
-    { done: invoices > 0, title: "Create an invoice with a vault link", detail: "Attach the Figma / Drive link; it unlocks on payment.", to: "/invoices", cta: "Create invoice" },
+    { done: Boolean(settings.data.brand_color || settings.data.logo_data), title: "Make it yours", detail: "Add your logo and colour. Clients see them on every invoice.", to: "/settings", cta: "Add your branding" },
+    { done: invoices > 0 && customers > 0, title: "Send your first invoice", detail: "Add line items and GST, attach your files, and share the pay link.", to: "/invoices", cta: "Create invoice" },
   ];
   const doneCount = steps.filter((s) => s.done).length;
   if (doneCount === steps.length) return null;

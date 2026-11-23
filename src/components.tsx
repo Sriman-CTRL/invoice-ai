@@ -367,7 +367,7 @@ function SidebarContent({ close }: { close?: () => void }) {
       <div className="px-4 pb-4">
         <div className="rounded-xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-3 text-xs backdrop-blur-md">
           <div className="flex items-center justify-between">
-            <span className="font-bold text-white text-[11px] tracking-wide">AI assistant</span>
+            <span className="font-bold text-white text-[11px] tracking-wide">Smart replies</span>
             <span className="inline-flex items-center gap-1.5 font-mono text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
@@ -377,7 +377,7 @@ function SidebarContent({ close }: { close?: () => void }) {
             </span>
           </div>
           <p className="mt-1.5 text-[10px] text-slate-400 font-mono">
-            Gemini 2.5 Flash · Neon Postgres
+            Reads client replies. Coming soon.
           </p>
         </div>
       </div>

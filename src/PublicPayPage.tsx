@@ -403,7 +403,15 @@ export function PublicPayPage() {
 
           {/* Right Column: Interactive Payment Panel */}
           <div>
-            <div className="rounded-2xl border border-white/10 bg-slate-900/90 p-6 backdrop-blur-md shadow-2xl sticky top-24">
+            {isPaid && (
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-8 text-center shadow-2xl sticky top-24">
+                <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-500/20 text-emerald-300"><CheckCircle2 className="h-7 w-7" /></span>
+                <h2 className="mt-4 text-xl font-black text-white">Payment received</h2>
+                <p className="mt-1.5 text-sm text-emerald-100/80">Thank you. {data.organization.name} has confirmed this invoice is paid in full.</p>
+                {data.has_deliverable && <p className="mt-3 text-xs text-emerald-100/70">Your files are unlocked on the left.</p>}
+              </div>
+            )}
+            <div className={`rounded-2xl border border-white/10 bg-slate-900/90 p-6 backdrop-blur-md shadow-2xl sticky top-24 ${isPaid ? "hidden" : ""}`}>
               <div className="border-b border-white/10 pb-4 mb-5">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   Select Settlement Method
@@ -675,12 +683,12 @@ export function PublicPayPage() {
           <span className="text-slate-700">•</span>
           <Link to="/terms" className="hover:text-slate-300 transition-colors">Terms of Service</Link>
           <span className="text-slate-700">•</span>
-          <span>Peer-to-Peer Direct Bank Settlement</span>
+          <span>You pay the seller directly</span>
           <span className="text-slate-700">•</span>
-          <span>Tenant-isolated records</span>
+          <span>Your details stay private</span>
         </div>
         <p className="mt-3 text-[11px] text-slate-600">
-          Invoice AI facilitates peer-to-peer settlement verification and deliverable vault protection. We do not store banking credentials or hold customer funds.
+          Paivo helps sellers send invoices and confirm payments. Your payment goes straight to the seller. We never store card or bank login details and never hold customer funds.
         </p>
       </footer>
     </div>

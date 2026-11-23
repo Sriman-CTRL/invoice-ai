@@ -733,12 +733,12 @@ export function InvoiceDetailPage() {
                     <input
                       type="text"
                       readOnly
-                      value={`https://invoice-ai-nine-beta.vercel.app/pay/${inv.id}`}
+                      value={`https://paivo.in/pay/${inv.id}`}
                       className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 font-mono text-xs text-slate-600 select-all"
                     />
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(`https://invoice-ai-nine-beta.vercel.app/pay/${inv.id}`);
+                        navigator.clipboard.writeText(`https://paivo.in/pay/${inv.id}`);
                         toast.success("Payment link copied");
                         setCopied(true);
                         setTimeout(() => setCopied(false), 2000);
@@ -770,7 +770,7 @@ export function InvoiceDetailPage() {
                   <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
                     <a
                       href={`https://wa.me/${(data.customer.phone || "").replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
-                        `Hi ${data.customer.name}, here is your invoice ${inv.invoice_number} for ${fin.currency} ${fin.outstanding_amount}. You can view details, scan UPI, or pay here: https://invoice-ai-nine-beta.vercel.app/pay/${inv.id}`
+                        `Hi ${data.customer.name}, here is your invoice ${inv.invoice_number} for ${fin.currency} ${fin.outstanding_amount}. You can view details, scan UPI, or pay here: https://paivo.in/pay/${inv.id}`
                       )}`}
                       target="_blank"
                       rel="noreferrer"

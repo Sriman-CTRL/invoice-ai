@@ -117,7 +117,7 @@ export function PrivacyPolicyPage() {
               Invoice AI (&ldquo;Platform&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;) provides an autonomous accounts-receivable,
               deliverable escrow facilitation, and dispute resolution service for freelancers, agencies, and micro-SMEs.
               This Privacy Policy explains how we process personal and commercial data when you access our dashboard
-              at <code className="text-slate-200 bg-white/5 px-1 py-0.5 rounded font-mono text-xs">invoice-ai-nine-beta.vercel.app</code> or
+              at <code className="text-slate-200 bg-white/5 px-1 py-0.5 rounded font-mono text-xs">paivo.in</code> or
               interact with public checkout portals (<code className="text-slate-200 bg-white/5 px-1 py-0.5 rounded font-mono text-xs">/pay/:invoice_id</code>).
             </p>
           </section>
