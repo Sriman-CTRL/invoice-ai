@@ -324,7 +324,7 @@ export function DashboardPage() {
           <div className="mt-5 rounded-xl bg-gradient-to-br from-brand-50 to-indigo-50/80 p-3.5 text-xs text-brand-900 ring-1 ring-inset ring-brand-500/10">
             <div className="flex items-center gap-2 font-bold text-brand-800">
               <ShieldCheck className="h-4 w-4 text-brand-600" />
-              <span>Safety Guarantee</span>
+              <span>Safety checks</span>
             </div>
             <p className="mt-1 text-[11px] text-brand-700 leading-relaxed">
               AI suggestions require verified ledger payments before moving invoice states. Double outreach is prevented via row-level locks.

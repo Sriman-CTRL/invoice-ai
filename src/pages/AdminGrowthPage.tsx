@@ -54,7 +54,7 @@ export function AdminGrowthPage() {
       {header}
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label="Page views" value={totalViews} icon={Eye} hint={`last ${days} days`} />
-        <Stat label="New accounts" value={d.funnel.signups} icon={UserPlus} hint={`${pct(d.funnel.signups, d.funnel.landing)} of home-page visitors`} />
+        <Stat label="New accounts" value={d.funnel.signups} icon={UserPlus} hint={d.funnel.landing > 0 ? `${d.funnel.signups} vs ${d.funnel.landing} home-page visitors` : "since the start of this period"} />
         <Stat label="Activated" value={d.funnel.activated} icon={Rocket} hint={`${pct(d.funnel.activated, d.funnel.signups)} of new accounts made an invoice`} />
         <Stat label="Paying businesses" value={d.totals.paid_organizations} icon={Users} hint={`${d.totals.organizations} total · ${d.totals.pending_upgrades} upgrade request(s) waiting`} />
       </div>
@@ -67,7 +67,7 @@ export function AdminGrowthPage() {
               <div key={label}>
                 <div className="flex items-baseline justify-between text-sm">
                   <span className="font-semibold text-slate-700">{label}</span>
-                  <span className="font-mono text-slate-500">{n}{i > 0 && steps[i - 1][1] > 0 && <span className="ml-2 text-xs text-slate-400">({pct(n, steps[i - 1][1])} of previous)</span>}</span>
+                  <span className="font-mono text-slate-500">{n}{[1, 2, 4].includes(i) && steps[i - 1][1] > 0 && <span className="ml-2 text-xs text-slate-400">({pct(n, steps[i - 1][1])} of previous)</span>}</span>
                 </div>
                 <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-slate-100">
                   <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-indigo-500 transition-all duration-500" style={{ width: `${(n / top) * 100}%` }} />

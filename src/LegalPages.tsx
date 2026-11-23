@@ -55,7 +55,7 @@ export function PrivacyPolicyPage() {
         <div className="mx-auto max-w-5xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-mono font-bold text-emerald-400 mb-4">
             <ShieldCheck className="h-3.5 w-3.5" />
-            <span>DPDP ACT 2023 & GDPR COMPLIANT</span>
+            <span>DESIGNED FOR DPDP ACT 2023 & GDPR</span>
           </div>
           <h1 className="text-3xl font-black tracking-tight text-white sm:text-5xl">
             Privacy & Data Protection Policy

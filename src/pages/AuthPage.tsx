@@ -105,13 +105,13 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
         <div className="max-w-lg my-auto py-8 z-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-brand-400/30 bg-brand-500/10 px-3.5 py-1 text-xs font-bold text-brand-300 backdrop-blur-md mb-5">
             <Zap className="h-3.5 w-3.5 text-brand-400" />
-            <span>Eliminating 10+ Hours of AR Admin Weekly</span>
+            <span>Less chasing. More getting paid.</span>
           </div>
 
           <h1 className="text-4xl font-black tracking-tight leading-[1.15] text-white sm:text-5xl">
-            Autonomous receivables that collect{" "}
+            Send the invoice.{" "}
             <span className="bg-gradient-to-r from-brand-300 via-indigo-200 to-teal-200 bg-clip-text text-transparent">
-              14 days faster.
+              Get paid before you hand over the work.
             </span>
           </h1>
 
@@ -165,16 +165,16 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
           {/* 3 Bento Mini-Stats */}
           <div className="mt-6 grid grid-cols-3 gap-3">
             <div className="rounded-xl border border-white/5 bg-white/[0.03] p-3 text-center">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">DSO Speed</span>
-              <p className="text-sm font-black text-emerald-400 mt-0.5 font-mono">14 Days Faster</p>
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Your files</span>
+              <p className="text-sm font-black text-emerald-400 mt-0.5 font-mono">Locked until paid</p>
             </div>
             <div className="rounded-xl border border-white/5 bg-white/[0.03] p-3 text-center">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Transaction Fees</span>
-              <p className="text-sm font-black text-brand-300 mt-0.5 font-mono">0% (UPI Direct)</p>
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Payment fees</span>
+              <p className="text-sm font-black text-brand-300 mt-0.5 font-mono">None (UPI direct)</p>
             </div>
             <div className="rounded-xl border border-white/5 bg-white/[0.03] p-3 text-center">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Admin Saved</span>
-              <p className="text-sm font-black text-teal-300 mt-0.5 font-mono">10+ Hrs / Wk</p>
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Reminders</span>
+              <p className="text-sm font-black text-teal-300 mt-0.5 font-mono">Sent for you</p>
             </div>
           </div>
         </div>
@@ -186,7 +186,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
             <span>•</span>
             <Link to="/terms" className="hover:text-slate-300 transition-colors">Terms of Service</Link>
           </div>
-          <span>Reg F & CAN-SPAM Suppressed</span>
+          <span>Opt-out requests are honoured</span>
         </div>
       </section>
 
@@ -353,10 +353,10 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
             </Link>
             <span>•</span>
             <Link to="/terms" className="hover:text-slate-300 transition-colors">
-              Terms & Escrow
+              Terms of Service
             </Link>
             <span>•</span>
-            <span>DPDP & FDCPA Certified</span>
+            <span>Built with DPDP Act privacy in mind</span>
           </div>
         </div>
       </section>

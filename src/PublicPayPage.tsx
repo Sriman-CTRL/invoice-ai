@@ -646,7 +646,7 @@ export function PublicPayPage() {
         <div className="flex flex-wrap items-center justify-center gap-6">
           <Link to="/privacy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
           <span className="text-slate-700">•</span>
-          <Link to="/terms" className="hover:text-slate-300 transition-colors">Terms of Service & Escrow</Link>
+          <Link to="/terms" className="hover:text-slate-300 transition-colors">Terms of Service</Link>
           <span className="text-slate-700">•</span>
           <span>Peer-to-Peer Direct Bank Settlement</span>
           <span className="text-slate-700">•</span>

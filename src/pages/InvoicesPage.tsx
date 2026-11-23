@@ -657,7 +657,7 @@ function CreateInvoiceModal({
                 <Lock className="h-3.5 w-3.5" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900">Zero-Cost Deliverable Vault (Escrow Lock)</p>
+                <p className="text-xs font-bold text-slate-900">Deliverable Vault (locked until paid)</p>
                 <p className="text-[10px] text-slate-500">Lock work deliverables until client completes settlement</p>
               </div>
             </div>
@@ -826,7 +826,7 @@ export function InvoicesPage() {
                         </Link>
                         {inv.external_invoice_id && (inv.external_invoice_id.startsWith("vault:") || inv.external_invoice_id.startsWith("http")) && (
                           <span
-                            title={inv.status === "PAID" ? "Deliverable Vault Unlocked" : "Deliverable Held in Escrow Vault"}
+                            title={inv.status === "PAID" ? "Deliverable Vault Unlocked" : "Deliverable locked until payment"}
                             className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
                               inv.status === "PAID"
                                 ? "text-emerald-700 bg-emerald-50 border-emerald-200"

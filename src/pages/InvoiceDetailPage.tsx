@@ -754,7 +754,7 @@ export function InvoiceDetailPage() {
                           ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
                           : "bg-amber-100 text-amber-800 border border-amber-300"
                       }`}>
-                        {inv.status === "PAID" ? "🔓 Unlocked & Delivered" : "🔒 Held in Escrow"}
+                        {inv.status === "PAID" ? "🔓 Unlocked & Delivered" : "🔒 Locked until paid"}
                       </span>
                     </div>
                     <p className="text-xs text-slate-600 mb-3 leading-relaxed">
