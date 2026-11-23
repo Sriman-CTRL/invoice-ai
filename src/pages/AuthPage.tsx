@@ -62,14 +62,6 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
 
   const registering = mode === "register";
 
-  const fillDemo = () => {
-    setForm((curr) => ({
-      ...curr,
-      email: "srimanbhavani961@gmail.com",
-      password: "bhavanisri",
-    }));
-  };
-
   return (
     <main className="grid min-h-screen lg:grid-cols-[1.15fr_0.85fr] bg-slate-950 font-sans selection:bg-brand-500 selection:text-white">
       {/* Left Hero Pane (Astryx Obsidian & Luminous Meshes) */}
@@ -284,7 +276,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
                   className="input bg-slate-950 border-white/10 text-white text-xs"
                   type="email"
                   autoComplete="email"
-                  placeholder="srimanbhavani961@gmail.com"
+                  placeholder="you@company.com"
                   value={form.email}
                   onChange={set("email")}
                 />
@@ -295,15 +287,6 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400" htmlFor="password">
                     Password *
                   </label>
-                  {!registering && (
-                    <button
-                      type="button"
-                      onClick={fillDemo}
-                      className="text-[10px] font-semibold text-brand-400 hover:text-brand-300 hover:underline"
-                    >
-                      Fill Demo Credentials
-                    </button>
-                  )}
                 </div>
                 <input
                   id="password"
