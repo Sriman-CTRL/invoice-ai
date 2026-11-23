@@ -36,6 +36,7 @@ Last updated: 24 Nov 2026.
 | 23 Nov (night) | `e5e6e56` **Security hardening from pre-launch audit**: shared database rate limiting, admin-email sign-up block, org-scoped recurring-invoice edits, account deletion, pinned dependency versions, required inbound-webhook timestamp, `security.txt`, removed stale RLS SQL, build bundle (`api/index.js`) no longer committed. `382f5dc` privacy/security contact moved to `paivo.in`. |
 | 24 Nov | Pinned dependency versions: root `package.json` uses caret ranges matching the lockfile instead of `latest`. |
 | 24 Nov | Fixed shared rate limiting under the restricted DB role: `rate_limits` is now created by `enable-rls.cjs` (the app role cannot run DDL), the runtime CREATE is tried once per process, and the in-memory fallback logs one warning. Corrected `AGENTS.md` (api/index.js is git-ignored, inbound timestamp, public-repo rule). |
+| 24 Nov (night build) | T0: `night-build` branch, local DB set up, green baseline recorded (54/54 integration tests, build OK). |
 
 ## 3. Key decisions (and why)
 
