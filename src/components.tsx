@@ -356,6 +356,7 @@ function SidebarContent({ close }: { close?: () => void }) {
       </nav>
 
       <div className="px-4 pb-3">
+        <Link to="/whats-new" onClick={close} className="mb-2 block rounded-xl px-3 py-2 text-xs font-semibold text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white">What's new</Link>
         <button onClick={() => setFeedbackOpen(true)} className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-left text-xs font-semibold text-slate-300 transition-colors hover:bg-white/[0.08] hover:text-white">
           💬 Tell us what's missing
           <span className="mt-0.5 block text-[10px] font-normal text-slate-500">Goes straight to the founder</span>

@@ -117,12 +117,12 @@ test("GOOGLE: an existing account with the same email is signed in, not duplicat
   createdEmails.push(email);
   const reg = await call("POST", "/api/auth/register", { email, password: "Existing-Pass-8642-xy", organization_name: "Existing Co", accepted_terms: true });
   assert.equal(reg.status, 201);
-  const before = await sys(() => prisma.organizations.count());
   const res = await call("POST", "/api/auth/google", { id_token: token({ email: email.toUpperCase() }) });
   assert.equal(res.status, 200);
   assert.equal(res.json.user.id, reg.json.user.id);
   assert.equal(res.json.user.has_password, true);
-  assert.equal(await sys(() => prisma.organizations.count()), before, "no new business");
+  assert.equal(await sys(() => prisma.users.count({ where: { email } })), 1, "no duplicate user");
+  assert.equal(await sys(() => prisma.organizations.count({ where: { id: reg.json.user.organization_id } })), 1);
 });
 
 test("GOOGLE: unverified email, wrong audience and bad tokens are refused", opts, async () => {

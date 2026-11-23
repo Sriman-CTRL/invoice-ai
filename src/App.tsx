@@ -7,6 +7,7 @@ import { LandingPage } from "./LandingPage";
 const named = <T extends Record<string, React.ComponentType<any>>>(load: () => Promise<T>, key: keyof T) =>
   lazy(async () => ({ default: (await load())[key] }));
 
+const WhatsNewPage = named(() => import("./WhatsNewPage"), "WhatsNewPage");
 const PricingPage = named(() => import("./PricingPage"), "PricingPage");
 const AuthPage = named(() => import("./pages/AuthPage"), "AuthPage");
 const PublicPayPage = named(() => import("./PublicPayPage"), "PublicPayPage");
@@ -48,6 +49,7 @@ export function App() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/whats-new" element={<WhatsNewPage />} />
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/register" element={<AuthPage mode="register" />} />
       <Route path="/pay/:invoiceNumber" element={<PublicPayPage />} />
