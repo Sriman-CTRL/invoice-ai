@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../lib/config";
 import { auditLogger } from "../lib/auditLogger";
+import { enterTenant } from "../lib/prisma";
 
 export interface AuthUser {
   id: string;
@@ -33,6 +34,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
       return;
     }
     req.user = decoded;
+    enterTenant(decoded.organization_id);
 
     // If a tenant id is supplied by the client, it must match the token's.
     const reqOrgId = req.query.organization_id || req.body?.organization_id;

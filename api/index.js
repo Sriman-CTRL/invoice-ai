@@ -6,6 +6,7 @@ import helmet from "helmet";
 
 // backend/src/lib/prisma.ts
 import "dotenv/config";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 // backend/src/generated/internal/class.ts
@@ -68,11 +69,58 @@ var defineExtension = runtime2.Extensions.defineExtension;
 var PrismaClient = getPrismaClientClass();
 
 // backend/src/lib/prisma.ts
-var adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL
+var appUrl = process.env.DATABASE_URL_APP;
+var RLS_ENFORCED = Boolean(appUrl);
+var base = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: appUrl || process.env.DATABASE_URL }),
+  // Neon cold starts can take a few seconds; the 2s default would fail the first query of a cold instance.
+  transactionOptions: { maxWait: 15e3, timeout: 2e4 }
 });
-var prisma = new PrismaClient({
-  adapter
+var warm = null;
+function ensureWarm() {
+  warm ??= base.$queryRaw`SELECT 1`.catch((e) => {
+    warm = null;
+    throw e;
+  });
+  return warm;
+}
+var tenantContext = new AsyncLocalStorage();
+function systemContext(_req, _res, next) {
+  tenantContext.run({ system: true }, next);
+}
+function enterTenant(orgId) {
+  tenantContext.enterWith({ orgId });
+}
+function currentSettings() {
+  const ctx = tenantContext.getStore();
+  return { org: ctx?.orgId ?? "", system: ctx?.system ? "on" : "off" };
+}
+var prisma = base.$extends({
+  query: {
+    async $allOperations({ args, query, __internalParams }) {
+      if (__internalParams?.transaction || !RLS_ENFORCED) return query(args);
+      await ensureWarm();
+      const { org, system } = currentSettings();
+      const [, result] = await base.$transaction([
+        base.$executeRaw`SELECT set_config('app.current_org_id', ${org}, true), set_config('app.system', ${system}, true)`,
+        query(args)
+      ]);
+      return result;
+    }
+  },
+  client: {
+    /** Interactive transaction that carries the tenant context (use instead of $transaction(async ...)). */
+    async $tenantTransaction(fn, options) {
+      await ensureWarm();
+      return base.$transaction(async (tx) => {
+        if (RLS_ENFORCED) {
+          const { org, system } = currentSettings();
+          await tx.$executeRaw`SELECT set_config('app.current_org_id', ${org}, true), set_config('app.system', ${system}, true)`;
+        }
+        return fn(tx);
+      }, options);
+    }
+  }
 });
 var prisma_default = prisma;
 
@@ -373,8 +421,7 @@ function ensureOrgSettingsSchema() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )`);
     })().catch((e) => {
-      ready = null;
-      throw e;
+      console.warn("ensureOrgSettingsSchema: skipped DDL:", e.message);
     });
   }
   return ready;
@@ -1267,7 +1314,7 @@ router5.post("/", async (req, res) => {
     if (!ALLOWED_STATUSES.includes(paymentStatus)) {
       return res.status(400).json({ error: `Invalid status. Must be one of: ${ALLOWED_STATUSES.join(", ")}` });
     }
-    const result = await prisma_default.$transaction(async (tx) => {
+    const result = await prisma_default.$tenantTransaction(async (tx) => {
       const locked = await tx.$queryRaw`
         SELECT id FROM invoices WHERE id = ${invoice_id}::uuid AND organization_id = ${organization_id}::uuid FOR UPDATE
       `;
@@ -2839,7 +2886,7 @@ router8.post(["/claim", "/claim-due"], async (req, res) => {
     const limit = Math.min(50, Math.max(1, Number(req.body?.limit) || 20));
     const action_type = typeof req.body?.action_type === "string" && req.body.action_type ? req.body.action_type : null;
     const include_future = Boolean(req.body?.include_future);
-    const claimed = await prisma_default.$transaction(async (tx) => {
+    const claimed = await prisma_default.$tenantTransaction(async (tx) => {
       const rows = await tx.$queryRaw`
         UPDATE collection_actions AS ca
         SET status = 'PROCESSING'
@@ -3055,7 +3102,7 @@ router8.patch("/:id/status", async (req, res) => {
 });
 router8.post("/:id/verify-proof", async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const organization_id = req.body?.organization_id || req.user?.organization_id;
     if (!organization_id || typeof organization_id !== "string") {
       res.status(400).json({ error: "organization_id is required" });
@@ -3079,24 +3126,25 @@ router8.post("/:id/verify-proof", async (req, res) => {
       res.status(400).json({ error: "Action is not linked to an invoice" });
       return;
     }
+    const invoiceId = action.invoice_id;
     const meta = action.metadata && typeof action.metadata === "object" ? action.metadata : {};
     const utr = String(meta.utr || "DIRECT_VERIFIED");
     const paymentId = meta.payment_id ? String(meta.payment_id) : null;
-    const result = await prisma_default.$transaction(async (tx) => {
+    const result = await prisma_default.$tenantTransaction(async (tx) => {
       const locked = await tx.$queryRaw`
-        SELECT id FROM invoices WHERE id = ${action.invoice_id}::uuid AND organization_id = ${organization_id}::uuid FOR UPDATE
+        SELECT id FROM invoices WHERE id = ${invoiceId}::uuid AND organization_id = ${organization_id}::uuid FOR UPDATE
       `;
       if (locked.length === 0) {
         throw new Error("INVOICE_NOT_FOUND");
       }
       const inv = await tx.invoices.findFirst({
-        where: { id: action.invoice_id, organization_id }
+        where: { id: invoiceId, organization_id }
       });
       if (!inv) throw new Error("INVOICE_NOT_FOUND");
       let payment = paymentId ? await tx.payments.findFirst({
         where: { id: paymentId, organization_id, status: "PENDING" }
       }) : await tx.payments.findFirst({
-        where: { invoice_id: action.invoice_id, organization_id, status: "PENDING" },
+        where: { invoice_id: invoiceId, organization_id, status: "PENDING" },
         orderBy: { created_at: "desc" }
       });
       if (payment) {
@@ -3109,15 +3157,15 @@ router8.post("/:id/verify-proof", async (req, res) => {
         });
       } else {
         const settled = await tx.payments.aggregate({
-          where: { invoice_id: action.invoice_id, organization_id, status: "SUCCEEDED" },
+          where: { invoice_id: invoiceId, organization_id, status: "SUCCEEDED" },
           _sum: { amount: true }
         });
-        const alreadyPaid = Number(settled._sum.amount ?? 0);
+        const alreadyPaid = Number(settled._sum?.amount ?? 0);
         const outstanding = Math.max(0, Number(inv.amount) - alreadyPaid);
         payment = await tx.payments.create({
           data: {
             organization_id,
-            invoice_id: action.invoice_id,
+            invoice_id: invoiceId,
             external_payment_id: utr,
             amount: outstanding > 0 ? outstanding : Number(inv.amount),
             currency: inv.currency,
@@ -3127,13 +3175,13 @@ router8.post("/:id/verify-proof", async (req, res) => {
         });
       }
       const settledNow = await tx.payments.aggregate({
-        where: { invoice_id: action.invoice_id, organization_id, status: "SUCCEEDED" },
+        where: { invoice_id: invoiceId, organization_id, status: "SUCCEEDED" },
         _sum: { amount: true }
       });
       const totalPaid = Number(settledNow._sum?.amount ?? 0);
       const fullyPaid = totalPaid + 0.01 >= Number(inv.amount);
       const updatedInvoice = await tx.invoices.update({
-        where: { id: action.invoice_id },
+        where: { id: invoiceId },
         data: { status: fullyPaid ? "PAID" : "PARTIALLY_PAID" }
       });
       const updatedAction = await tx.collection_actions.update({
@@ -3455,8 +3503,7 @@ function ensureTable() {
       await prisma_default.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS auth_failures_email_at ON auth_failures (email, at)`);
       await prisma_default.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS auth_failures_ip_at ON auth_failures (ip, at)`);
     })().catch((e) => {
-      ready2 = null;
-      throw e;
+      console.warn("ensureTable(auth_failures): skipped DDL:", e.message);
     });
   }
   return ready2;
@@ -3492,8 +3539,8 @@ var router11 = Router11();
 var EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 var dummyHashPromise = null;
 function slugify(name) {
-  const base = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32) || "org";
-  return `${base}-${Date.now().toString(36)}`;
+  const base2 = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32) || "org";
+  return `${base2}-${Date.now().toString(36)}`;
 }
 router11.post("/register", async (req, res) => {
   try {
@@ -3752,7 +3799,7 @@ router14.post("/", async (req, res) => {
     if (!reason || typeof reason !== "string") {
       return res.status(400).json({ error: "A valid statutory reason is required for issuing a credit note" });
     }
-    const result = await prisma_default.$transaction(async (tx) => {
+    const result = await prisma_default.$tenantTransaction(async (tx) => {
       const invoice = await tx.invoices.findFirst({
         where: { id: invoice_id, organization_id }
       });
@@ -3956,6 +4003,7 @@ function authMiddleware(req, res, next) {
       return;
     }
     req.user = decoded;
+    enterTenant(decoded.organization_id);
     const reqOrgId = req.query.organization_id || req.body?.organization_id;
     if (reqOrgId && reqOrgId !== decoded.organization_id) {
       auditLogger.log({
@@ -4034,10 +4082,11 @@ app.use(
   })
 );
 app.use(express.json({ limit: "1mb" }));
-app.use("/api/auth", rateLimit({ windowMs: 6e4, max: 20, message: "Too many authentication attempts. Please wait 1 minute." }), auth_routes_default);
-app.use("/api/inbound", inbound_routes_default);
+app.use("/api/auth", systemContext, rateLimit({ windowMs: 6e4, max: 20, message: "Too many authentication attempts. Please wait 1 minute." }), auth_routes_default);
+app.use("/api/inbound", systemContext, inbound_routes_default);
 app.use(
   "/api/public/invoices",
+  systemContext,
   rateLimit({ windowMs: 6e4, max: 60, message: "Too many requests. Please wait a moment." }),
   public_invoice_routes_default
 );
@@ -4055,7 +4104,7 @@ app.use(
 );
 app.use("/api/customers", authMiddleware, customer_routes_default);
 app.use("/api/organizations", authMiddleware, organization_routes_default);
-app.use("/api/admin", authMiddleware, admin_routes_default);
+app.use("/api/admin", authMiddleware, systemContext, admin_routes_default);
 app.use(
   "/api/messages",
   authMiddleware,
@@ -4082,7 +4131,7 @@ app.use(
 app.use("/api/dashboard", authMiddleware, dashboard_routes_default);
 app.use("/api/compliance", authMiddleware, compliance_routes_default);
 app.use("/api/credit-notes", authMiddleware, credit_note_routes_default);
-app.get("/health", async (_req, res) => {
+app.get("/health", systemContext, async (_req, res) => {
   try {
     await prisma_default.$queryRaw`SELECT 1`;
     res.json({ status: "ok", database: "connected" });

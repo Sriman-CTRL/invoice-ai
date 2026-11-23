@@ -30,7 +30,7 @@ router.post("/", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "A valid statutory reason is required for issuing a credit note" });
     }
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$tenantTransaction(async (tx) => {
       // 1. Lock invoice row
       const invoice = await tx.invoices.findFirst({
         where: { id: invoice_id, organization_id },

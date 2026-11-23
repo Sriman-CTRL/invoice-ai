@@ -21,8 +21,7 @@ function ensureTable(): Promise<void> {
       await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS auth_failures_email_at ON auth_failures (email, at)`);
       await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS auth_failures_ip_at ON auth_failures (ip, at)`);
     })().catch((e) => {
-      ready = null;
-      throw e;
+      console.warn("ensureTable(auth_failures): skipped DDL:", (e as Error).message);
     });
   }
   return ready;

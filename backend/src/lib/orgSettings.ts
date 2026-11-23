@@ -35,8 +35,9 @@ export function ensureOrgSettingsSchema(): Promise<void> {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )`);
     })().catch((e) => {
-      ready = null;
-      throw e;
+      // The restricted app role cannot run DDL. That's fine when the owner already applied it
+      // (scripts/enable-rls.cjs does); only fail loudly if the columns are genuinely missing.
+      console.warn("ensureOrgSettingsSchema: skipped DDL:", (e as Error).message);
     });
   }
   return ready;

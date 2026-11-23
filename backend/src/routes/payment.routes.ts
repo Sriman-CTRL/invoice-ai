@@ -50,7 +50,7 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: `Invalid status. Must be one of: ${ALLOWED_STATUSES.join(", ")}` });
     }
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$tenantTransaction(async (tx) => {
       // Row-level lock: serializes payments against the same invoice.
       const locked = await tx.$queryRaw<Array<{ id: string }>>`
         SELECT id FROM invoices WHERE id = ${invoice_id}::uuid AND organization_id = ${organization_id}::uuid FOR UPDATE

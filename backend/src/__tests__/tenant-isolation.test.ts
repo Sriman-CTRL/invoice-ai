@@ -69,13 +69,16 @@ after(async () => {
   server?.close();
   const prismaModule: any = await import("../lib/prisma.js");
   const prisma = prismaModule.default?.default ?? prismaModule.default;
-  for (const org of created.orgIds) {
-    for (const table of ["payments", "collection_actions", "messages", "conversations", "invoices", "customers", "suppressions", "credit_notes", "users"]) {
-      await prisma.$executeRawUnsafe(`DELETE FROM ${table} WHERE organization_id = $1::uuid`, org).catch(() => undefined);
+  const runAsSystem = prismaModule.runAsSystem;
+  await runAsSystem(async () => {
+    for (const org of created.orgIds) {
+      for (const table of ["payments", "collection_actions", "messages", "conversations", "invoices", "customers", "suppressions", "credit_notes", "users"]) {
+        await prisma.$executeRawUnsafe(`DELETE FROM ${table} WHERE organization_id = $1::uuid`, org).catch(() => undefined);
+      }
+      await prisma.$executeRawUnsafe(`DELETE FROM plan_requests WHERE organization_id = $1::uuid`, org).catch(() => undefined);
+      await prisma.$executeRawUnsafe(`DELETE FROM organizations WHERE id = $1::uuid`, org).catch(() => undefined);
     }
-    await prisma.$executeRawUnsafe(`DELETE FROM plan_requests WHERE organization_id = $1::uuid`, org).catch(() => undefined);
-    await prisma.$executeRawUnsafe(`DELETE FROM organizations WHERE id = $1::uuid`, org).catch(() => undefined);
-  }
+  });
   await prisma.$disconnect();
 });
 

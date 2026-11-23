@@ -2,7 +2,7 @@ import "dotenv/config";
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
-import prisma from "./lib/prisma";
+import prisma, { systemContext } from "./lib/prisma";
 import customerRoutes from "./routes/customer.routes";
 import organizationRoutes from "./routes/organization.routes";
 import invoiceRoutes from "./routes/invoice.routes";
@@ -86,14 +86,15 @@ app.use(express.json({ limit: "1mb" }));
 
 // LAYER 5: Multi-Tier Rate Limiting
 // 1. Auth routes (login/register) - brute force defense
-app.use("/api/auth", rateLimit({ windowMs: 60_000, max: 20, message: "Too many authentication attempts. Please wait 1 minute." }), authRoutes);
+app.use("/api/auth", systemContext, rateLimit({ windowMs: 60_000, max: 20, message: "Too many authentication attempts. Please wait 1 minute." }), authRoutes);
 
 // 2. Inbound webhook endpoint
-app.use("/api/inbound", inboundRoutes);
+app.use("/api/inbound", systemContext, inboundRoutes);
 
 // Public customer invoice payment portal (no auth required)
 app.use(
   "/api/public/invoices",
+  systemContext,
   rateLimit({ windowMs: 60_000, max: 60, message: "Too many requests. Please wait a moment." }),
   publicInvoiceRoutes,
 );
@@ -116,7 +117,7 @@ app.use(
 
 app.use("/api/customers", authMiddleware, customerRoutes);
 app.use("/api/organizations", authMiddleware, organizationRoutes);
-app.use("/api/admin", authMiddleware, adminRoutes);
+app.use("/api/admin", authMiddleware, systemContext, adminRoutes);
 
 // Reprocess & ingest rate limits on messages
 app.use(
@@ -150,7 +151,7 @@ app.use("/api/dashboard", authMiddleware, dashboardRoutes);
 app.use("/api/compliance", authMiddleware, complianceRoutes);
 app.use("/api/credit-notes", authMiddleware, creditNoteRoutes);
 
-app.get("/health", async (_req, res) => {
+app.get("/health", systemContext, async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
     res.json({ status: "ok", database: "connected" });

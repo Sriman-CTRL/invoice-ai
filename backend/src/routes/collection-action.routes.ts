@@ -34,7 +34,7 @@ router.post(["/claim", "/claim-due"], async (req: Request, res: Response): Promi
         : null;
     const include_future = Boolean(req.body?.include_future);
 
-    const claimed = await prisma.$transaction(async (tx) => {
+    const claimed = await prisma.$tenantTransaction(async (tx) => {
       const rows = await tx.$queryRaw<Array<{ id: string }>>`
         UPDATE collection_actions AS ca
         SET status = 'PROCESSING'
@@ -347,7 +347,7 @@ router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<vo
     const utr = String(meta.utr || "DIRECT_VERIFIED");
     const paymentId = meta.payment_id ? String(meta.payment_id) : null;
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$tenantTransaction(async (tx) => {
       // Row lock on invoice
       const locked = await tx.$queryRaw<Array<{ id: string }>>`
         SELECT id FROM invoices WHERE id = ${invoiceId}::uuid AND organization_id = ${organization_id}::uuid FOR UPDATE
