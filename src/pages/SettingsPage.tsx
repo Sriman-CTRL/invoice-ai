@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
+import { BrandingCard } from "./BrandingCard";
 import { Banknote, Check, CreditCard, Crown, Landmark, ShieldCheck } from "lucide-react";
 import { accountApi, settingsApi } from "../api";
 import { PageHeader, TableSkeleton, ErrorState } from "../components";
@@ -263,6 +264,8 @@ export function SettingsPage() {
           </ul>
         </aside>
       </div>
+
+      <BrandingCard key={`${r.data.brand_color || ""}-${r.data.logo_data?.length || 0}`} settings={r.data} onSaved={r.reload} />
 
       <ChangePasswordCard />
 

@@ -1,4 +1,4 @@
-import type { OrgSettings, CollectionAction, Conversation, ConversationDetail, Customer, CustomerDetail, Dashboard, Invoice, InvoiceDetail, Payment, PublicInvoiceDetail, User } from "./types";
+import type { ActivityEvent, OrgSettings, CollectionAction, Conversation, ConversationDetail, Customer, CustomerDetail, Dashboard, Invoice, InvoiceDetail, Payment, PublicInvoiceDetail, User } from "./types";
 
 const BASE_URL = import.meta.env.PROD ? "/api" : (import.meta.env.VITE_API_BASE_URL || "/api");
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
@@ -37,7 +37,9 @@ export const dashboardApi = { get: () => request<Dashboard>("/dashboard") };
 export const invoicesApi = {
   list: (status?: string) => request<Invoice[]>(`/invoices${status ? `?status=${encodeURIComponent(status)}` : ""}`),
   detail: (id: string) => request<InvoiceDetail>(`/invoices/${id}`),
-  create: (data: { customer_id: string; invoice_number: string; amount: number; currency?: string; issued_at: string; due_at: string; external_invoice_id?: string }) => request<Invoice>("/invoices", { method: "POST", body: JSON.stringify(data) }),
+  create: (data: { customer_id: string; invoice_number: string; amount?: number; currency?: string; issued_at: string; due_at: string; external_invoice_id?: string; status?: string; items?: Array<{ description: string; quantity: number; rate: number }>; discount?: number; tax_mode?: string; tax_percent?: number; notes?: string }) => request<Invoice>("/invoices", { method: "POST", body: JSON.stringify(data) }),
+  aiItems: (prompt: string, currency: string) => request<{ items: Array<{ description: string; quantity: number; rate: number }> }>("/invoices/meta/ai-items", { method: "POST", body: JSON.stringify({ prompt, currency }) }),
+  activity: () => request<{ events: ActivityEvent[]; views: Record<string, { last_viewed_at: string; count: number }> }>("/invoices/meta/activity"),
   bulkImport: (invoices: Array<{
     customer_name?: string;
     customer_email: string;
@@ -56,7 +58,7 @@ export const invoicesApi = {
     skipped_count: number;
     errors: string[];
   }>("/invoices/bulk-import", { method: "POST", body: JSON.stringify({ invoices }) }),
-  emailStatus: () => request<{ email_enabled: boolean }>("/invoices/meta/email-status"),
+  emailStatus: () => request<{ email_enabled: boolean; payment_ready: boolean }>("/invoices/meta/email-status"),
   sendReminder: (id: string, data?: { subject?: string; body?: string; deliver?: boolean }) =>
     request<{ success: boolean; message: any; collection_action: any }>(`/invoices/${id}/send-reminder`, {
       method: "POST",

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowUpRight, Building2, Check, Copy, DollarSign, Lock, Mail, MessageSquare, Download, Printer, RefreshCw, Send, ShieldCheck, X } from "lucide-react";
+import { timeAgo } from "../ActivityBell";
+import { ArrowUpRight, Building2, Eye, Check, Copy, DollarSign, Lock, Mail, MessageSquare, Download, Printer, RefreshCw, Send, ShieldCheck, X } from "lucide-react";
 import { invoicesApi, organizationsApi, paymentsApi, settingsApi } from "../api";
 import { Badge, PageHeader } from "../components";
 import { date, money, titleCase } from "../lib";
@@ -771,6 +772,37 @@ export function InvoiceDetailPage() {
                       <Printer className="h-3.5 w-3.5" />
                       <span>Print</span>
                     </button>
+                  </div>
+                </section>
+
+                {data.details && data.details.items.length > 0 && (
+                  <section className="panel overflow-hidden">
+                    <div className="border-b border-slate-100 px-6 py-4">
+                      <h3 className="text-sm font-bold text-slate-900">Line items</h3>
+                    </div>
+                    <div className="divide-y divide-slate-100">
+                      {data.details.items.map((li, i) => (
+                        <div key={i} className="flex items-baseline justify-between gap-4 px-6 py-3 text-sm">
+                          <span className="min-w-0 font-medium text-slate-800">{li.description}<span className="ml-2 font-mono text-xs text-slate-400">{li.quantity} × {li.rate.toLocaleString("en-IN")}</span></span>
+                          <span className="font-mono font-bold text-slate-900">{money(li.amount, fin.currency)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="space-y-1 bg-slate-50 px-6 py-4 text-xs text-slate-600">
+                      <div className="flex justify-between"><span>Subtotal</span><span className="font-mono">{money(data.details.totals.subtotal, fin.currency)}</span></div>
+                      {data.details.totals.discount > 0 && <div className="flex justify-between"><span>Discount</span><span className="font-mono">− {money(data.details.totals.discount, fin.currency)}</span></div>}
+                      {data.details.tax_mode === "GST_INTRA" && (<><div className="flex justify-between"><span>CGST {data.details.tax_percent / 2}%</span><span className="font-mono">{money(data.details.totals.cgst, fin.currency)}</span></div><div className="flex justify-between"><span>SGST {data.details.tax_percent / 2}%</span><span className="font-mono">{money(data.details.totals.sgst, fin.currency)}</span></div></>)}
+                      {data.details.tax_mode === "GST_INTER" && <div className="flex justify-between"><span>IGST {data.details.tax_percent}%</span><span className="font-mono">{money(data.details.totals.igst, fin.currency)}</span></div>}
+                      <div className="flex justify-between border-t border-slate-200 pt-2 text-sm font-bold text-slate-900"><span>Total</span><span className="font-mono">{money(data.details.totals.total, fin.currency)}</span></div>
+                    </div>
+                  </section>
+                )}
+
+                <section className="panel flex items-center gap-3 p-4 text-sm">
+                  <span className={`grid h-9 w-9 place-items-center rounded-xl ${data.views.count ? "bg-sky-50 text-sky-600" : "bg-slate-100 text-slate-400"}`}><Eye className="h-4 w-4" /></span>
+                  <div>
+                    <p className="font-semibold text-slate-900">{data.views.last_viewed_at ? `Client opened this ${timeAgo(data.views.last_viewed_at)}` : "Not opened yet"}</p>
+                    <p className="text-xs text-slate-500">{data.views.count ? `Opened ${data.views.count} time${data.views.count === 1 ? "" : "s"} in total.` : "Share the pay link, and you'll see here when your client opens it."}</p>
                   </div>
                 </section>
 

@@ -12,17 +12,19 @@ export interface OrgSettings {
   bank_ifsc: string | null;
   bank_name: string | null;
   gstin: string | null;
+  brand_color: string | null;
+  logo_data: string | null;
   plan: "FREE" | "PRO" | "AGENCY";
 }
 
-export const SETTING_FIELDS = ["upi_id", "payee_name", "bank_account_name", "bank_account_number", "bank_ifsc", "bank_name", "gstin"] as const;
+export const SETTING_FIELDS = ["upi_id", "payee_name", "bank_account_name", "bank_account_number", "bank_ifsc", "bank_name", "gstin", "brand_color", "logo_data"] as const;
 type Field = (typeof SETTING_FIELDS)[number];
 
 let ready: Promise<void> | null = null;
 export function ensureOrgSettingsSchema(): Promise<void> {
   if (!ready) {
     ready = (async () => {
-      for (const col of SETTING_FIELDS) {
+      for (const col of ["upi_id", "payee_name", "bank_account_name", "bank_account_number", "bank_ifsc", "bank_name", "gstin"]) {
         await prisma.$executeRawUnsafe(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS ${col} VARCHAR(255)`);
       }
       await prisma.$executeRawUnsafe(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS plan VARCHAR(20) NOT NULL DEFAULT 'FREE'`);
@@ -45,13 +47,13 @@ export function ensureOrgSettingsSchema(): Promise<void> {
 
 const EMPTY: OrgSettings = {
   upi_id: null, payee_name: null, bank_account_name: null, bank_account_number: null,
-  bank_ifsc: null, bank_name: null, gstin: null, plan: "FREE",
+  bank_ifsc: null, bank_name: null, gstin: null, brand_color: null, logo_data: null, plan: "FREE",
 };
 
 export async function getOrgSettings(organizationId: string): Promise<OrgSettings> {
   await ensureOrgSettingsSchema();
   const rows = await prisma.$queryRawUnsafe<OrgSettings[]>(
-    `SELECT upi_id, payee_name, bank_account_name, bank_account_number, bank_ifsc, bank_name, gstin, plan FROM organizations WHERE id = $1::uuid`,
+    `SELECT upi_id, payee_name, bank_account_name, bank_account_number, bank_ifsc, bank_name, gstin, brand_color, logo_data, plan FROM organizations WHERE id = $1::uuid`,
     organizationId,
   );
   return rows[0] ?? EMPTY;
@@ -62,6 +64,20 @@ const IFSC_RE = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 const ACCT_RE = /^[0-9]{6,20}$/;
 
+/** A logo must be a small PNG/JPEG/WebP data URL whose bytes really are that format. */
+function logoProblem(raw: unknown): string | null {
+  if (typeof raw !== "string") return "Logo must be an image.";
+  const m = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/.exec(raw);
+  if (!m) return "Logo must be a PNG, JPEG or WebP image.";
+  const bytes = Buffer.from(m[2], "base64");
+  if (bytes.length === 0 || bytes.length > 150 * 1024) return "Logo is too large. Please use an image under 150 KB.";
+  const png = bytes.length > 8 && bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  const jpg = bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  const webp = bytes.length > 12 && bytes.subarray(0, 4).toString("ascii") === "RIFF" && bytes.subarray(8, 12).toString("ascii") === "WEBP";
+  const ok = m[1] === "image/png" ? png : m[1] === "image/jpeg" ? jpg : webp;
+  return ok ? null : "That file doesn't look like a valid image.";
+}
+
 /** Validates & normalises a settings patch. Returns cleaned values or an error message. */
 export function validateSettingsPatch(body: Record<string, unknown>): { data: Partial<Record<Field, string | null>> } | { error: string } {
   const data: Partial<Record<Field, string | null>> = {};
@@ -70,7 +86,9 @@ export function validateSettingsPatch(body: Record<string, unknown>): { data: Pa
     const raw = body[field];
     if (raw === null || raw === "") { data[field] = null; continue; }
     if (typeof raw !== "string") return { error: `${field} must be text` };
+    if (field === "logo_data") { const bad = logoProblem(raw); if (bad) return { error: bad }; data[field] = raw; continue; }
     let v = raw.trim().slice(0, 255);
+    if (field === "brand_color") { v = v.toLowerCase(); if (!/^#[0-9a-f]{6}$/.test(v)) return { error: "Pick a valid colour." }; }
     if (field === "upi_id") { v = v.toLowerCase(); if (!UPI_RE.test(v)) return { error: "Enter a valid UPI ID, e.g. yourname@okhdfcbank" }; }
     if (field === "bank_ifsc") { v = v.toUpperCase(); if (!IFSC_RE.test(v)) return { error: "IFSC must look like HDFC0001234" }; }
     if (field === "gstin") { v = v.toUpperCase(); if (!GSTIN_RE.test(v)) return { error: "GSTIN must be 15 characters, e.g. 29ABCDE1234F1Z5" }; }

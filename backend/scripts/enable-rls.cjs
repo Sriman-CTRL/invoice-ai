@@ -13,7 +13,7 @@
 require("dotenv").config();
 const { Client } = require("pg");
 
-const TENANT_TABLES = ["payment_proof_images", "collection_actions", "conversations", "credit_notes", "customers", "invoices", "messages", "payments", "suppressions", "users"];
+const TENANT_TABLES = ["invoice_details", "invoice_views", "recurring_invoices", "payment_proof_images", "collection_actions", "conversations", "credit_notes", "customers", "invoices", "messages", "payments", "suppressions", "users"];
 
 (async () => {
   const url = process.env.DATABASE_URL;
@@ -39,6 +39,44 @@ const TENANT_TABLES = ["payment_proof_images", "collection_actions", "conversati
   await run(`CREATE TABLE IF NOT EXISTS leads (id BIGSERIAL PRIMARY KEY, at TIMESTAMPTZ NOT NULL DEFAULT now(), kind VARCHAR(20) NOT NULL, email VARCHAR(255), plan VARCHAR(20), message VARCHAR(1000))`);
   await run(`CREATE TABLE IF NOT EXISTS payment_proof_images (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), organization_id UUID NOT NULL, payment_id UUID NOT NULL, mime VARCHAR(20) NOT NULL, data TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
   await run(`CREATE INDEX IF NOT EXISTS payment_proof_images_payment ON payment_proof_images (payment_id)`);
+
+  // Branding on the organisation (logo is a small compressed data URL, validated by the API).
+  await run(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS brand_color VARCHAR(9)`);
+  await run(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS logo_data TEXT`);
+  // Line items, discount, GST and notes live beside the invoice so the core table is untouched.
+  await run(`CREATE TABLE IF NOT EXISTS invoice_details (
+    invoice_id UUID PRIMARY KEY,
+    organization_id UUID NOT NULL,
+    items JSONB NOT NULL DEFAULT '[]',
+    discount NUMERIC(14,2) NOT NULL DEFAULT 0,
+    tax_percent NUMERIC(5,2) NOT NULL DEFAULT 0,
+    tax_mode VARCHAR(10) NOT NULL DEFAULT 'NONE',
+    notes VARCHAR(2000),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`);
+  // When a client opened an invoice's payment page.
+  await run(`CREATE TABLE IF NOT EXISTS invoice_views (
+    id BIGSERIAL PRIMARY KEY,
+    organization_id UUID NOT NULL,
+    invoice_id UUID NOT NULL,
+    viewed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`);
+  await run(`CREATE INDEX IF NOT EXISTS invoice_views_org_at ON invoice_views (organization_id, viewed_at DESC)`);
+  await run(`CREATE INDEX IF NOT EXISTS invoice_views_invoice ON invoice_views (invoice_id, viewed_at DESC)`);
+  // Repeating invoices (retainers). The template is a JSON snapshot; each run creates a DRAFT to review.
+  await run(`CREATE TABLE IF NOT EXISTS recurring_invoices (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL,
+    customer_id UUID NOT NULL,
+    template JSONB NOT NULL,
+    frequency VARCHAR(12) NOT NULL,
+    next_run DATE NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT true,
+    last_invoice_id UUID,
+    runs INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`);
+  await run(`CREATE INDEX IF NOT EXISTS recurring_invoices_due ON recurring_invoices (active, next_run)`);
   await run(`CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_unique ON users (lower(email))`);
 
   await run(`CREATE OR REPLACE FUNCTION app_current_org_id() RETURNS uuid LANGUAGE plpgsql STABLE AS $$

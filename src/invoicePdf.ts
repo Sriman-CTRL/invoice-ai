@@ -2,13 +2,17 @@ import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
 import type { InvoiceDetail, OrgSettings } from "./types";
 
-export const PUBLIC_BASE_URL = "https://invoice-ai-nine-beta.vercel.app";
+export const PUBLIC_BASE_URL = "https://paivo.in";
 
 type Rgb = [number, number, number];
 const INK: Rgb = [15, 23, 42];
 const MUTED: Rgb = [100, 116, 139];
 const LINE: Rgb = [226, 232, 240];
-const BRAND: Rgb = [79, 70, 229];
+const DEFAULT_BRAND: Rgb = [79, 70, 229];
+const hexToRgb = (h?: string | null): Rgb | null => {
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(h || "");
+  return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : null;
+};
 const GREEN: Rgb = [5, 150, 105];
 const AMBER: Rgb = [180, 83, 9];
 
@@ -36,6 +40,7 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   const paid = inv.status === "PAID";
   const payUrl = `${PUBLIC_BASE_URL}/pay/${inv.id}`;
 
+  const BRAND: Rgb = hexToRgb(st?.brand_color) ?? DEFAULT_BRAND;
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
   const M = 16;
@@ -44,18 +49,37 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   // Letterhead band
   doc.setFillColor(...INK);
   doc.rect(0, 0, W, 38, "F");
-  doc.setFillColor(...BRAND);
-  doc.roundedRect(M, 11, 16, 16, 3, 3, "F");
+  let logoDrawn = false;
+  if (st?.logo_data) {
+    try {
+      const props = doc.getImageProperties(st.logo_data);
+      const box = 18;
+      const scale = Math.min(box / props.width, box / props.height);
+      const w = props.width * scale;
+      const h = props.height * scale;
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(M, 10, box + 2, box + 2, 3, 3, "F");
+      doc.addImage(st.logo_data, props.fileType, M + 1 + (box - w) / 2, 11 + (box - h) / 2, w, h);
+      logoDrawn = true;
+    } catch {
+      logoDrawn = false;
+    }
+  }
+  if (!logoDrawn) {
+    doc.setFillColor(...BRAND);
+    doc.roundedRect(M, 11, 16, 16, 3, 3, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    doc.setTextColor(255, 255, 255);
+    doc.text((org[0] || "P").toUpperCase(), M + 8, 22, { align: "center" });
+  }
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
-  doc.setTextColor(255, 255, 255);
-  doc.text((org[0] || "L").toUpperCase(), M + 8, 22, { align: "center" });
   doc.setFontSize(16);
-  doc.text(org, M + 21, 20);
+  doc.text(org, M + (logoDrawn ? 24 : 21), 20);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(165, 180, 252);
-  doc.text(st?.gstin ? `GSTIN: ${st.gstin}` : "Powered by LedgerLane", M + 21, 26);
+  doc.text(st?.gstin ? `GSTIN: ${st.gstin}` : "Tax invoice", M + (logoDrawn ? 24 : 21), 26);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
   doc.setTextColor(255, 255, 255);
@@ -64,6 +88,9 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   doc.setFont("helvetica", "normal");
   doc.setTextColor(203, 213, 225);
   doc.text(`# ${inv.invoice_number}`, W - M, 27, { align: "right" });
+
+  doc.setFillColor(...BRAND);
+  doc.rect(0, 38, W, 1.6, "F");
 
   // Meta + Bill To
   let y = 50;
@@ -105,22 +132,34 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   doc.setFillColor(248, 250, 252);
   doc.rect(M, y, W - 2 * M, 9, "F");
   label("Description", M + 3, y + 6);
-  label("Qty", W - M - 62, y + 6);
+  label("Qty", W - M - 74, y + 6);
+  label("Rate", W - M - 46, y + 6);
   label("Amount", W - M - 3, y + 6);
   y += 16;
-  val(`Professional services - ${inv.invoice_number}`, M + 3, y, true);
-  doc.setFontSize(8.5); set(MUTED);
-  doc.text(`Billed to ${customer.company_name || customer.name}`, M + 3, y + 5);
-  val("1", W - M - 62, y);
-  doc.setFont("helvetica", "bold"); doc.setFontSize(10); set(INK);
-  doc.text(inr(fin.invoice_amount, currency), W - M - 3, y, { align: "right" });
-  y += 11;
-  doc.setDrawColor(...LINE);
-  doc.line(M, y, W - M, y);
+  const lines = data.details?.items?.length
+    ? data.details.items
+    : [{ description: `Professional services - ${inv.invoice_number}`, quantity: 1, rate: Number(fin.invoice_amount), amount: Number(fin.invoice_amount) }];
+  const H0 = doc.internal.pageSize.getHeight();
+  for (const li of lines) {
+    const wrapped = doc.splitTextToSize(li.description, W - 2 * M - 100) as string[];
+    const rowH = Math.max(7, wrapped.length * 4.6 + 2.4);
+    if (y + rowH > H0 - 60) { doc.addPage(); y = 24; }
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10); set(INK);
+    doc.text(wrapped, M + 3, y);
+    doc.setFont("helvetica", "normal"); set(MUTED);
+    doc.text(String(li.quantity), W - M - 74, y);
+    doc.text(inr(li.rate, currency), W - M - 46, y);
+    set(INK); doc.setFont("helvetica", "bold");
+    doc.text(inr(li.amount, currency), W - M - 3, y, { align: "right" });
+    y += rowH;
+    doc.setDrawColor(...LINE);
+    doc.line(M, y - 3.2, W - M, y - 3.2);
+  }
 
   // Totals
-  y += 8;
-  const tx = W - M - 70;
+  if (y > H0 - 80) { doc.addPage(); y = 24; }
+  y += 4;
+  const tx = W - M - 78;
   const row = (l: string, v: string, bold = false, color: Rgb = INK) => {
     doc.setFont("helvetica", bold ? "bold" : "normal");
     doc.setFontSize(bold ? 11 : 9.5);
@@ -130,17 +169,35 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
     doc.text(v, W - M - 3, y, { align: "right" });
     y += bold ? 8 : 6.5;
   };
-  row("Subtotal", inr(fin.invoice_amount, currency));
+  const dt = data.details?.totals;
+  const half = (data.details?.tax_percent ?? 0) / 2;
+  row("Subtotal", inr(dt ? dt.subtotal : fin.invoice_amount, currency));
+  if (dt && dt.discount > 0) row("Discount", `- ${inr(dt.discount, currency)}`, false, GREEN);
+  if (dt && data.details?.tax_mode === "GST_INTRA") {
+    row(`CGST ${half}%`, inr(dt.cgst, currency));
+    row(`SGST ${half}%`, inr(dt.sgst, currency));
+  }
+  if (dt && data.details?.tax_mode === "GST_INTER") row(`IGST ${data.details?.tax_percent}%`, inr(dt.igst, currency));
+  if (dt && dt.tax > 0) row("Invoice total", inr(dt.total, currency), false, INK);
   if (fin.paid_amount > 0) row("Payments received", `- ${inr(fin.paid_amount, currency)}`, false, GREEN);
   doc.setDrawColor(...INK);
   doc.line(tx, y - 3, W - M, y - 3);
   y += 2;
   row("Balance due", inr(fin.outstanding_amount, currency), true, paid ? GREEN : INK);
 
+  if (data.details?.notes) {
+    y += 2;
+    label("Note", M, y);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9); set(INK);
+    const noteLines = doc.splitTextToSize(data.details.notes, W - 2 * M) as string[];
+    doc.text(noteLines.slice(0, 5), M, y + 5);
+    y += 5 + Math.min(noteLines.length, 5) * 4.4;
+  }
+
   // TDS summary
   const rate = opts.tdsRate ?? 10;
   const section = opts.tdsSection ?? "194J";
-  const base = Number(fin.invoice_amount);
+  const base = Number(dt ? dt.taxable : fin.invoice_amount); // TDS applies to the amount before GST
   const tds = +(base * (rate / 100)).toFixed(2);
   y += 4;
   doc.setFillColor(238, 242, 255);
@@ -153,7 +210,8 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   doc.text(`Net bank deposit: ${inr(base - tds, currency)}`, M + 4, y + 23.5);
 
   // UPI QR + pay link
-  const qy = Math.max(y + 36, 170);
+  let qy = Math.max(y + 36, 170);
+  if (qy + 54 > doc.internal.pageSize.getHeight() - 24) { doc.addPage(); qy = 24; }
   doc.setDrawColor(...LINE);
   doc.roundedRect(M, qy, W - 2 * M, 52, 3, 3, "S");
   const cleanOrg = (st?.payee_name || org).replace(/[^a-zA-Z0-9 ]/g, "").slice(0, 25) || "Payee";
@@ -197,7 +255,7 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   doc.setDrawColor(...LINE);
   doc.line(M, H - 20, W - M, H - 20);
   doc.setFont("helvetica", "normal"); doc.setFontSize(8); set(MUTED);
-  doc.text(`${org} - Generated with LedgerLane. Deliverables unlock once payment is confirmed.`, M, H - 14);
+  doc.text(`${org} - Generated with Paivo. Deliverables unlock once payment is confirmed.`, M, H - 14);
   doc.text("Computer-generated invoice; no signature required.", M, H - 9.5);
 
   doc.setProperties({ title: `Invoice ${inv.invoice_number}`, subject: `Invoice for ${customer.name}`, creator: "LedgerLane" });

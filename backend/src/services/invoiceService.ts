@@ -1,4 +1,5 @@
 import prisma from "../lib/prisma";
+import { getDetails } from "../lib/invoiceDetails";
 
 export interface InvoiceDetails {
     invoice: any;
@@ -13,6 +14,8 @@ export interface InvoiceDetails {
     conversation: any | null;
     conversations: any[];
     collection_actions: any[];
+    details: any | null;
+    views: { count: number; last_viewed_at: string | null };
 }
 
 export async function getInvoiceDetails(organization_id: string, invoice_id: string): Promise<InvoiceDetails | null> {
@@ -73,7 +76,15 @@ export async function getInvoiceDetails(organization_id: string, invoice_id: str
     const invoice_amount = Number(invoice.amount);
     const outstanding_amount = Math.max(0, invoice_amount - paid_amount);
 
+    const details = await getDetails(invoice_id);
+    const viewRows = await prisma.$queryRawUnsafe<{ n: number; last: Date | null }[]>(
+        `SELECT count(*)::int AS n, max(viewed_at) AS last FROM invoice_views WHERE invoice_id = $1::uuid`,
+        invoice_id,
+    );
+
     return {
+        details,
+        views: { count: viewRows[0]?.n ?? 0, last_viewed_at: viewRows[0]?.last ? new Date(viewRows[0].last).toISOString() : null },
         invoice: invoiceData,
         customer,
         financial_summary: {

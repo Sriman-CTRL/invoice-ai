@@ -29,6 +29,7 @@ import { useEffect, useState } from "react";
 import { adminApi } from "./api";
 import { LeadDialog } from "./LeadForms";
 import { CommandPalette } from "./CommandPalette";
+import { ActivityBell } from "./ActivityBell";
 import { useAuth } from "./auth";
 import { initials, titleCase } from "./lib";
 
@@ -483,14 +484,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </kbd>
             </div>
 
-            {/* Live Indicator Pill */}
-            <div className="hidden items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-50/80 px-3 py-1 text-xs font-semibold text-emerald-800 sm:flex shadow-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
-              </span>
-              <span>Live Engine Connected</span>
-            </div>
+            <ActivityBell />
 
             <Link
               to="/playground"

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { getOrgSettings } from "../lib/orgSettings";
+import { getDetails } from "../lib/invoiceDetails";
 import { turnstileGuard } from "../lib/turnstile";
 import { ensureExtraSchema, parseScreenshot } from "../lib/extraSchema";
 
@@ -78,6 +79,19 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
         });
 
         const settings = await getOrgSettings(invoice.organization_id);
+        const details = await getDetails(invoice.id);
+
+        // Record a view, but not for link-preview bots (WhatsApp, Slack, crawlers) and at most once per 30 minutes.
+        const ua = String(req.headers["user-agent"] || "");
+        if (!/bot|crawl|spider|preview|whatsapp|facebookexternalhit|slack|telegram|curl|wget|headless|lighthouse/i.test(ua)) {
+            await prisma.$executeRawUnsafe(
+                `INSERT INTO invoice_views (organization_id, invoice_id)
+                 SELECT $1::uuid, $2::uuid
+                 WHERE NOT EXISTS (SELECT 1 FROM invoice_views WHERE invoice_id = $2::uuid AND viewed_at > now() - interval '30 minutes')`,
+                invoice.organization_id,
+                invoice.id,
+            ).catch((e) => console.warn("view tracking skipped:", (e as Error).message));
+        }
         const hasBank = Boolean(settings.bank_account_number && settings.bank_ifsc);
 
         res.json({
@@ -99,7 +113,11 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
             organization: {
                 name: invoice.organizations.name,
                 slug: invoice.organizations.slug,
+                brand_color: settings.brand_color,
+                logo_data: settings.logo_data,
+                gstin: settings.gstin,
             },
+            details: details ? { items: details.items, notes: details.notes, tax_mode: details.tax_mode, tax_percent: details.tax_percent, totals: details.totals } : null,
             payment: {
                 upi_id: settings.upi_id,
                 payee_name: settings.payee_name || invoice.organizations.name,

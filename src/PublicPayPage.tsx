@@ -181,13 +181,18 @@ export function PublicPayPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100 font-sans selection:bg-brand-500 selection:text-white">
+      {data.organization.brand_color && <div className="h-1 w-full" style={{ background: data.organization.brand_color }} />}
       {/* Top Navbar */}
       <header className="border-b border-white/10 bg-slate-950/70 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 shadow-glow">
-              <Sparkles className="h-4 w-4 text-white" />
-            </div>
+            {data.organization.logo_data ? (
+              <img src={data.organization.logo_data} alt="" className="h-9 w-9 rounded-xl bg-white object-contain p-0.5" />
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 shadow-glow" style={data.organization.brand_color ? { background: data.organization.brand_color } : undefined}>
+                <Sparkles className="h-4 w-4 text-white" />
+              </div>
+            )}
             <div>
               <span className="font-extrabold text-sm tracking-tight text-white block">
                 {data.organization.name}
@@ -278,6 +283,28 @@ export function PublicPayPage() {
                   </p>
                 </div>
               </div>
+
+              {data.details && data.details.items.length > 0 && (
+                <div className="mt-6 overflow-hidden rounded-xl border border-white/10">
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-white/10 bg-white/5 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    <span>Description</span><span className="text-right">Qty × Rate</span><span className="w-24 text-right">Amount</span>
+                  </div>
+                  {data.details.items.map((li, i) => (
+                    <div key={i} className="grid grid-cols-[1fr_auto_auto] items-baseline gap-x-4 border-b border-white/5 px-4 py-2.5 text-xs last:border-0">
+                      <span className="font-semibold text-white">{li.description}</span>
+                      <span className="text-right font-mono text-slate-400">{li.quantity} × {li.rate.toLocaleString("en-IN")}</span>
+                      <span className="w-24 text-right font-mono font-bold text-slate-100">{li.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  ))}
+                  <div className="space-y-1 bg-white/[0.03] px-4 py-3 text-xs text-slate-300">
+                    <div className="flex justify-between"><span>Subtotal</span><span className="font-mono">{data.details.totals.subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+                    {data.details.totals.discount > 0 && <div className="flex justify-between text-emerald-300"><span>Discount</span><span className="font-mono">− {data.details.totals.discount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>}
+                    {data.details.tax_mode === "GST_INTRA" && (<><div className="flex justify-between"><span>CGST {data.details.tax_percent / 2}%</span><span className="font-mono">{data.details.totals.cgst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div><div className="flex justify-between"><span>SGST {data.details.tax_percent / 2}%</span><span className="font-mono">{data.details.totals.sgst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div></>)}
+                    {data.details.tax_mode === "GST_INTER" && <div className="flex justify-between"><span>IGST {data.details.tax_percent}%</span><span className="font-mono">{data.details.totals.igst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>}
+                  </div>
+                  {data.details.notes && <p className="border-t border-white/10 px-4 py-3 text-xs leading-relaxed text-slate-400 whitespace-pre-wrap">{data.details.notes}</p>}
+                </div>
+              )}
 
               {/* Balance Summary Box */}
               <div className="mt-6 rounded-xl bg-slate-900/80 border border-white/5 p-4">

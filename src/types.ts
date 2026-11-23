@@ -6,7 +6,11 @@ export type Conversation = { id: string; customer_id: string; invoice_id: string
 export type Message = { id: string; direction: "INBOUND" | "OUTBOUND"; channel: string; sender: string | null; recipient: string | null; subject: string | null; body: string | null; ai_intent: string | null; ai_confidence: number | string | null; created_at: string };
 export type CollectionAction = { id: string; customer_id: string | null; invoice_id: string | null; conversation_id: string | null; action_type: string; status: string; scheduled_at: string | null; executed_at: string | null; created_at: string; metadata?: Record<string, unknown>; customers?: Customer; invoices?: Invoice };
 export type Dashboard = { invoice_summary: Record<string, number>; financial_summary: { total_invoiced: number; total_paid: number; total_outstanding: number; overdue_outstanding: number; currency: string }; customer_summary: { total_customers: number; customers_with_outstanding: number; customers_with_overdue: number }; collection_summary: Record<string, number>; recent_activity: { invoices: Invoice[]; payments: Payment[]; collection_actions: CollectionAction[] } };
-export type InvoiceDetail = { invoice: Invoice; customer: Customer; financial_summary: { invoice_amount: number; paid_amount: number; outstanding_amount: number; currency: string }; payments: Payment[]; conversation: Conversation | null; conversations: Conversation[]; collection_actions: CollectionAction[] };
+export type InvoiceDetail = { invoice: Invoice; customer: Customer; financial_summary: { invoice_amount: number; paid_amount: number; outstanding_amount: number; currency: string }; payments: Payment[]; conversation: Conversation | null; conversations: Conversation[]; collection_actions: CollectionAction[]; details: InvoiceExtras | null; views: { count: number; last_viewed_at: string | null } };
+export type InvoiceLine = { description: string; quantity: number; rate: number; amount: number };
+export type InvoiceTotals = { subtotal: number; discount: number; taxable: number; tax: number; cgst: number; sgst: number; igst: number; total: number };
+export type InvoiceExtras = { items: InvoiceLine[]; discount: number; tax_percent: number; tax_mode: "NONE" | "GST_INTRA" | "GST_INTER"; notes: string | null; totals: InvoiceTotals };
+export type ActivityEvent = { type: "viewed" | "paid" | "proof"; invoice_id: string; invoice_number: string; customer_name: string; at: string; amount: number | null; currency: string };
 export type CustomerDetail = { customer: Customer; summary: { total_invoices: number; total_invoiced: number; total_paid: number; total_outstanding: number; overdue_amount: number }; invoices: Invoice[]; payments: Payment[]; conversations: Conversation[]; collection_actions: CollectionAction[] };
 export type ConversationDetail = { conversation: Conversation; customer: Customer; invoice: Invoice | null; messages: Message[]; collection_actions: CollectionAction[] };
 export type PublicInvoiceDetail = {
@@ -20,7 +24,8 @@ export type PublicInvoiceDetail = {
   due_at: string | null;
   status: string;
   customer: { name: string; company_name: string | null; email: string | null; phone: string | null };
-  organization: { name: string; slug: string };
+  organization: { name: string; slug: string; brand_color?: string | null; logo_data?: string | null; gstin?: string | null };
+  details?: { items: InvoiceLine[]; notes: string | null; tax_mode: "NONE" | "GST_INTRA" | "GST_INTER"; tax_percent: number; totals: InvoiceTotals } | null;
   payment: {
     upi_id: string | null;
     payee_name: string;
@@ -41,5 +46,7 @@ export type OrgSettings = {
   bank_ifsc: string | null;
   bank_name: string | null;
   gstin: string | null;
+  brand_color?: string | null;
+  logo_data?: string | null;
   plan: "FREE" | "PRO" | "AGENCY";
 };

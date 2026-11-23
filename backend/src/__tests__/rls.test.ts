@@ -109,3 +109,20 @@ test("RLS: the app role cannot change the schema", opts, async () => {
   await assert.rejects(db.query("CREATE TABLE should_not_exist (id int)"), /permission denied/i);
   await assert.rejects(db.query("ALTER TABLE invoices DISABLE ROW LEVEL SECURITY"), /must be owner|permission denied/i);
 });
+
+test("new tables (line items, views, recurring) are tenant-isolated by the database", opts, async () => {
+  const tables = ["invoice_details", "invoice_views", "recurring_invoices"];
+  for (const t of tables) {
+    const rls = await db.query("SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE relname = $1", [t]);
+    assert.equal(rls.rows[0]?.relrowsecurity, true, `${t} must have RLS enabled`);
+    const pol = await db.query("SELECT count(*)::int AS n FROM pg_policies WHERE tablename = $1", [t]);
+    assert.ok(pol.rows[0].n >= 1, `${t} must have a tenant policy`);
+  }
+  // With no tenant context, the restricted role sees nothing at all.
+  await withContext({}, async () => {
+    for (const t of tables) {
+      const n = (await db.query(`SELECT count(*)::int AS n FROM ${t}`)).rows[0].n;
+      assert.equal(n, 0, `${t} must show zero rows without a tenant context`);
+    }
+  });
+});

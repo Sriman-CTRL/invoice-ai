@@ -28,6 +28,7 @@ export interface MailInput {
   text: string;
   payUrl?: string;
   unsubscribeUrl?: string;
+  brandColor?: string | null;
 }
 
 export async function sendMail(input: MailInput): Promise<{ id: string }> {
@@ -40,7 +41,7 @@ export async function sendMail(input: MailInput): Promise<{ id: string }> {
   const html =
     `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#0f172a;white-space:pre-wrap">${esc(input.text)}</div>` +
     (input.payUrl
-      ? `<p style="margin:20px 0"><a href="${esc(input.payUrl)}" style="background:#4f46e5;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-family:Arial,sans-serif;font-size:14px;font-weight:bold">View and pay online</a></p>`
+      ? `<p style="margin:20px 0"><a href="${esc(input.payUrl)}" style="background:${/^#[0-9a-f]{6}$/i.test(input.brandColor || "") ? input.brandColor : "#4f46e5"};color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-family:Arial,sans-serif;font-size:14px;font-weight:bold">View and pay online</a></p>`
       : "") +
     `<p style="font-family:Arial,sans-serif;font-size:12px;color:#64748b">Sent by ${esc(cleanName(input.fromName))} using Paivo. Reply to this email to reach ${esc(cleanName(input.fromName))} directly. ${input.unsubscribeUrl ? `<a href="${esc(input.unsubscribeUrl)}" style="color:#64748b">Unsubscribe</a>` : ""}</p>`;
 
