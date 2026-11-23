@@ -29,10 +29,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export const authApi = {
   register: (data: { email: string; password: string; name: string; organization_name: string; accepted_terms?: boolean; heard_from?: string; attribution?: object; turnstile_token?: string }) => request<{ user: User; organization: { id: string; name: string } }>("/auth/register", { method: "POST", body: JSON.stringify(data) }),
   login: (data: { email: string; password: string }) => request<{ token: string; user: User }>("/auth/login", { method: "POST", body: JSON.stringify(data) }),
+  google: (data: { id_token: string; accepted_terms?: boolean; heard_from?: string; attribution?: object }) => request<{ token: string; user: User }>("/auth/google", { method: "POST", body: JSON.stringify(data) }),
 };
 export const accountApi = {
-  deleteAccount: (data: { password: string; confirm: string }) => request<{ success: boolean }>("/auth/account", { method: "DELETE", body: JSON.stringify(data) }),
-  changePassword: (data: { current_password: string; new_password: string }) => request<{ success: boolean; message: string }>("/auth/password", { method: "PUT", body: JSON.stringify(data) }),
+  deleteAccount: (data: { password?: string; confirm: string; id_token?: string }) => request<{ success: boolean }>("/auth/account", { method: "DELETE", body: JSON.stringify(data) }),
+  changePassword: (data: { current_password?: string; new_password: string; id_token?: string }) => request<{ success: boolean; message: string }>("/auth/password", { method: "PUT", body: JSON.stringify(data) }),
 };
 export type AnalyticsData = {
   months: Array<{ month: string; received: number; invoiced: number }>;

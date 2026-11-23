@@ -8,6 +8,7 @@ import { turnstileGuard } from "../lib/turnstile";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { passwordProblem } from "../lib/passwordPolicy";
 import { clearLoginFailures, loginLockoutSeconds, recordLoginFailure } from "../lib/loginThrottle";
+import { googleClientId, verifyGoogleToken } from "../lib/googleAuth";
 
 const router = Router();
 
@@ -17,6 +18,33 @@ let dummyHashPromise: Promise<string> | null = null;
 function slugify(name: string): string {
   const base = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32) || "org";
   return `${base}-${Date.now().toString(36)}`;
+}
+
+const SIGNUP_SOURCES = ["friend", "whatsapp", "linkedin", "instagram", "x", "youtube", "reddit", "google", "other"];
+
+/** Consent evidence (who, when, which terms) and, optionally, how they found us. Never blocks sign-up. */
+async function recordSignupEvidence(userId: string, heard_from: unknown, attribution: unknown): Promise<void> {
+  await prisma
+    .$executeRawUnsafe(`INSERT INTO analytics_events (event, path, visitor) VALUES ('consent_terms', 'terms-privacy-2026-11', $1)`, userId)
+    .catch((e) => console.warn("consent log skipped:", (e as Error).message));
+  if (typeof heard_from === "string" && SIGNUP_SOURCES.includes(heard_from)) {
+    await prisma
+      .$executeRawUnsafe(`INSERT INTO analytics_events (event, path) VALUES ('signup_source', $1)`, heard_from)
+      .catch((e) => console.warn("source log skipped:", (e as Error).message));
+  }
+  const tags = encodeAttribution(attribution);
+  if (tags) {
+    await prisma
+      .$executeRawUnsafe(`INSERT INTO analytics_events (event, path) VALUES ('signup_attr', $1)`, tags)
+      .catch((e) => console.warn("attribution log skipped:", (e as Error).message));
+  }
+}
+
+const platformAdminEmails = (): string[] => (process.env.PLATFORM_ADMIN_EMAILS || "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+
+function sessionFor(user: { id: string; email: string; name: string | null; organization_id: string; password_hash: string | null }) {
+  const token = jwt.sign({ id: user.id, organization_id: user.organization_id }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN as jwt.SignOptions["expiresIn"] });
+  return { token, user: { id: user.id, email: user.email, name: user.name, organization_id: user.organization_id, has_password: Boolean(user.password_hash) } };
 }
 
 router.post("/register", turnstileGuard, async (req: Request, res: Response): Promise<void> => {
@@ -45,8 +73,7 @@ router.post("/register", turnstileGuard, async (req: Request, res: Response): Pr
     }
 
     // Platform-admin emails can never be claimed through public sign-up (there is no email verification yet).
-    const adminEmails = (process.env.PLATFORM_ADMIN_EMAILS || "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
-    if (adminEmails.includes(emailTrimmed)) {
+    if (platformAdminEmails().includes(emailTrimmed)) {
       res.status(409).json({ error: "Email already in use" });
       return;
     }
@@ -72,23 +99,7 @@ router.post("/register", turnstileGuard, async (req: Request, res: Response): Pr
       },
     });
 
-    // Evidence of consent (who, when, which terms) and, optionally, how they found us. Never blocks signup.
-    const SOURCES = ["friend", "whatsapp", "linkedin", "instagram", "x", "youtube", "reddit", "google", "other"];
-    await prisma
-      .$executeRawUnsafe(`INSERT INTO analytics_events (event, path, visitor) VALUES ('consent_terms', 'terms-privacy-2026-11', $1)`, user.id)
-      .catch((e) => console.warn("consent log skipped:", (e as Error).message));
-    if (typeof heard_from === "string" && SOURCES.includes(heard_from)) {
-      await prisma
-        .$executeRawUnsafe(`INSERT INTO analytics_events (event, path) VALUES ('signup_source', $1)`, heard_from)
-        .catch((e) => console.warn("source log skipped:", (e as Error).message));
-    }
-
-    const tags = encodeAttribution(attribution);
-    if (tags) {
-      await prisma
-        .$executeRawUnsafe(`INSERT INTO analytics_events (event, path) VALUES ('signup_attr', $1)`, tags)
-        .catch((e) => console.warn("attribution log skipped:", (e as Error).message));
-    }
+    await recordSignupEvidence(user.id, heard_from, attribution);
 
     res.status(201).json({
       user: { id: user.id, email: user.email, name: user.name, organization_id: user.organization_id },
@@ -140,21 +151,86 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
     }
     await clearLoginFailures(emailTrimmed);
 
-    const token = jwt.sign(
-      { id: user.id, organization_id: user.organization_id },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN as jwt.SignOptions["expiresIn"] },
-    );
-
-    res.json({
-      token,
-      user: { id: user.id, email: user.email, name: user.name, organization_id: user.organization_id },
-    });
+    res.json(sessionFor(user));
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+const GOOGLE_ERRORS: Record<string, [number, string]> = {
+  not_configured: [503, "Google sign-in isn't available right now."],
+  bad_token: [401, "Google sign-in could not be verified. Please try again."],
+  wrong_audience: [401, "Google sign-in could not be verified. Please try again."],
+  bad_issuer: [401, "Google sign-in could not be verified. Please try again."],
+  email_not_verified: [401, "Your Google email address isn't verified, so we can't sign you in with it."],
+};
+
+/**
+ * POST /api/auth/google: sign in (or sign up) with a Google ID token. Inert (503) until GOOGLE_CLIENT_ID is set.
+ * An existing account with the same email is signed in; a new one is created exactly like /register
+ * (new business, free plan, consent evidence, admin-email block), which needs accepted_terms = true.
+ */
+router.post("/google", async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!googleClientId()) {
+      res.status(503).json({ error: GOOGLE_ERRORS.not_configured[1] });
+      return;
+    }
+    const { id_token, accepted_terms, heard_from, attribution } = req.body ?? {};
+    let identity;
+    try {
+      identity = await verifyGoogleToken(id_token);
+    } catch (e) {
+      const [status, message] = GOOGLE_ERRORS[(e as Error).message] ?? GOOGLE_ERRORS.bad_token;
+      res.status(status).json({ error: message });
+      return;
+    }
+
+    const email = identity.email.slice(0, 320);
+    const existing = await prisma.users.findFirst({ where: { email } });
+    if (existing) {
+      res.json(sessionFor(existing));
+      return;
+    }
+
+    if (accepted_terms !== true) {
+      res.status(400).json({ error: "To create an account, first confirm you are 18 or older and accept the Terms and Privacy Policy on the Create account page.", code: "TERMS_REQUIRED" });
+      return;
+    }
+    // Same rule as /register: platform-admin emails can't be claimed through public sign-up.
+    if (platformAdminEmails().includes(email)) {
+      res.status(409).json({ error: "Email already in use" });
+      return;
+    }
+
+    const display = (identity.name || email.split("@")[0]).trim().slice(0, 80);
+    const orgName = `${display}'s business`;
+    const organization = await prisma.organizations.create({ data: { name: orgName.slice(0, 255), slug: slugify(orgName) } });
+    const user = await prisma.users.create({
+      data: { email, name: identity.name?.slice(0, 255) || null, password_hash: null, organization_id: organization.id },
+    });
+    await recordSignupEvidence(user.id, heard_from, attribution);
+    res.status(201).json(sessionFor(user));
+  } catch (error) {
+    console.error("Google sign-in error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
+ * Fresh Google re-authentication for accounts without a password: proves the person at the keyboard controls the
+ * Google account behind this user. Returns an error message, or null when it checks out.
+ */
+async function googleReauthProblem(idToken: unknown, userEmail: string): Promise<string | null> {
+  if (!googleClientId()) return "Google sign-in isn't available right now.";
+  try {
+    const identity = await verifyGoogleToken(idToken);
+    return identity.email === userEmail.toLowerCase() ? null : "That Google account is not the one this account uses.";
+  } catch {
+    return "Please confirm with Google first.";
+  }
+}
 
 /**
  * PUT /api/auth/password: change your own password. Requires the current password,
@@ -162,9 +238,9 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
  */
 router.put("/password", authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { current_password, new_password } = req.body ?? {};
+    const { current_password, new_password, id_token } = req.body ?? {};
     const userId = req.user?.id;
-    if (!userId || typeof current_password !== "string" || typeof new_password !== "string") {
+    if (!userId || typeof new_password !== "string") {
       res.status(400).json({ error: "current_password and new_password are required" });
       return;
     }
@@ -172,6 +248,27 @@ router.put("/password", authMiddleware, async (req: Request, res: Response): Pro
     const user = await prisma.users.findFirst({ where: { id: userId } });
     if (!user) {
       res.status(404).json({ error: "Account not found" });
+      return;
+    }
+
+    // Accounts created with Google have no password yet: let them set one after a fresh Google confirmation.
+    if (!user.password_hash) {
+      const problem = await googleReauthProblem(id_token, user.email);
+      if (problem) {
+        res.status(400).json({ error: problem, code: "GOOGLE_REAUTH_REQUIRED" });
+        return;
+      }
+      const weak = passwordProblem(new_password, user.email, 12);
+      if (weak) {
+        res.status(400).json({ error: weak });
+        return;
+      }
+      await prisma.users.update({ where: { id: user.id }, data: { password_hash: await bcrypt.hash(new_password, 12) } });
+      res.json({ success: true, message: "Password set. You can now sign in with your email and password too." });
+      return;
+    }
+    if (typeof current_password !== "string") {
+      res.status(400).json({ error: "current_password and new_password are required" });
       return;
     }
 
@@ -217,15 +314,32 @@ router.put("/password", authMiddleware, async (req: Request, res: Response): Pro
  */
 router.delete("/account", authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { password, confirm } = req.body ?? {};
+    const { password, confirm, id_token } = req.body ?? {};
     const userId = req.user?.id;
-    if (!userId || typeof password !== "string" || confirm !== "DELETE") {
+    if (!userId || confirm !== "DELETE") {
       res.status(400).json({ error: "Enter your password and type DELETE to confirm." });
       return;
     }
     const user = await prisma.users.findFirst({ where: { id: userId } });
     if (!user) {
       res.status(404).json({ error: "Account not found" });
+      return;
+    }
+    // Google-only accounts have no password: a fresh Google confirmation takes its place.
+    if (!user.password_hash) {
+      const problem = await googleReauthProblem(id_token, user.email);
+      if (problem) {
+        res.status(400).json({ error: problem, code: "GOOGLE_REAUTH_REQUIRED" });
+        return;
+      }
+      const members = await prisma.users.count({ where: { organization_id: user.organization_id } });
+      if (members <= 1) await prisma.organizations.delete({ where: { id: user.organization_id } });
+      else await prisma.users.delete({ where: { id: user.id } });
+      res.json({ success: true });
+      return;
+    }
+    if (typeof password !== "string") {
+      res.status(400).json({ error: "Enter your password and type DELETE to confirm." });
       return;
     }
     const throttleKey = `acctdel:${user.email}`.slice(0, 255);

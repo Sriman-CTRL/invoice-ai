@@ -5,10 +5,11 @@ import { Check, CheckCircle2, RefreshCw, Sparkles, X, Zap } from "lucide-react";
 import { Badge } from "../components";
 import { useAuth } from "../auth";
 import { loadAttribution } from "../attribution";
+import { GOOGLE_CLIENT_ID, GoogleButton } from "../GoogleButton";
 import type { Customer, Dashboard } from "../types";
 
 export function AuthPage({ mode }: { mode: "login" | "register" }) {
-  const { user, login, register } = useAuth();
+  const { user, login, register, googleLogin } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -59,6 +60,24 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to authenticate.");
       if (mode === "register") setHumanReset((n) => n + 1);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onGoogle = async (idToken: string) => {
+    setError(null);
+    setLoading(true);
+    try {
+      await googleLogin({
+        id_token: idToken,
+        accepted_terms: registering ? accepted : undefined,
+        heard_from: registering ? heardFrom || undefined : undefined,
+        attribution: loadAttribution() ?? undefined,
+      });
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Google sign-in failed.");
     } finally {
       setLoading(false);
     }
@@ -372,6 +391,19 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
                 )}
               </button>
             </form>
+
+            {GOOGLE_CLIENT_ID && (
+              <div className="mt-5">
+                <div className="mb-4 flex items-center gap-3 text-[11px] uppercase tracking-wider text-slate-500">
+                  <span className="h-px flex-1 bg-white/10" /> or <span className="h-px flex-1 bg-white/10" />
+                </div>
+                {registering && !accepted ? (
+                  <p className="text-center text-xs text-slate-400">Tick the box above (18+ and Terms) to sign up with Google.</p>
+                ) : (
+                  <GoogleButton text={registering ? "signup_with" : "signin_with"} onCredential={onGoogle} />
+                )}
+              </div>
+            )}
           </div>
 
           {/* Legal Compliance Footer Links */}

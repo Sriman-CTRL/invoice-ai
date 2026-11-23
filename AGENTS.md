@@ -74,7 +74,7 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
 - **CORS**: allowed = `CORS_ORIGIN` env + hard-coded `paivo.in`/`www.paivo.in` + this project's Vercel preview URLs
   (`server.ts`). `paivo.in` was once missing and sign-up broke in production. Any new domain must be added. Blocked → 403.
 - **Neon cold starts** take seconds; Prisma transaction timeouts are raised in `lib/prisma.ts` — don't lower them.
-- **CSP in `vercel.json`** only allows self + `challenges.cloudflare.com`. Any new third-party script/font/API
+- **CSP in `vercel.json`** only allows self + `challenges.cloudflare.com` + the Google Identity Services endpoints (`accounts.google.com/gsi/*`). Any new third-party script/font/API
   must be added there or it silently fails in production. Fonts are self-hosted (`@fontsource`).
 - **Tests can hang CI** on lingering connections — `--test-force-exit` and per-test timeouts are deliberate.
   CI sets `AUTH_RATE_LIMIT_MAX=1000`; prod default is 20/min.
@@ -96,9 +96,9 @@ Backend: `DATABASE_URL` (owner), `DATABASE_URL_APP` (restricted `app_user`; turn
 `OLLAMA_*`, `AI_CONFIDENCE_THRESHOLD` (default 0.75 → below goes to MANUAL_REVIEW), `INBOUND_WEBHOOK_SECRET`,
 `INBOUND_DOMAIN`, `RESEND_API_KEY`, `MAIL_FROM_ADDRESS` (default `reminders@paivo.in`), `REMINDER_DAILY_CAP`,
 `CRON_TIME_BUDGET_MS` (default 8000), `AUTO_REMINDER_RUN_CAP` (default 200), `AUTO_REMINDERS_DRY_RUN` (`1` = log, don't send),
-`TURNSTILE_SECRET`, `CRON_SECRET`, `PLATFORM_ADMIN_EMAILS`, `AUTH_RATE_LIMIT_MAX`, `INTEGRATION_TESTS`.
+`GOOGLE_CLIENT_ID` (enables `POST /api/auth/google`; 503 while unset), `TURNSTILE_SECRET`, `CRON_SECRET`, `PLATFORM_ADMIN_EMAILS`, `AUTH_RATE_LIMIT_MAX`, `INTEGRATION_TESTS`.
 
-Frontend (Vite): `VITE_API_BASE_URL`, `VITE_PAYMENTS_OPEN`, `VITE_PLATFORM_UPI_ID`, `VITE_SUPPORT_EMAIL`, `VITE_TURNSTILE_SITE_KEY`.
+Frontend (Vite): `VITE_API_BASE_URL`, `VITE_PAYMENTS_OPEN`, `VITE_PLATFORM_UPI_ID`, `VITE_SUPPORT_EMAIL`, `VITE_TURNSTILE_SITE_KEY`, `VITE_GOOGLE_CLIENT_ID` (shows the Google button).
 
 ## Related documentation
 
