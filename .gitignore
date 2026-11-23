@@ -17,3 +17,7 @@ src/generated/
 
 .vercel
 .env*
+
+# security audit output (lists weaknesses; delete when done)
+AUDIT.md
+api/index.js

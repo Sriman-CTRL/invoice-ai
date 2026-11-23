@@ -21,7 +21,7 @@ function safeCompare(a: string, b: string): boolean {
 // Cloudflare Email Worker) that you adapt to this shape with a tiny shim.
 router.post(
   "/email",
-  rateLimit({ windowMs: 60_000, max: 60, message: "Inbound rate limit exceeded" }),
+  rateLimit({ windowMs: 60_000, max: 60, message: "Inbound rate limit exceeded", shared: true }),
   async (req: Request, res: Response): Promise<void> => {
     // Require a shared secret. If it isn't configured, inbound is disabled.
     if (!INBOUND_WEBHOOK_SECRET) {
@@ -36,14 +36,11 @@ router.post(
     }
 
     // Replay attack prevention: if timestamp header is provided, enforce a 5-minute tolerance window
-    const timestampHeader = req.headers["x-inbound-timestamp"];
-    if (timestampHeader) {
-      const timestamp = Number(timestampHeader);
-      const now = Math.floor(Date.now() / 1000);
-      if (isNaN(timestamp) || Math.abs(now - timestamp) > 300) {
-        res.status(401).json({ error: "Webhook timestamp expired or outside 5-minute tolerance window" });
-        return;
-      }
+    const timestamp = Number(req.headers["x-inbound-timestamp"]);
+    const now = Math.floor(Date.now() / 1000);
+    if (!Number.isFinite(timestamp) || Math.abs(now - timestamp) > 300) {
+      res.status(401).json({ error: "Webhook timestamp missing, expired or outside 5-minute tolerance window" });
+      return;
     }
 
     try {

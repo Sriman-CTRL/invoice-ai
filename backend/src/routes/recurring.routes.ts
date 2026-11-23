@@ -62,14 +62,14 @@ recurringRouter.post("/", async (req, res) => {
 recurringRouter.patch("/:id", async (req, res) => {
   if (!UUID.test(req.params.id)) return res.status(404).json({ error: "Not found" });
   const active = req.body?.active === true;
-  const n = await prisma.$executeRawUnsafe(`UPDATE recurring_invoices SET active = $2 WHERE id = $1::uuid`, req.params.id, active);
+  const n = await prisma.$executeRawUnsafe(`UPDATE recurring_invoices SET active = $2 WHERE id = $1::uuid AND organization_id = $3::uuid`, req.params.id, active, req.user!.organization_id);
   if (!n) return res.status(404).json({ error: "Not found" });
   res.json({ ok: true });
 });
 
 recurringRouter.delete("/:id", async (req, res) => {
   if (!UUID.test(req.params.id)) return res.status(404).json({ error: "Not found" });
-  const n = await prisma.$executeRawUnsafe(`DELETE FROM recurring_invoices WHERE id = $1::uuid`, req.params.id);
+  const n = await prisma.$executeRawUnsafe(`DELETE FROM recurring_invoices WHERE id = $1::uuid AND organization_id = $2::uuid`, req.params.id, req.user!.organization_id);
   if (!n) return res.status(404).json({ error: "Not found" });
   res.json({ ok: true });
 });

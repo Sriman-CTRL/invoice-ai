@@ -43,6 +43,13 @@ router.post("/register", turnstileGuard, async (req: Request, res: Response): Pr
       return;
     }
 
+    // Platform-admin emails can never be claimed through public sign-up (there is no email verification yet).
+    const adminEmails = (process.env.PLATFORM_ADMIN_EMAILS || "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+    if (adminEmails.includes(emailTrimmed)) {
+      res.status(409).json({ error: "Email already in use" });
+      return;
+    }
+
     const existingUser = await prisma.users.findFirst({ where: { email: emailTrimmed } });
     if (existingUser) {
       res.status(409).json({ error: "Email already in use" });
@@ -192,6 +199,51 @@ router.put("/password", authMiddleware, async (req: Request, res: Response): Pro
   } catch (error) {
     console.error("Change password error:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
+ * DELETE /api/auth/account: permanently deletes your account. If you are the only user of your
+ * organisation, the organisation and all its invoices, customers, payments and messages go too.
+ * Requires the current password (brute-force throttled) and the exact text "DELETE".
+ */
+router.delete("/account", authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { password, confirm } = req.body ?? {};
+    const userId = req.user?.id;
+    if (!userId || typeof password !== "string" || confirm !== "DELETE") {
+      res.status(400).json({ error: "Enter your password and type DELETE to confirm." });
+      return;
+    }
+    const user = await prisma.users.findFirst({ where: { id: userId } });
+    if (!user) {
+      res.status(404).json({ error: "Account not found" });
+      return;
+    }
+    const throttleKey = `acctdel:${user.email}`.slice(0, 255);
+    const ip = String(req.ip || "unknown");
+    const wait = await loginLockoutSeconds(throttleKey, ip);
+    if (wait > 0) {
+      res.setHeader("Retry-After", String(wait));
+      res.status(429).json({ error: "Too many failed attempts. Please wait 15 minutes and try again." });
+      return;
+    }
+    if (!user.password_hash || !(await bcrypt.compare(password, user.password_hash))) {
+      await recordLoginFailure(throttleKey, ip);
+      res.status(400).json({ error: "Your password is incorrect" });
+      return;
+    }
+    const members = await prisma.users.count({ where: { organization_id: user.organization_id } });
+    if (members <= 1) {
+      await prisma.organizations.delete({ where: { id: user.organization_id } }); // cascades to all tenant data
+    } else {
+      await prisma.users.delete({ where: { id: user.id } });
+    }
+    await clearLoginFailures(throttleKey);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete account error:", error);
+    res.status(500).json({ error: "Could not delete the account. Please contact support." });
   }
 });
 

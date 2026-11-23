@@ -84,6 +84,54 @@ function UpgradePanel({ plan, onClose, current }: { plan: Plan; onClose: () => v
   );
 }
 
+function DeleteAccountCard() {
+  const { logout } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      await accountApi.deleteAccount({ password, confirm });
+      logout();
+      window.location.assign("/");
+    } catch (err: any) {
+      setError(err?.message || "Could not delete the account.");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="panel mt-6 border-rose-200 p-6" autoComplete="off">
+      <h2 className="text-base font-bold text-rose-700">Delete account</h2>
+      <p className="mt-1 text-xs text-slate-500">Permanently deletes your account. If you are the only user, all invoices, clients, payments and messages are deleted too. This cannot be undone.</p>
+      {!open ? (
+        <button type="button" className="btn-secondary mt-4" onClick={() => setOpen(true)}>Delete my account…</button>
+      ) : (
+        <>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="block"><span className="label">Password</span>
+              <input className="input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            </label>
+            <label className="block"><span className="label">Type DELETE to confirm</span>
+              <input className="input" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+            </label>
+          </div>
+          {error && <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700" role="alert">{error}</p>}
+          <div className="mt-4 flex justify-end">
+            <button className="btn-primary" disabled={busy || !password || confirm !== "DELETE"}>{busy ? "Deleting…" : "Permanently delete"}</button>
+          </div>
+        </>
+      )}
+    </form>
+  );
+}
+
 function ChangePasswordCard() {
   const toast = useToast();
   const [current, setCurrent] = useState("");
@@ -268,6 +316,7 @@ export function SettingsPage() {
       <BrandingCard key={`${r.data.brand_color || ""}-${r.data.logo_data?.length || 0}`} settings={r.data} onSaved={r.reload} />
 
       <ChangePasswordCard />
+      <DeleteAccountCard />
 
       {upgrade && PAYMENTS_OPEN && <UpgradePanel plan={upgrade} current={plan} onClose={() => setUpgrade(null)} />}
       <LeadDialog

@@ -92,16 +92,16 @@ app.use(express.json({ limit: "1mb" }));
 
 // LAYER 5: Multi-Tier Rate Limiting
 // 1. Auth routes (login/register) - brute force defense
-app.use("/api/auth", systemContext, rateLimit({ windowMs: 60_000, max: Number(process.env.AUTH_RATE_LIMIT_MAX || 20), message: "Too many authentication attempts. Please wait 1 minute." }), authRoutes);
+app.use("/api/auth", systemContext, rateLimit({ windowMs: 60_000, max: Number(process.env.AUTH_RATE_LIMIT_MAX || 20), message: "Too many authentication attempts. Please wait 1 minute.", shared: true }), authRoutes);
 
 // Privacy-friendly first-party analytics (page views only, no cookies/IPs stored)
-app.use("/api/events", systemContext, rateLimit({ windowMs: 60_000, max: 120, message: "Too many events." }), eventsRoutes);
+app.use("/api/events", systemContext, rateLimit({ windowMs: 60_000, max: 120, message: "Too many events.", shared: true }), eventsRoutes);
 
 // Public waitlist + feedback (strict rate limit; honeypot inside the route)
-app.use("/api/unsubscribe", systemContext, rateLimit({ windowMs: 60_000, max: 30, message: "Too many requests." }), unsubscribeRoutes);
+app.use("/api/unsubscribe", systemContext, rateLimit({ windowMs: 60_000, max: 30, message: "Too many requests.", shared: true }), unsubscribeRoutes);
 app.use("/api/cron", systemContext, cronRouter);
 app.use("/api/recurring", authMiddleware, recurringRouter);
-app.use("/api/leads", systemContext, rateLimit({ windowMs: 60_000, max: 8, message: "Too many submissions. Please try again in a minute." }), leadsRoutes);
+app.use("/api/leads", systemContext, rateLimit({ windowMs: 60_000, max: 8, message: "Too many submissions. Please try again in a minute.", shared: true }), leadsRoutes);
 
 // 2. Inbound webhook endpoint
 app.use("/api/inbound", systemContext, inboundRoutes);
@@ -110,11 +110,11 @@ app.use("/api/inbound", systemContext, inboundRoutes);
 app.use(
   "/api/public/invoices",
   systemContext,
-  rateLimit({ windowMs: 60_000, max: 60, message: "Too many requests. Please wait a moment." }),
+  rateLimit({ windowMs: 60_000, max: 60, message: "Too many requests. Please wait a moment.", shared: true }),
   publicInvoiceRoutes,
 );
 
-app.use("/api/public/client", systemContext, rateLimit({ windowMs: 60_000, max: 60, message: "Too many requests. Please wait a moment." }), clientPortalRoutes);
+app.use("/api/public/client", systemContext, rateLimit({ windowMs: 60_000, max: 60, message: "Too many requests. Please wait a moment.", shared: true }), clientPortalRoutes);
 
 // 3. Authenticated routes with fine-grained rate limits
 app.use("/api/invoices", authMiddleware, invoiceRoutes);

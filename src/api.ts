@@ -31,6 +31,7 @@ export const authApi = {
   login: (data: { email: string; password: string }) => request<{ token: string; user: User }>("/auth/login", { method: "POST", body: JSON.stringify(data) }),
 };
 export const accountApi = {
+  deleteAccount: (data: { password: string; confirm: string }) => request<{ success: boolean }>("/auth/account", { method: "DELETE", body: JSON.stringify(data) }),
   changePassword: (data: { current_password: string; new_password: string }) => request<{ success: boolean; message: string }>("/auth/password", { method: "PUT", body: JSON.stringify(data) }),
 };
 export type AnalyticsData = {
