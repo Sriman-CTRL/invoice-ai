@@ -202,7 +202,7 @@ export function PrivacyPolicyPage() {
               <li>Withdraw consent for automated WhatsApp or email communications.</li>
             </ul>
             <p className="mt-2 text-xs text-slate-400">
-              To exercise data subject rights, email <a href="mailto:privacy@invoice-ai.com" className="text-brand-400 underline">privacy@invoice-ai.com</a> or utilize the in-app GDPR Erasure action.
+              To exercise data subject rights, email <a href="mailto:privacy@paivo.in" className="text-brand-400 underline">privacy@paivo.in</a> or utilize the in-app GDPR Erasure action.
             </p>
           </section>
         </div>

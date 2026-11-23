@@ -1,3 +1,4 @@
-Contact: mailto:privacy@invoice-ai.com
+Contact: mailto:privacy@paivo.in
 Expires: 2027-11-23T00:00:00.000Z
 Preferred-Languages: en
+Canonical: https://paivo.in/.well-known/security.txt
