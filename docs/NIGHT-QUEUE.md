@@ -108,7 +108,7 @@ decompiling apps, using leaked code, copying any text, code, images, icons or vi
 
 **Notes (R4):** Zoho, Refrens, Razorpay read from public pages (head tags via one plain curl each). The Kwill domain reachable (kwill.app) is not an invoicing product; flagged in the doc as unverified. Pay page already has a UPI deep link. Doc-only, tests unchanged.
 
-## [ ] G1. Go-to-market pack: who to contact, where, and exactly what to send
+## [x] G1. Go-to-market pack: who to contact, where, and exactly what to send
 
 Goal: everything the owner needs to find and talk to the first 10–30 users, ready to copy-paste. Build on
 `docs/FIRST-10-USERS.md` (don't repeat it; extend and update it with fresh research). Use WebSearch/WebFetch and
@@ -155,6 +155,8 @@ Create `docs/gtm/` with:
 7. `LAUNCH-CHECKLIST.md`: Google Search Console + Bing Webmaster setup and sitemap submission, Google Business Profile
    (if applicable), directories worth listing on (Product Hunt, Indie Hackers, BetaList, Indian startup directories),
    with links and what each requires. Mark anything needing the owner's login/keys.
+
+**Notes (G1):** Community sizes are only what third-party listings reported; most pages could not be opened, so CHANNELS.md says to verify rules/activity first. No personal data stored. G2 will make the UTM tags in MESSAGES.md live. Doc-only, tests unchanged.
 
 ## [ ] R2. Open-source and API scouting: what can be integrated
 

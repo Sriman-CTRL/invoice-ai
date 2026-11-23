@@ -39,6 +39,7 @@ Last updated: 24 Nov 2026.
 | 24 Nov (night build) | T0: `night-build` branch, local DB set up, green baseline recorded (54/54 integration tests, build OK). |
 | 24 Nov (night build) | R1: market research in `docs/research/MARKET-2026-11.md`. |
 | 24 Nov (night build) | R4: competitor teardown in `docs/research/TEARDOWN.md`. |
+| 24 Nov (night build) | G1: go-to-market pack in `docs/gtm/` (ICP, channels, messages, demo, 14-day plan, content, launch checklist). |
 
 ## 3. Key decisions (and why)
 
