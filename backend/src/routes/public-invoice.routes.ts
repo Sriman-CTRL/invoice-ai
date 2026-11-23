@@ -47,7 +47,7 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
             },
         });
 
-        if (!invoice) {
+        if (!invoice || invoice.status === "DRAFT") {
             res.status(404).json({ error: "Invoice not found or link has expired." });
             return;
         }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Download, FileText, Phone, ShieldCheck } from "lucide-react";
+import { Download, FileText, Link2, Phone, ShieldCheck } from "lucide-react";
 import { customersApi } from "../api";
 import { Badge, PageHeader } from "../components";
 import { date, money, titleCase } from "../lib";
@@ -64,6 +64,17 @@ export function CustomerDetailPage() {
             title={data.customer.name}
             detail={data.customer.company_name || data.customer.email}
             back="/customers"
+            actions={
+              <button
+                onClick={async () => {
+                  try { const { url } = await customersApi.portalLink(data.customer.id); await navigator.clipboard.writeText(url); toast.success("Client portal link copied", "Send it to your client. They see all their invoices in one place."); }
+                  catch (e: any) { toast.error("Could not copy the link", e?.message); }
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+              >
+                <Link2 className="h-3.5 w-3.5 text-brand-600" /> Copy client portal link
+              </button>
+            }
           />
 
           <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">

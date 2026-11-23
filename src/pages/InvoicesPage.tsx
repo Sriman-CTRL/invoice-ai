@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { InvoiceItemsEditor, initialItems, type ItemsValue } from "./InvoiceItemsEditor";
-import { TERMS, addDays, totalsFor } from "../invoiceMath";
+import { TERMS, addDays, addPeriod, totalsFor, type Frequency } from "../invoiceMath";
+import { RecurringPanel } from "./RecurringPanel";
 import { Link } from "react-router-dom";
 import { timeAgo } from "../ActivityBell";
-import { ArrowUpRight, CheckCircle2, Eye, ChevronRight, Download, FileSpreadsheet, FileText, Lock, Phone, Plus, RefreshCw, Search, Upload, X } from "lucide-react";
-import { customersApi, invoicesApi } from "../api";
+import { ArrowUpRight, CheckCircle2, Eye, ChevronRight, Download, FileSpreadsheet, FileText, Lock, Phone, Plus, RefreshCw, Repeat, Search, Upload, X } from "lucide-react";
+import { customersApi, invoicesApi, recurringApi } from "../api";
 import { Badge, EmptyState, ErrorState, PageHeader, SearchInput, TableSkeleton } from "../components";
 import { date, money } from "../lib";
 import type { Customer, Invoice } from "../types";
@@ -404,6 +405,7 @@ function CreateInvoiceModal({
   const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Math.floor(1000 + Math.random() * 9000)}`);
   const [details, setDetails] = useState<ItemsValue>(initialItems());
   const [terms, setTerms] = useState(30);
+  const [repeat, setRepeat] = useState<"" | Frequency>("");
   const [paymentReady, setPaymentReady] = useState(true);
   const [currency, setCurrency] = useState("INR");
   const [issuedAt, setIssuedAt] = useState(new Date().toISOString().split("T")[0]);
@@ -481,7 +483,24 @@ function CreateInvoiceModal({
         external_invoice_id: deliverableVaultUrl.trim() ? `vault:${deliverableVaultUrl.trim()}` : undefined,
       });
 
-      toast.success("Invoice created", invoiceNumber.trim());
+      if (repeat) {
+        const days = terms >= 0 ? terms : Math.max(0, Math.round((new Date(dueAt).getTime() - new Date(issuedAt).getTime()) / 86400000));
+        await recurringApi.create({
+          customer_id: finalCustomerId,
+          frequency: repeat,
+          first_run: addPeriod(issuedAt, repeat),
+          currency,
+          terms_days: days,
+          prefix: (invoiceNumber.match(/^[A-Za-z]+/)?.[0] || "REC").slice(0, 10),
+          deliverable: deliverableVaultUrl.trim() || undefined,
+          items: details.items.map((i) => ({ description: i.description.trim(), quantity: parseFloat(i.quantity) || 1, rate: parseFloat(i.rate) || 0 })),
+          discount: parseFloat(details.discount) || 0,
+          tax_mode: details.taxMode,
+          tax_percent: details.taxMode === "NONE" ? 0 : details.taxPercent,
+          notes: details.notes.trim() || undefined,
+        });
+      }
+      toast.success("Invoice created", repeat ? `${invoiceNumber.trim()}. The next one will arrive as a draft on ${addPeriod(issuedAt, repeat)}.` : invoiceNumber.trim());
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -661,6 +680,21 @@ function CreateInvoiceModal({
             </div>
           </div>
 
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3.5">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-violet-100 text-violet-600"><Repeat className="h-4 w-4" /></span>
+            <div className="min-w-[10rem] flex-1">
+              <p className="text-xs font-bold text-slate-800">Repeat this invoice</p>
+              <p className="text-[11px] text-slate-500">For retainers. Each repeat is created as a draft, and nothing is sent until you approve it.</p>
+            </div>
+            <select value={repeat} onChange={(e) => setRepeat(e.target.value as "" | Frequency)} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold">
+              <option value="">Don't repeat</option>
+              <option value="WEEKLY">Every week</option>
+              <option value="MONTHLY">Every month</option>
+              <option value="QUARTERLY">Every 3 months</option>
+              <option value="YEARLY">Every year</option>
+            </select>
+          </div>
+
           {/* Deliverable Vault Escrow Lock (Fix My Itch: Freelancer Ghosting & SME Cashflow Shield) */}
           <div className="rounded-xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/70 via-purple-50/40 to-white p-3.5 space-y-2">
             <div className="flex items-center gap-2">
@@ -721,6 +755,7 @@ export function InvoicesPage() {
   const [query, setQuery] = useState("");
   const [showImportModal, setShowImportModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [recurringKey, setRecurringKey] = useState(0);
 
   const resource = useResource(() => invoicesApi.list(status || undefined), [status]);
   const [views, setViews] = useState<Record<string, { last_viewed_at: string; count: number }>>({});
@@ -739,6 +774,7 @@ export function InvoicesPage() {
   const tabs = [
     { id: "", label: "All" },
     { id: "OPEN", label: "Open" },
+    { id: "DRAFT", label: "Drafts" },
     { id: "PARTIALLY_PAID", label: "Partially Paid" },
     { id: "PAID", label: "Paid" },
     { id: "CANCELLED", label: "Cancelled" },
@@ -771,6 +807,8 @@ export function InvoicesPage() {
           </div>
         }
       />
+
+      <RecurringPanel refreshKey={recurringKey} />
 
       {/* Filter Tabs & Search Bar */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -914,7 +952,7 @@ export function InvoicesPage() {
       <CreateInvoiceModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onSuccess={() => resource.reload()}
+        onSuccess={() => { resource.reload(); setRecurringKey((k) => k + 1); }}
       />
     </>
   );

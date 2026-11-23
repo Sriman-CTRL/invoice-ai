@@ -125,7 +125,7 @@ var prisma = base.$extends({
 var prisma_default = prisma;
 
 // backend/src/routes/customer.routes.ts
-import { Router } from "express";
+import { Router as Router2 } from "express";
 
 // backend/src/services/customerService.ts
 async function getCustomerDetails(organization_id, customer_id) {
@@ -208,199 +208,24 @@ async function getCustomerDetails(organization_id, customer_id) {
   };
 }
 
-// backend/src/routes/customer.routes.ts
-var router = Router();
-var UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-router.get("/", async (req, res) => {
-  try {
-    const organization_id = String(req.query.organization_id || "");
-    if (!organization_id) {
-      return res.status(400).json({ error: "organization_id is required" });
-    }
-    const q = String(req.query.q || "").trim();
-    const limit = Math.min(200, Math.max(1, Number(req.query.limit) || 100));
-    const offset = Math.max(0, Number(req.query.offset) || 0);
-    const where = { organization_id };
-    if (q) {
-      where.OR = [
-        { name: { contains: q, mode: "insensitive" } },
-        { email: { contains: q, mode: "insensitive" } },
-        { company_name: { contains: q, mode: "insensitive" } }
-      ];
-    }
-    const customers = await prisma_default.customers.findMany({
-      where,
-      orderBy: { created_at: "desc" },
-      skip: offset,
-      take: limit
-    });
-    res.setHeader("X-Total-Count", String(await prisma_default.customers.count({ where })));
-    res.json(customers);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to fetch customers" });
-  }
-});
-router.get("/:id", async (req, res) => {
-  try {
-    const { organization_id } = req.query;
-    const { id } = req.params;
-    if (!organization_id || typeof organization_id !== "string") {
-      return res.status(400).json({ error: "organization_id is required" });
-    }
-    if (!UUID_REGEX.test(organization_id)) {
-      return res.status(400).json({ error: "organization_id must be a valid UUID" });
-    }
-    if (!UUID_REGEX.test(id)) {
-      return res.status(404).json({ error: "Customer not found" });
-    }
-    const details = await getCustomerDetails(organization_id, id);
-    if (!details) {
-      return res.status(404).json({ error: "Customer not found" });
-    }
-    res.json(details);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to fetch customer" });
-  }
-});
-router.post("/", async (req, res) => {
-  try {
-    const { organization_id, name, email, company_name, phone, external_customer_id } = req.body;
-    if (!organization_id || !name || !email) {
-      return res.status(400).json({
-        error: "organization_id, name and email are required"
-      });
-    }
-    const cleanName2 = String(name).trim();
-    if (cleanName2.length === 0 || cleanName2.length > 255) {
-      return res.status(400).json({ error: "Customer name must be between 1 and 255 characters" });
-    }
-    const cleanCompany = company_name ? String(company_name).trim().slice(0, 255) : null;
-    const cleanPhone = phone ? String(phone).trim().slice(0, 50) : null;
-    const cleanExternalId = external_customer_id ? String(external_customer_id).trim().slice(0, 255) : null;
-    const emailTrimmed = String(email).trim().toLowerCase();
-    if (emailTrimmed.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
-      return res.status(400).json({ error: "A valid email (max 320 chars) is required" });
-    }
-    const existing = await prisma_default.customers.findFirst({
-      where: { organization_id, email: emailTrimmed }
-    });
-    if (existing) {
-      return res.status(409).json({ error: "A customer with this email already exists" });
-    }
-    const customer = await prisma_default.customers.create({
-      data: {
-        organization_id,
-        name: cleanName2,
-        email: emailTrimmed,
-        company_name: cleanCompany,
-        phone: cleanPhone,
-        external_customer_id: cleanExternalId
-      }
-    });
-    res.status(201).json(customer);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to create customer" });
-  }
-});
-router.post("/:id/erasure", async (req, res) => {
-  try {
-    const organization_id = req.user?.organization_id;
-    const { id } = req.params;
-    if (!organization_id || !UUID_REGEX.test(id)) {
-      return res.status(400).json({ error: "Valid customer id is required" });
-    }
-    const customer = await prisma_default.customers.findFirst({
-      where: { id, organization_id }
-    });
-    if (!customer) {
-      return res.status(404).json({ error: "Customer not found" });
-    }
-    const originalEmail = customer.email;
-    const anonymizedEmail = `anonymized_${customer.id.slice(0, 8)}@erased.local`;
-    const updated = await prisma_default.customers.update({
-      where: { id },
-      data: {
-        name: "Anonymized Debtor",
-        email: anonymizedEmail,
-        company_name: null,
-        phone: null,
-        external_customer_id: null,
-        processing_restricted: true
-      }
-    });
-    await prisma_default.suppressions.upsert({
-      where: {
-        organization_id_address: {
-          organization_id,
-          address: originalEmail
-        }
-      },
-      update: { reason: "GDPR_DPDP_RIGHT_TO_ERASURE" },
-      create: {
-        organization_id,
-        address: originalEmail,
-        reason: "GDPR_DPDP_RIGHT_TO_ERASURE"
-      }
-    });
-    await prisma_default.collection_actions.updateMany({
-      where: {
-        organization_id,
-        customer_id: id,
-        status: "PENDING"
-      },
-      data: { status: "CANCELLED" }
-    });
-    res.json({
-      status: "ERASURE_COMPLETED",
-      customer_id: id,
-      processing_restricted: true,
-      legal_notice: "PII anonymized and future communications suppressed. Historical tax and invoice records are preserved under statutory 7-year legal hold as required by accounting regulations."
-    });
-  } catch (error) {
-    console.error("Customer erasure error:", error);
-    res.status(500).json({ error: "Failed to process customer erasure request" });
-  }
-});
-router.get("/:id/export", async (req, res) => {
-  try {
-    const organization_id = req.user?.organization_id;
-    const { id } = req.params;
-    if (!organization_id || !UUID_REGEX.test(id)) {
-      return res.status(400).json({ error: "Valid customer id is required" });
-    }
-    const customer = await prisma_default.customers.findFirst({
-      where: { id, organization_id },
-      include: {
-        invoices: {
-          include: { payments: true }
-        },
-        conversations: {
-          include: { messages: true }
-        },
-        collection_actions: true
-      }
-    });
-    if (!customer) {
-      return res.status(404).json({ error: "Customer not found" });
-    }
-    res.setHeader("Content-Disposition", `attachment; filename="data-export-${customer.id}.json"`);
-    res.json({
-      export_version: "1.0",
-      generated_at: (/* @__PURE__ */ new Date()).toISOString(),
-      customer
-    });
-  } catch (error) {
-    console.error("Customer export error:", error);
-    res.status(500).json({ error: "Failed to export customer data" });
-  }
-});
-var customer_routes_default = router;
+// backend/src/routes/client-portal.routes.ts
+import { Router } from "express";
+import crypto from "crypto";
 
-// backend/src/routes/organization.routes.ts
-import { Router as Router2 } from "express";
+// backend/src/lib/config.ts
+import "dotenv/config";
+function requireSecret(name) {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV !== "test") {
+    throw new Error(`${name} must be set. See backend/.env.example`);
+  }
+  return value || "";
+}
+var JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === "test" ? "test_secret_do_not_use" : requireSecret("JWT_SECRET"));
+var JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+var INBOUND_DOMAIN = process.env.INBOUND_DOMAIN || "in.ar.ledgerlane.local";
+var INBOUND_WEBHOOK_SECRET = process.env.INBOUND_WEBHOOK_SECRET || "";
+var AI_CONFIDENCE_THRESHOLD = Number(process.env.AI_CONFIDENCE_THRESHOLD ?? "0.75");
 
 // backend/src/lib/orgSettings.ts
 var SETTING_FIELDS = ["upi_id", "payee_name", "bank_account_name", "bank_account_number", "bank_ifsc", "bank_name", "gstin", "brand_color", "logo_data"];
@@ -531,10 +356,264 @@ async function checkPlanLimit(organizationId, adding = 1) {
   return null;
 }
 
-// backend/src/routes/organization.routes.ts
+// backend/src/routes/client-portal.routes.ts
+var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var portalToken = (customerId) => crypto.createHmac("sha256", JWT_SECRET).update(`portal:${customerId}`).digest("hex").slice(0, 32);
+var valid = (customerId, token) => {
+  const a = Buffer.from(portalToken(customerId));
+  const b = Buffer.from(String(token || ""));
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+};
+var router = Router();
+router.get("/:customerId/:token", async (req, res) => {
+  try {
+    const customerId = String(req.params.customerId);
+    const token = String(req.params.token);
+    if (!UUID.test(customerId) || !valid(customerId, token)) {
+      res.status(404).json({ error: "This link isn't valid. Ask the sender for a fresh one." });
+      return;
+    }
+    const customer = await prisma_default.customers.findFirst({ where: { id: customerId }, include: { organizations: true } });
+    if (!customer) {
+      res.status(404).json({ error: "This link isn't valid. Ask the sender for a fresh one." });
+      return;
+    }
+    const settings = await getOrgSettings(customer.organization_id);
+    const rows = await prisma_default.$queryRawUnsafe(
+      `SELECT i.id, i.invoice_number, i.amount::float8 AS amount, i.currency, i.status, i.issued_at, i.due_at,
+              COALESCE((SELECT sum(p.amount) FROM payments p WHERE p.invoice_id = i.id AND p.status = 'SUCCEEDED'), 0)::float8 AS paid
+         FROM invoices i
+        WHERE i.customer_id = $1::uuid AND i.status NOT IN ('DRAFT', 'CANCELLED')
+        ORDER BY COALESCE(i.issued_at, i.created_at) DESC LIMIT 100`,
+      customerId
+    );
+    const invoices = rows.map((r) => ({
+      id: r.id,
+      invoice_number: r.invoice_number,
+      amount: r.amount,
+      currency: r.currency,
+      status: r.status,
+      issued_at: r.issued_at,
+      due_at: r.due_at,
+      outstanding: Math.max(0, Math.round((r.amount - r.paid) * 100) / 100)
+    }));
+    res.json({
+      organization: { name: customer.organizations.name, brand_color: settings.brand_color, logo_data: settings.logo_data },
+      customer: { name: customer.name, company_name: customer.company_name },
+      invoices,
+      outstanding_total: Math.round(invoices.filter((i) => i.status !== "PAID").reduce((s, i) => s + i.outstanding, 0) * 100) / 100
+    });
+  } catch (e) {
+    console.error("client portal error", e);
+    res.status(500).json({ error: "Could not load this page." });
+  }
+});
+var client_portal_routes_default = router;
+
+// backend/src/routes/customer.routes.ts
 var router2 = Router2();
+var UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+router2.get("/", async (req, res) => {
+  try {
+    const organization_id = String(req.query.organization_id || "");
+    if (!organization_id) {
+      return res.status(400).json({ error: "organization_id is required" });
+    }
+    const q = String(req.query.q || "").trim();
+    const limit = Math.min(200, Math.max(1, Number(req.query.limit) || 100));
+    const offset = Math.max(0, Number(req.query.offset) || 0);
+    const where = { organization_id };
+    if (q) {
+      where.OR = [
+        { name: { contains: q, mode: "insensitive" } },
+        { email: { contains: q, mode: "insensitive" } },
+        { company_name: { contains: q, mode: "insensitive" } }
+      ];
+    }
+    const customers = await prisma_default.customers.findMany({
+      where,
+      orderBy: { created_at: "desc" },
+      skip: offset,
+      take: limit
+    });
+    res.setHeader("X-Total-Count", String(await prisma_default.customers.count({ where })));
+    res.json(customers);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch customers" });
+  }
+});
+router2.get("/:id/portal-link", async (req, res) => {
+  const { id } = req.params;
+  if (!UUID_REGEX.test(id)) return res.status(404).json({ error: "Customer not found" });
+  const c = await prisma_default.customers.findFirst({ where: { id, organization_id: req.user.organization_id }, select: { id: true } });
+  if (!c) return res.status(404).json({ error: "Customer not found" });
+  const base2 = (process.env.PUBLIC_APP_URL || "https://paivo.in").replace(/\/$/, "");
+  res.json({ url: `${base2}/client/${id}/${portalToken(id)}` });
+});
+router2.get("/:id", async (req, res) => {
+  try {
+    const { organization_id } = req.query;
+    const { id } = req.params;
+    if (!organization_id || typeof organization_id !== "string") {
+      return res.status(400).json({ error: "organization_id is required" });
+    }
+    if (!UUID_REGEX.test(organization_id)) {
+      return res.status(400).json({ error: "organization_id must be a valid UUID" });
+    }
+    if (!UUID_REGEX.test(id)) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+    const details = await getCustomerDetails(organization_id, id);
+    if (!details) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+    res.json(details);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch customer" });
+  }
+});
+router2.post("/", async (req, res) => {
+  try {
+    const { organization_id, name, email, company_name, phone, external_customer_id } = req.body;
+    if (!organization_id || !name || !email) {
+      return res.status(400).json({
+        error: "organization_id, name and email are required"
+      });
+    }
+    const cleanName2 = String(name).trim();
+    if (cleanName2.length === 0 || cleanName2.length > 255) {
+      return res.status(400).json({ error: "Customer name must be between 1 and 255 characters" });
+    }
+    const cleanCompany = company_name ? String(company_name).trim().slice(0, 255) : null;
+    const cleanPhone = phone ? String(phone).trim().slice(0, 50) : null;
+    const cleanExternalId = external_customer_id ? String(external_customer_id).trim().slice(0, 255) : null;
+    const emailTrimmed = String(email).trim().toLowerCase();
+    if (emailTrimmed.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
+      return res.status(400).json({ error: "A valid email (max 320 chars) is required" });
+    }
+    const existing = await prisma_default.customers.findFirst({
+      where: { organization_id, email: emailTrimmed }
+    });
+    if (existing) {
+      return res.status(409).json({ error: "A customer with this email already exists" });
+    }
+    const customer = await prisma_default.customers.create({
+      data: {
+        organization_id,
+        name: cleanName2,
+        email: emailTrimmed,
+        company_name: cleanCompany,
+        phone: cleanPhone,
+        external_customer_id: cleanExternalId
+      }
+    });
+    res.status(201).json(customer);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to create customer" });
+  }
+});
+router2.post("/:id/erasure", async (req, res) => {
+  try {
+    const organization_id = req.user?.organization_id;
+    const { id } = req.params;
+    if (!organization_id || !UUID_REGEX.test(id)) {
+      return res.status(400).json({ error: "Valid customer id is required" });
+    }
+    const customer = await prisma_default.customers.findFirst({
+      where: { id, organization_id }
+    });
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+    const originalEmail = customer.email;
+    const anonymizedEmail = `anonymized_${customer.id.slice(0, 8)}@erased.local`;
+    const updated = await prisma_default.customers.update({
+      where: { id },
+      data: {
+        name: "Anonymized Debtor",
+        email: anonymizedEmail,
+        company_name: null,
+        phone: null,
+        external_customer_id: null,
+        processing_restricted: true
+      }
+    });
+    await prisma_default.suppressions.upsert({
+      where: {
+        organization_id_address: {
+          organization_id,
+          address: originalEmail
+        }
+      },
+      update: { reason: "GDPR_DPDP_RIGHT_TO_ERASURE" },
+      create: {
+        organization_id,
+        address: originalEmail,
+        reason: "GDPR_DPDP_RIGHT_TO_ERASURE"
+      }
+    });
+    await prisma_default.collection_actions.updateMany({
+      where: {
+        organization_id,
+        customer_id: id,
+        status: "PENDING"
+      },
+      data: { status: "CANCELLED" }
+    });
+    res.json({
+      status: "ERASURE_COMPLETED",
+      customer_id: id,
+      processing_restricted: true,
+      legal_notice: "PII anonymized and future communications suppressed. Historical tax and invoice records are preserved under statutory 7-year legal hold as required by accounting regulations."
+    });
+  } catch (error) {
+    console.error("Customer erasure error:", error);
+    res.status(500).json({ error: "Failed to process customer erasure request" });
+  }
+});
+router2.get("/:id/export", async (req, res) => {
+  try {
+    const organization_id = req.user?.organization_id;
+    const { id } = req.params;
+    if (!organization_id || !UUID_REGEX.test(id)) {
+      return res.status(400).json({ error: "Valid customer id is required" });
+    }
+    const customer = await prisma_default.customers.findFirst({
+      where: { id, organization_id },
+      include: {
+        invoices: {
+          include: { payments: true }
+        },
+        conversations: {
+          include: { messages: true }
+        },
+        collection_actions: true
+      }
+    });
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+    res.setHeader("Content-Disposition", `attachment; filename="data-export-${customer.id}.json"`);
+    res.json({
+      export_version: "1.0",
+      generated_at: (/* @__PURE__ */ new Date()).toISOString(),
+      customer
+    });
+  } catch (error) {
+    console.error("Customer export error:", error);
+    res.status(500).json({ error: "Failed to export customer data" });
+  }
+});
+var customer_routes_default = router2;
+
+// backend/src/routes/organization.routes.ts
+import { Router as Router3 } from "express";
+var router3 = Router3();
 var SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-router2.get("/me", async (req, res) => {
+router3.get("/me", async (req, res) => {
   try {
     const organization_id = String(req.query.organization_id || req.body?.organization_id || "");
     if (!organization_id) {
@@ -556,7 +635,7 @@ router2.get("/me", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch organization" });
   }
 });
-router2.patch("/me", async (req, res) => {
+router3.patch("/me", async (req, res) => {
   try {
     const organization_id = String(req.body?.organization_id || "");
     const { name, slug } = req.body;
@@ -593,7 +672,7 @@ router2.patch("/me", async (req, res) => {
     res.status(500).json({ error: "Failed to update organization" });
   }
 });
-router2.get("/settings", async (req, res) => {
+router3.get("/settings", async (req, res) => {
   try {
     res.json(await getOrgSettings(req.user.organization_id));
   } catch (error) {
@@ -601,7 +680,7 @@ router2.get("/settings", async (req, res) => {
     res.status(500).json({ error: "Failed to load settings" });
   }
 });
-router2.put("/settings", async (req, res) => {
+router3.put("/settings", async (req, res) => {
   try {
     const checked = validateSettingsPatch(req.body ?? {});
     if ("error" in checked) return res.status(400).json({ error: checked.error });
@@ -611,7 +690,7 @@ router2.put("/settings", async (req, res) => {
     res.status(500).json({ error: "Failed to save settings" });
   }
 });
-router2.post("/upgrade-request", async (req, res) => {
+router3.post("/upgrade-request", async (req, res) => {
   try {
     const plan = String(req.body?.plan || "").toUpperCase();
     const utr = String(req.body?.utr || "").trim();
@@ -630,10 +709,10 @@ router2.post("/upgrade-request", async (req, res) => {
     res.status(500).json({ error: "Failed to submit upgrade request" });
   }
 });
-var organization_routes_default = router2;
+var organization_routes_default = router3;
 
 // backend/src/routes/invoice.routes.ts
-import { Router as Router4 } from "express";
+import { Router as Router5 } from "express";
 
 // backend/src/lib/invoiceDetails.ts
 var r2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
@@ -775,7 +854,7 @@ async function getInvoiceDetails(organization_id, invoice_id) {
 }
 
 // backend/src/routes/public-invoice.routes.ts
-import { Router as Router3 } from "express";
+import { Router as Router4 } from "express";
 
 // backend/src/lib/turnstile.ts
 var VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
@@ -861,7 +940,7 @@ function parseScreenshot(input) {
 }
 
 // backend/src/routes/public-invoice.routes.ts
-var router3 = Router3();
+var router4 = Router4();
 var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var SAFE_URL_RE = /^https?:\/\/[^\s"'<>]+$/i;
 var STALE_LINK = "This payment link is not valid. Please ask the sender for a fresh link.";
@@ -873,7 +952,7 @@ function safeDeliverableUrl(external) {
   const url = String(external ?? "").replace(/^vault:/, "").trim();
   return SAFE_URL_RE.test(url) ? url : null;
 }
-router3.get("/:invoice_number", async (req, res) => {
+router4.get("/:invoice_number", async (req, res) => {
   try {
     const invoiceId = publicInvoiceId(req.params.invoice_number);
     if (!invoiceId) {
@@ -891,7 +970,7 @@ router3.get("/:invoice_number", async (req, res) => {
         }
       }
     });
-    if (!invoice) {
+    if (!invoice || invoice.status === "DRAFT") {
       res.status(404).json({ error: "Invoice not found or link has expired." });
       return;
     }
@@ -973,7 +1052,7 @@ router3.get("/:invoice_number", async (req, res) => {
     res.status(500).json({ error: "Failed to load invoice." });
   }
 });
-router3.post("/:invoice_number/submit-proof", turnstileGuard, async (req, res) => {
+router4.post("/:invoice_number/submit-proof", turnstileGuard, async (req, res) => {
   try {
     const invoiceId = publicInvoiceId(req.params.invoice_number);
     const { utr, amount, notes, paid_at } = req.body ?? {};
@@ -1122,7 +1201,7 @@ Please verify your bank statement to confirm settlement.`,
     res.status(500).json({ error: "Failed to submit payment confirmation." });
   }
 });
-var public_invoice_routes_default = router3;
+var public_invoice_routes_default = router4;
 
 // backend/src/lib/mailer.ts
 var API_KEY = process.env.RESEND_API_KEY || "";
@@ -1146,9 +1225,9 @@ async function sendMail(input) {
 Sent by ${cleanName(input.fromName)} using Paivo. Reply to this email to reach ${cleanName(input.fromName)} directly.`;
   const text = input.text + (input.payUrl ? `
 
-View and pay online: ${input.payUrl}` : "") + footer + (input.unsubscribeUrl ? `
+${input.buttonLabel || "View and pay online"}: ${input.payUrl}` : "") + footer + (input.unsubscribeUrl ? `
 Don't want these emails? Unsubscribe: ${input.unsubscribeUrl}` : "");
-  const html = `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#0f172a;white-space:pre-wrap">${esc(input.text)}</div>` + (input.payUrl ? `<p style="margin:20px 0"><a href="${esc(input.payUrl)}" style="background:${/^#[0-9a-f]{6}$/i.test(input.brandColor || "") ? input.brandColor : "#4f46e5"};color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-family:Arial,sans-serif;font-size:14px;font-weight:bold">View and pay online</a></p>` : "") + `<p style="font-family:Arial,sans-serif;font-size:12px;color:#64748b">Sent by ${esc(cleanName(input.fromName))} using Paivo. Reply to this email to reach ${esc(cleanName(input.fromName))} directly. ${input.unsubscribeUrl ? `<a href="${esc(input.unsubscribeUrl)}" style="color:#64748b">Unsubscribe</a>` : ""}</p>`;
+  const html = `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#0f172a;white-space:pre-wrap">${esc(input.text)}</div>` + (input.payUrl ? `<p style="margin:20px 0"><a href="${esc(input.payUrl)}" style="background:${/^#[0-9a-f]{6}$/i.test(input.brandColor || "") ? input.brandColor : "#4f46e5"};color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-family:Arial,sans-serif;font-size:14px;font-weight:bold">${esc(input.buttonLabel || "View and pay online")}</a></p>` : "") + `<p style="font-family:Arial,sans-serif;font-size:12px;color:#64748b">Sent by ${esc(cleanName(input.fromName))} using Paivo. Reply to this email to reach ${esc(cleanName(input.fromName))} directly. ${input.unsubscribeUrl ? `<a href="${esc(input.unsubscribeUrl)}" style="color:#64748b">Unsubscribe</a>` : ""}</p>`;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -1169,31 +1248,14 @@ Don't want these emails? Unsubscribe: ${input.unsubscribeUrl}` : "");
 }
 
 // backend/src/lib/unsubscribe.ts
-import crypto from "crypto";
-
-// backend/src/lib/config.ts
-import "dotenv/config";
-function requireSecret(name) {
-  const value = process.env[name];
-  if (!value && process.env.NODE_ENV !== "test") {
-    throw new Error(`${name} must be set. See backend/.env.example`);
-  }
-  return value || "";
-}
-var JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === "test" ? "test_secret_do_not_use" : requireSecret("JWT_SECRET"));
-var JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
-var INBOUND_DOMAIN = process.env.INBOUND_DOMAIN || "in.ar.ledgerlane.local";
-var INBOUND_WEBHOOK_SECRET = process.env.INBOUND_WEBHOOK_SECRET || "";
-var AI_CONFIDENCE_THRESHOLD = Number(process.env.AI_CONFIDENCE_THRESHOLD ?? "0.75");
-
-// backend/src/lib/unsubscribe.ts
+import crypto2 from "crypto";
 function unsubscribeToken(orgId, email) {
-  return crypto.createHmac("sha256", JWT_SECRET).update(`unsub:${orgId}:${email.toLowerCase()}`).digest("hex").slice(0, 32);
+  return crypto2.createHmac("sha256", JWT_SECRET).update(`unsub:${orgId}:${email.toLowerCase()}`).digest("hex").slice(0, 32);
 }
 function verifyUnsubscribeToken(orgId, email, token) {
   const expected = Buffer.from(unsubscribeToken(orgId, email));
   const given = Buffer.from(String(token || ""));
-  return expected.length === given.length && crypto.timingSafeEqual(expected, given);
+  return expected.length === given.length && crypto2.timingSafeEqual(expected, given);
 }
 function unsubscribeUrl(baseUrl, orgId, email) {
   const q = new URLSearchParams({ o: orgId, e: email.toLowerCase(), t: unsubscribeToken(orgId, email) });
@@ -1204,7 +1266,7 @@ function unsubscribeUrl(baseUrl, orgId, email) {
 var PUBLIC_APP_URL = (process.env.PUBLIC_APP_URL || "https://paivo.in").replace(/\/$/, "");
 var REMINDER_COOLDOWN_MS = 24 * 60 * 60 * 1e3;
 var REMINDER_DAILY_CAP = Number(process.env.REMINDER_DAILY_CAP || 30);
-var router4 = Router4();
+var router5 = Router5();
 var UUID_REGEX2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var INVOICE_STATUSES = ["OPEN", "PAID", "PARTIALLY_PAID", "CANCELLED", "DRAFT"];
 function parseFlexibleDate(dateStr) {
@@ -1221,7 +1283,7 @@ function parseFlexibleDate(dateStr) {
   }
   return null;
 }
-router4.post("/bulk-import", async (req, res) => {
+router5.post("/bulk-import", async (req, res) => {
   try {
     const organization_id = String(req.body?.organization_id || req.user?.organization_id || "");
     if (!organization_id || !UUID_REGEX2.test(organization_id)) {
@@ -1333,7 +1395,7 @@ router4.post("/bulk-import", async (req, res) => {
     return res.status(500).json({ error: "Failed to process bulk import" });
   }
 });
-router4.post("/", async (req, res) => {
+router5.post("/", async (req, res) => {
   try {
     const {
       organization_id,
@@ -1400,7 +1462,7 @@ router4.post("/", async (req, res) => {
     res.status(500).json({ error: "Failed to create invoice" });
   }
 });
-router4.get("/", async (req, res) => {
+router5.get("/", async (req, res) => {
   try {
     const { organization_id, status } = req.query;
     if (!organization_id) {
@@ -1424,7 +1486,7 @@ router4.get("/", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch invoices" });
   }
 });
-router4.get("/:id", async (req, res) => {
+router5.get("/:id", async (req, res) => {
   try {
     const { organization_id } = req.query;
     const { id } = req.params;
@@ -1454,11 +1516,11 @@ router4.get("/:id", async (req, res) => {
     });
   }
 });
-router4.get("/meta/email-status", async (req, res) => {
+router5.get("/meta/email-status", async (req, res) => {
   const s = req.user?.organization_id ? await getOrgSettings(req.user.organization_id) : null;
   res.json({ email_enabled: emailEnabled(), payment_ready: Boolean(s && (s.upi_id || s.bank_account_number && s.bank_ifsc)) });
 });
-router4.get("/meta/activity", async (req, res) => {
+router5.get("/meta/activity", async (req, res) => {
   try {
     const org = req.user?.organization_id;
     if (!org) return res.status(401).json({ error: "Unauthorized" });
@@ -1489,7 +1551,7 @@ router4.get("/meta/activity", async (req, res) => {
     res.status(500).json({ error: "Failed to load activity" });
   }
 });
-router4.post("/meta/ai-items", async (req, res) => {
+router5.post("/meta/ai-items", async (req, res) => {
   try {
     const prompt = String(req.body?.prompt || "").trim().slice(0, 600);
     const currency = String(req.body?.currency || "INR").slice(0, 3);
@@ -1527,7 +1589,15 @@ router4.post("/meta/ai-items", async (req, res) => {
     res.status(502).json({ error: "The AI helper is unavailable right now." });
   }
 });
-router4.post("/:id/send-reminder", async (req, res) => {
+router5.post("/:id/approve", async (req, res) => {
+  const id = req.params.id;
+  if (!UUID_REGEX2.test(id)) return res.status(404).json({ error: "Invoice not found" });
+  const org = req.user.organization_id;
+  const done = await prisma_default.invoices.updateMany({ where: { id, organization_id: org, status: "DRAFT" }, data: { status: "OPEN", issued_at: /* @__PURE__ */ new Date(), updated_at: /* @__PURE__ */ new Date() } });
+  if (!done.count) return res.status(404).json({ error: "No draft invoice found." });
+  res.json({ ok: true });
+});
+router5.post("/:id/send-reminder", async (req, res) => {
   try {
     const organization_id = String(req.body?.organization_id || req.user?.organization_id || "");
     const { id } = req.params;
@@ -1669,17 +1739,17 @@ ${invoice.organizations.name}`;
     return res.status(500).json({ error: "Failed to send reminder" });
   }
 });
-var invoice_routes_default = router4;
+var invoice_routes_default = router5;
 
 // backend/src/routes/payment.routes.ts
-import { Router as Router5 } from "express";
+import { Router as Router6 } from "express";
 
 // backend/src/lib/auditLogger.ts
-import crypto2 from "crypto";
+import crypto3 from "crypto";
 var AuditLogger = class {
   log(event) {
     const record = {
-      event_id: crypto2.randomUUID(),
+      event_id: crypto3.randomUUID(),
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       ...event,
       metadata: this.sanitizeMetadata(event.metadata)
@@ -1705,10 +1775,10 @@ var AuditLogger = class {
 var auditLogger = new AuditLogger();
 
 // backend/src/routes/payment.routes.ts
-var router5 = Router5();
+var router6 = Router6();
 var UUID_REGEX3 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var ALLOWED_STATUSES = ["SUCCEEDED", "PENDING", "FAILED"];
-router5.post("/", async (req, res) => {
+router6.post("/", async (req, res) => {
   try {
     const {
       organization_id,
@@ -1819,7 +1889,7 @@ router5.post("/", async (req, res) => {
     res.status(500).json({ error: "Failed to create payment" });
   }
 });
-router5.get("/", async (req, res) => {
+router6.get("/", async (req, res) => {
   try {
     const { organization_id, invoice_id } = req.query;
     if (!organization_id) {
@@ -1842,10 +1912,10 @@ router5.get("/", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch payments" });
   }
 });
-var payment_routes_default = router5;
+var payment_routes_default = router6;
 
 // backend/src/routes/message.routes.ts
-import { Router as Router6 } from "express";
+import { Router as Router7 } from "express";
 
 // backend/src/services/ai/types.ts
 var SUPPORTED_INTENTS = [
@@ -2914,8 +2984,8 @@ async function classifyInboundMessage(organization_id, message_id) {
 }
 
 // backend/src/routes/message.routes.ts
-var router6 = Router6();
-router6.post("/", async (req, res) => {
+var router7 = Router7();
+router7.post("/", async (req, res) => {
   try {
     const {
       organization_id,
@@ -2958,7 +3028,7 @@ router6.post("/", async (req, res) => {
     return res.status(500).json({ error: "Failed to create message" });
   }
 });
-router6.post("/ingest", async (req, res) => {
+router7.post("/ingest", async (req, res) => {
   try {
     const organization_id = String(req.body?.organization_id || "");
     const { from, subject, text, html, invoice_number, to } = req.body ?? {};
@@ -2987,7 +3057,7 @@ router6.post("/ingest", async (req, res) => {
     });
   }
 });
-router6.post(["/reprocess", "/reprocess-unclassified"], async (req, res) => {
+router7.post(["/reprocess", "/reprocess-unclassified"], async (req, res) => {
   try {
     const organization_id = String(req.body?.organization_id || req.user?.organization_id || "");
     if (!organization_id) {
@@ -3033,7 +3103,7 @@ router6.post(["/reprocess", "/reprocess-unclassified"], async (req, res) => {
     return res.status(500).json({ error: "Failed to reprocess unclassified messages" });
   }
 });
-router6.get("/conversation/:conversation_id", async (req, res) => {
+router7.get("/conversation/:conversation_id", async (req, res) => {
   try {
     const organization_id = req.query.organization_id;
     const { conversation_id } = req.params;
@@ -3072,7 +3142,7 @@ var CLASSIFY_ERROR_MESSAGE = {
   CLASSIFIER_FAILED: "AI classifier failed",
   INVALID_CLASSIFICATION: "AI classifier returned an invalid response"
 };
-router6.post("/:message_id/classify", async (req, res) => {
+router7.post("/:message_id/classify", async (req, res) => {
   try {
     const organization_id = String(req.body?.organization_id || "");
     if (!organization_id) {
@@ -3091,10 +3161,10 @@ router6.post("/:message_id/classify", async (req, res) => {
     return res.status(500).json({ error: "Failed to classify message" });
   }
 });
-var message_routes_default = router6;
+var message_routes_default = router7;
 
 // backend/src/routes/conversation.routes.ts
-import { Router as Router7 } from "express";
+import { Router as Router8 } from "express";
 
 // backend/src/services/conversationService.ts
 async function getConversationDetails(organization_id, conversation_id) {
@@ -3125,14 +3195,14 @@ async function getConversationDetails(organization_id, conversation_id) {
 }
 
 // backend/src/routes/conversation.routes.ts
-var router7 = Router7();
+var router8 = Router8();
 var UUID_REGEX4 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function extractEmail(input) {
   const match = input.match(/<([^>]+)>/);
   if (match) return match[1].trim().toLowerCase();
   return input.trim().toLowerCase();
 }
-router7.post("/resolve", async (req, res) => {
+router8.post("/resolve", async (req, res) => {
   try {
     const organization_id = req.body?.organization_id || req.user?.organization_id;
     const thread_id = req.body?.thread_id;
@@ -3199,7 +3269,7 @@ router7.post("/resolve", async (req, res) => {
     return res.status(500).json({ error: "Failed to resolve conversation" });
   }
 });
-router7.post("/", async (req, res) => {
+router8.post("/", async (req, res) => {
   try {
     const { organization_id, customer_id, invoice_id, channel, external_thread_id } = req.body;
     if (!organization_id || !customer_id || !channel) {
@@ -3230,7 +3300,7 @@ router7.post("/", async (req, res) => {
     return res.status(500).json({ error: "Failed to create conversation" });
   }
 });
-router7.get("/", async (req, res) => {
+router8.get("/", async (req, res) => {
   try {
     const organization_id = req.query.organization_id;
     if (!organization_id) {
@@ -3254,7 +3324,7 @@ router7.get("/", async (req, res) => {
     return res.status(500).json({ error: "Failed to fetch conversations" });
   }
 });
-router7.get("/:id", async (req, res) => {
+router8.get("/:id", async (req, res) => {
   try {
     const { organization_id } = req.query;
     const { id } = req.params;
@@ -3277,13 +3347,13 @@ router7.get("/:id", async (req, res) => {
     return res.status(500).json({ error: "Failed to fetch conversation" });
   }
 });
-var conversation_routes_default = router7;
+var conversation_routes_default = router8;
 
 // backend/src/routes/collection-action.routes.ts
-import { Router as Router8 } from "express";
-var router8 = Router8();
+import { Router as Router9 } from "express";
+var router9 = Router9();
 var VALID_STATUSES = ["PENDING", "PROCESSING", "COMPLETED", "FAILED", "CANCELLED"];
-router8.post(["/claim", "/claim-due"], async (req, res) => {
+router9.post(["/claim", "/claim-due"], async (req, res) => {
   try {
     const organization_id = req.body?.organization_id || req.user?.organization_id;
     if (!organization_id || typeof organization_id !== "string") {
@@ -3377,7 +3447,7 @@ router8.post(["/claim", "/claim-due"], async (req, res) => {
     res.status(500).json({ error: "Failed to claim collection actions" });
   }
 });
-router8.get("/", async (req, res) => {
+router9.get("/", async (req, res) => {
   try {
     const { organization_id, status, action_type, customer_id, invoice_id } = req.query;
     if (!organization_id || typeof organization_id !== "string") {
@@ -3417,7 +3487,7 @@ router8.get("/", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router8.get("/:id", async (req, res) => {
+router9.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { organization_id } = req.query;
@@ -3446,7 +3516,7 @@ router8.get("/:id", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router8.patch("/:id/status", async (req, res) => {
+router9.patch("/:id/status", async (req, res) => {
   try {
     const { id } = req.params;
     const organization_id = req.body?.organization_id || req.user?.organization_id;
@@ -3507,7 +3577,7 @@ router8.patch("/:id/status", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router8.get("/:id/proof-image", async (req, res) => {
+router9.get("/:id/proof-image", async (req, res) => {
   try {
     const id = String(req.params.id);
     const organization_id = req.user?.organization_id;
@@ -3541,7 +3611,7 @@ router8.get("/:id/proof-image", async (req, res) => {
     res.status(500).json({ error: "Failed to load screenshot" });
   }
 });
-router8.post("/:id/verify-proof", async (req, res) => {
+router9.post("/:id/verify-proof", async (req, res) => {
   try {
     const id = String(req.params.id);
     const organization_id = req.body?.organization_id || req.user?.organization_id;
@@ -3649,10 +3719,10 @@ router8.post("/:id/verify-proof", async (req, res) => {
     res.status(500).json({ error: error instanceof Error ? error.message : "Failed to verify payment proof" });
   }
 });
-var collection_action_routes_default = router8;
+var collection_action_routes_default = router9;
 
 // backend/src/routes/overdue-invoices.routes.ts
-import { Router as Router9 } from "express";
+import { Router as Router10 } from "express";
 
 // backend/src/services/overdueInvoiceEngine.ts
 async function processOverdueInvoices(organization_id) {
@@ -3717,8 +3787,8 @@ async function processOverdueInvoices(organization_id) {
 }
 
 // backend/src/routes/overdue-invoices.routes.ts
-var router9 = Router9();
-router9.post("/process", async (req, res) => {
+var router10 = Router10();
+router10.post("/process", async (req, res) => {
   try {
     const organization_id = String(req.body?.organization_id || req.user?.organization_id || "");
     if (!organization_id) {
@@ -3732,10 +3802,10 @@ router9.post("/process", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-var overdue_invoices_routes_default = router9;
+var overdue_invoices_routes_default = router10;
 
 // backend/src/routes/dashboard.routes.ts
-import { Router as Router10 } from "express";
+import { Router as Router11 } from "express";
 
 // backend/src/services/dashboardService.ts
 async function getDashboardData(organization_id) {
@@ -3900,9 +3970,9 @@ async function getDashboardData(organization_id) {
 }
 
 // backend/src/routes/dashboard.routes.ts
-var router10 = Router10();
+var router11 = Router11();
 var UUID_REGEX5 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-router10.get("/", async (req, res) => {
+router11.get("/", async (req, res) => {
   try {
     const { organization_id } = req.query;
     if (!organization_id || typeof organization_id !== "string") {
@@ -3920,10 +3990,107 @@ router10.get("/", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-var dashboard_routes_default = router10;
+router11.get("/analytics", async (req, res) => {
+  try {
+    const org = req.user?.organization_id;
+    if (!org) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const months = await prisma_default.$queryRawUnsafe(
+      `WITH m AS (SELECT generate_series(date_trunc('month', now()) - interval '11 months', date_trunc('month', now()), interval '1 month') AS month)
+             SELECT to_char(m.month, 'YYYY-MM') AS month,
+                    COALESCE((SELECT sum(p.amount) FROM payments p WHERE p.organization_id = $1::uuid AND p.status = 'SUCCEEDED' AND date_trunc('month', COALESCE(p.paid_at, p.created_at)) = m.month), 0)::float8 AS received,
+                    COALESCE((SELECT sum(i.amount) FROM invoices i WHERE i.organization_id = $1::uuid AND i.status <> 'DRAFT' AND i.status <> 'CANCELLED' AND date_trunc('month', COALESCE(i.issued_at, i.created_at)) = m.month), 0)::float8 AS invoiced
+               FROM m ORDER BY m.month`,
+      org
+    );
+    const top = await prisma_default.$queryRawUnsafe(
+      `SELECT c.id, c.name, c.company_name, COALESCE(sum(p.amount), 0)::float8 AS paid, count(DISTINCT i.id)::int AS invoices
+               FROM customers c
+               LEFT JOIN invoices i ON i.customer_id = c.id AND i.status <> 'DRAFT' AND i.status <> 'CANCELLED'
+               LEFT JOIN payments p ON p.invoice_id = i.id AND p.status = 'SUCCEEDED'
+              WHERE c.organization_id = $1::uuid
+              GROUP BY c.id ORDER BY paid DESC, invoices DESC LIMIT 5`,
+      org
+    );
+    const kpi = await prisma_default.$queryRawUnsafe(
+      `SELECT
+                COALESCE((SELECT sum(amount) FROM payments WHERE organization_id = $1::uuid AND status = 'SUCCEEDED'), 0)::float8 AS lifetime_received,
+                COALESCE((SELECT sum(i.amount - COALESCE((SELECT sum(p.amount) FROM payments p WHERE p.invoice_id = i.id AND p.status = 'SUCCEEDED'), 0))
+                           FROM invoices i WHERE i.organization_id = $1::uuid AND i.status IN ('OPEN','PARTIALLY_PAID')), 0)::float8 AS outstanding,
+                COALESCE((SELECT sum(i.amount - COALESCE((SELECT sum(p.amount) FROM payments p WHERE p.invoice_id = i.id AND p.status = 'SUCCEEDED'), 0))
+                           FROM invoices i WHERE i.organization_id = $1::uuid AND i.status IN ('OPEN','PARTIALLY_PAID') AND i.due_at < now()), 0)::float8 AS overdue,
+                (SELECT round(avg(EXTRACT(EPOCH FROM (COALESCE(p.paid_at, p.created_at) - COALESCE(i.issued_at, i.created_at))) / 86400)::numeric, 1)::float8
+                   FROM invoices i JOIN payments p ON p.invoice_id = i.id AND p.status = 'SUCCEEDED'
+                  WHERE i.organization_id = $1::uuid AND i.status = 'PAID') AS avg_days_to_pay,
+                (SELECT count(*)::int FROM invoices WHERE organization_id = $1::uuid AND status = 'PAID') AS paid_count,
+                (SELECT count(*)::int FROM invoices WHERE organization_id = $1::uuid AND status NOT IN ('DRAFT','CANCELLED')) AS sent_count`,
+      org
+    );
+    res.json({ months, top_clients: top, kpi: kpi[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to load analytics" });
+  }
+});
+router11.get("/gst-report", async (req, res) => {
+  try {
+    const org = req.user?.organization_id;
+    if (!org) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const from = String(req.query.from || "");
+    const to = String(req.query.to || "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+      res.status(400).json({ error: "from and to must be dates (YYYY-MM-DD)" });
+      return;
+    }
+    const rows = await prisma_default.$queryRawUnsafe(
+      `SELECT i.invoice_number, to_char(COALESCE(i.issued_at, i.created_at), 'YYYY-MM-DD') AS date, c.name AS customer, c.company_name, i.currency, i.status,
+                    i.amount::float8 AS total, d.items, d.discount::float8 AS discount, d.tax_percent::float8 AS tax_percent, d.tax_mode
+               FROM invoices i
+               JOIN customers c ON c.id = i.customer_id
+               LEFT JOIN invoice_details d ON d.invoice_id = i.id
+              WHERE i.organization_id = $1::uuid AND i.status NOT IN ('DRAFT','CANCELLED')
+                AND COALESCE(i.issued_at, i.created_at)::date BETWEEN $2::date AND $3::date
+              ORDER BY COALESCE(i.issued_at, i.created_at), i.invoice_number`,
+      org,
+      from,
+      to
+    );
+    const r22 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+    const out = rows.map((r) => {
+      const items = Array.isArray(r.items) ? r.items : [];
+      const subtotal = r22(items.reduce((a, i) => a + Number(i.amount || 0), 0));
+      const taxable = items.length ? r22(Math.max(0, subtotal - (r.discount || 0))) : r22(r.total);
+      const tax = items.length && r.tax_mode !== "NONE" ? r22(taxable * (r.tax_percent || 0) / 100) : 0;
+      const half = r22(tax / 2);
+      return {
+        invoice_number: r.invoice_number,
+        date: r.date,
+        customer: r.company_name || r.customer,
+        currency: r.currency,
+        status: r.status,
+        taxable,
+        cgst: r.tax_mode === "GST_INTRA" ? half : 0,
+        sgst: r.tax_mode === "GST_INTRA" ? r22(tax - half) : 0,
+        igst: r.tax_mode === "GST_INTER" ? tax : 0,
+        total: r22(r.total),
+        gst_rate: r.tax_mode === "NONE" || !items.length ? 0 : r.tax_percent
+      };
+    });
+    res.json({ from, to, rows: out });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to build the GST report" });
+  }
+});
+var dashboard_routes_default = router11;
 
 // backend/src/routes/auth.routes.ts
-import { Router as Router11 } from "express";
+import { Router as Router12 } from "express";
 import bcrypt from "bcryptjs";
 import jwt2 from "jsonwebtoken";
 
@@ -4058,16 +4225,16 @@ async function clearLoginFailures(email) {
 }
 
 // backend/src/routes/auth.routes.ts
-var router11 = Router11();
+var router12 = Router12();
 var EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 var dummyHashPromise = null;
 function slugify(name) {
   const base2 = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32) || "org";
   return `${base2}-${Date.now().toString(36)}`;
 }
-router11.post("/register", turnstileGuard, async (req, res) => {
+router12.post("/register", turnstileGuard, async (req, res) => {
   try {
-    const { email, password, name, organization_name, accepted_terms } = req.body ?? {};
+    const { email, password, name, organization_name, accepted_terms, heard_from } = req.body ?? {};
     if (accepted_terms !== true) {
       res.status(400).json({ error: "Please confirm you are 18 or older and accept the Terms and Privacy Policy." });
       return;
@@ -4103,6 +4270,11 @@ router11.post("/register", turnstileGuard, async (req, res) => {
         organization_id: organization.id
       }
     });
+    const SOURCES = ["friend", "whatsapp", "linkedin", "instagram", "x", "youtube", "reddit", "google", "other"];
+    await prisma_default.$executeRawUnsafe(`INSERT INTO analytics_events (event, path, visitor) VALUES ('consent_terms', 'terms-privacy-2026-11', $1)`, user.id).catch((e) => console.warn("consent log skipped:", e.message));
+    if (typeof heard_from === "string" && SOURCES.includes(heard_from)) {
+      await prisma_default.$executeRawUnsafe(`INSERT INTO analytics_events (event, path) VALUES ('signup_source', $1)`, heard_from).catch((e) => console.warn("source log skipped:", e.message));
+    }
     res.status(201).json({
       user: { id: user.id, email: user.email, name: user.name, organization_id: user.organization_id },
       organization: { id: organization.id, name: organization.name, slug: organization.slug }
@@ -4116,7 +4288,7 @@ router11.post("/register", turnstileGuard, async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router11.post("/login", async (req, res) => {
+router12.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body ?? {};
     if (!email || !password) {
@@ -4155,7 +4327,7 @@ router11.post("/login", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router11.put("/password", authMiddleware, async (req, res) => {
+router12.put("/password", authMiddleware, async (req, res) => {
   try {
     const { current_password, new_password } = req.body ?? {};
     const userId = req.user?.id;
@@ -4199,11 +4371,11 @@ router11.put("/password", authMiddleware, async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-var auth_routes_default = router11;
+var auth_routes_default = router12;
 
 // backend/src/routes/inbound.routes.ts
-import { Router as Router12 } from "express";
-import crypto3 from "crypto";
+import { Router as Router13 } from "express";
+import crypto4 from "crypto";
 
 // backend/src/middleware/rateLimit.ts
 var buckets = /* @__PURE__ */ new Map();
@@ -4236,15 +4408,15 @@ function rateLimit(options) {
 }
 
 // backend/src/routes/inbound.routes.ts
-var router12 = Router12();
+var router13 = Router13();
 function safeCompare(a, b) {
   if (typeof a !== "string" || typeof b !== "string") return false;
   const bufA = Buffer.from(a);
   const bufB = Buffer.from(b);
   if (bufA.length !== bufB.length) return false;
-  return crypto3.timingSafeEqual(bufA, bufB);
+  return crypto4.timingSafeEqual(bufA, bufB);
 }
-router12.post(
+router13.post(
   "/email",
   rateLimit({ windowMs: 6e4, max: 60, message: "Inbound rate limit exceeded" }),
   async (req, res) => {
@@ -4288,12 +4460,12 @@ router12.post(
     }
   }
 );
-var inbound_routes_default = router12;
+var inbound_routes_default = router13;
 
 // backend/src/routes/compliance.routes.ts
-import { Router as Router13 } from "express";
-var router13 = Router13();
-router13.post("/authorize-send", async (req, res) => {
+import { Router as Router14 } from "express";
+var router14 = Router14();
+router14.post("/authorize-send", async (req, res) => {
   try {
     const organization_id = req.user?.organization_id;
     if (!organization_id) {
@@ -4313,7 +4485,7 @@ router13.post("/authorize-send", async (req, res) => {
     res.status(500).json({ error: "Failed to evaluate compliance authorization" });
   }
 });
-router13.get("/suppressions", async (req, res) => {
+router14.get("/suppressions", async (req, res) => {
   try {
     const organization_id = req.user?.organization_id;
     if (!organization_id) {
@@ -4329,7 +4501,7 @@ router13.get("/suppressions", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch suppressions" });
   }
 });
-router13.post("/suppressions", async (req, res) => {
+router14.post("/suppressions", async (req, res) => {
   try {
     const organization_id = req.user?.organization_id;
     if (!organization_id) {
@@ -4350,13 +4522,13 @@ router13.post("/suppressions", async (req, res) => {
     res.status(500).json({ error: "Failed to add suppression" });
   }
 });
-var compliance_routes_default = router13;
+var compliance_routes_default = router14;
 
 // backend/src/routes/credit-note.routes.ts
-import { Router as Router14 } from "express";
-var router14 = Router14();
+import { Router as Router15 } from "express";
+var router15 = Router15();
 var UUID_REGEX6 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-router14.post("/", async (req, res) => {
+router15.post("/", async (req, res) => {
   try {
     const organization_id = req.user?.organization_id;
     const { invoice_id, amount, reason } = req.body ?? {};
@@ -4460,7 +4632,7 @@ router14.post("/", async (req, res) => {
     res.status(500).json({ error: "Failed to issue credit note" });
   }
 });
-router14.get("/", async (req, res) => {
+router15.get("/", async (req, res) => {
   try {
     const organization_id = req.user?.organization_id;
     if (!organization_id) {
@@ -4485,11 +4657,11 @@ router14.get("/", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch credit notes" });
   }
 });
-var credit_note_routes_default = router14;
+var credit_note_routes_default = router15;
 
 // backend/src/routes/admin.routes.ts
-import { Router as Router15 } from "express";
-var router15 = Router15();
+import { Router as Router16 } from "express";
+var router16 = Router16();
 async function isPlatformAdmin(userId) {
   const allowed = (process.env.PLATFORM_ADMIN_EMAILS || "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
   if (!allowed.length) return false;
@@ -4508,14 +4680,14 @@ async function requireAdmin(req, res, next) {
     res.status(500).json({ error: "Failed to verify admin access" });
   }
 }
-router15.get("/me", async (req, res) => {
+router16.get("/me", async (req, res) => {
   try {
     res.json({ is_admin: req.user ? await isPlatformAdmin(req.user.id) : false });
   } catch {
     res.json({ is_admin: false });
   }
 });
-router15.get("/plan-requests", requireAdmin, async (_req, res) => {
+router16.get("/plan-requests", requireAdmin, async (_req, res) => {
   try {
     await ensureOrgSettingsSchema();
     const rows = await prisma_default.$queryRawUnsafe(
@@ -4530,7 +4702,7 @@ router15.get("/plan-requests", requireAdmin, async (_req, res) => {
     res.status(500).json({ error: "Failed to load plan requests" });
   }
 });
-router15.get("/analytics", requireAdmin, async (req, res) => {
+router16.get("/analytics", requireAdmin, async (req, res) => {
   try {
     await ensureExtraSchema();
     const days = Math.min(Math.max(parseInt(String(req.query.days ?? "30"), 10) || 30, 1), 365);
@@ -4560,7 +4732,7 @@ router15.get("/analytics", requireAdmin, async (req, res) => {
     res.status(500).json({ error: "Failed to load analytics" });
   }
 });
-router15.get("/leads", requireAdmin, async (_req, res) => {
+router16.get("/leads", requireAdmin, async (_req, res) => {
   try {
     await ensureExtraSchema();
     const [rows, counts] = await Promise.all([
@@ -4574,7 +4746,7 @@ router15.get("/leads", requireAdmin, async (_req, res) => {
   }
 });
 var UUID_RE2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-router15.post("/plan-requests/:id/:decision", requireAdmin, async (req, res) => {
+router16.post("/plan-requests/:id/:decision", requireAdmin, async (req, res) => {
   try {
     const id = String(req.params.id);
     const decision = String(req.params.decision);
@@ -4602,14 +4774,14 @@ router15.post("/plan-requests/:id/:decision", requireAdmin, async (req, res) => 
     res.status(500).json({ error: "Failed to process request" });
   }
 });
-var admin_routes_default = router15;
+var admin_routes_default = router16;
 
 // backend/src/routes/events.routes.ts
-import { Router as Router16 } from "express";
-var router16 = Router16();
+import { Router as Router17 } from "express";
+var router17 = Router17();
 var UUID_SEG = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
 var VISITOR_RE = /^[A-Za-z0-9_-]{8,40}$/;
-router16.post("/", async (req, res) => {
+router17.post("/", async (req, res) => {
   try {
     const { event, path, referrer, visitor } = req.body ?? {};
     if (event !== "pageview" || typeof path !== "string" || !path.startsWith("/") || path.length > 200) {
@@ -4640,13 +4812,13 @@ router16.post("/", async (req, res) => {
     res.status(204).end();
   }
 });
-var events_routes_default = router16;
+var events_routes_default = router17;
 
 // backend/src/routes/leads.routes.ts
-import { Router as Router17 } from "express";
-var router17 = Router17();
+import { Router as Router18 } from "express";
+var router18 = Router18();
 var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-router17.post("/", async (req, res) => {
+router18.post("/", async (req, res) => {
   try {
     const { kind, email, message, plan, website } = req.body ?? {};
     if (website) {
@@ -4696,22 +4868,22 @@ router17.post("/", async (req, res) => {
     res.status(500).json({ error: "Something went wrong. Please try again." });
   }
 });
-var leads_routes_default = router17;
+var leads_routes_default = router18;
 
 // backend/src/routes/unsubscribe.routes.ts
-import { Router as Router18 } from "express";
-var router18 = Router18();
-var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { Router as Router19 } from "express";
+var router19 = Router19();
+var UUID2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var esc2 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 var page = (res, status, title, body) => res.status(status).type("html").send(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc2(title)}</title></head><body style="font-family:Arial,sans-serif;max-width:440px;margin:15vh auto;padding:0 20px;color:#0f172a;line-height:1.6"><h1 style="font-size:22px">${esc2(title)}</h1>${body}</body></html>`);
 function parse(req) {
   const o = String(req.query.o || "");
   const e = String(req.query.e || "").toLowerCase().trim();
   const t = String(req.query.t || "");
-  if (!UUID.test(o) || !e || e.length > 320 || !verifyUnsubscribeToken(o, e, t)) return null;
+  if (!UUID2.test(o) || !e || e.length > 320 || !verifyUnsubscribeToken(o, e, t)) return null;
   return { o, e, t };
 }
-router18.get("/", (req, res) => {
+router19.get("/", (req, res) => {
   const p = parse(req);
   if (!p) return page(res, 400, "Link not valid", "<p>This unsubscribe link is invalid or incomplete.</p>");
   const q = new URLSearchParams({ o: p.o, e: p.e, t: p.t }).toString();
@@ -4722,7 +4894,7 @@ router18.get("/", (req, res) => {
     `<p>Stop payment reminder emails sent to <b>${esc2(p.e)}</b> through Paivo?</p><form method="post" action="/api/unsubscribe?${esc2(q)}"><button style="background:#4f46e5;color:#fff;border:0;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer">Yes, unsubscribe me</button></form>`
   );
 });
-router18.post("/", async (req, res) => {
+router19.post("/", async (req, res) => {
   const p = parse(req);
   if (!p) return page(res, 400, "Link not valid", "<p>This unsubscribe link is invalid or incomplete.</p>");
   try {
@@ -4737,7 +4909,184 @@ router18.post("/", async (req, res) => {
     return page(res, 500, "Something went wrong", "<p>Please try again in a moment.</p>");
   }
 });
-var unsubscribe_routes_default = router18;
+var unsubscribe_routes_default = router19;
+
+// backend/src/routes/recurring.routes.ts
+import { Router as Router20 } from "express";
+import crypto5 from "crypto";
+
+// backend/src/lib/recurring.ts
+var FREQUENCIES = ["WEEKLY", "MONTHLY", "QUARTERLY", "YEARLY"];
+function addPeriod(isoDate, freq) {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  if (freq === "WEEKLY") {
+    const t = new Date(Date.UTC(y, m - 1, d + 7));
+    return t.toISOString().slice(0, 10);
+  }
+  const months = freq === "MONTHLY" ? 1 : freq === "QUARTERLY" ? 3 : 12;
+  const total = m - 1 + months;
+  const ny = y + Math.floor(total / 12);
+  const nm = total % 12;
+  const last = new Date(Date.UTC(ny, nm + 1, 0)).getUTCDate();
+  const nd = Math.min(d, last);
+  return `${ny}-${String(nm + 1).padStart(2, "0")}-${String(nd).padStart(2, "0")}`;
+}
+async function runDueRecurring(publicUrl) {
+  const due = await prisma_default.$queryRawUnsafe(
+    `SELECT id, organization_id, customer_id, template, frequency, to_char(next_run, 'YYYY-MM-DD') AS next_run, runs
+       FROM recurring_invoices WHERE active = true AND next_run <= current_date ORDER BY next_run LIMIT 200`
+  );
+  let created = 0;
+  let failed = 0;
+  for (const row of due) {
+    const nextRun = addPeriod(row.next_run, row.frequency);
+    const claimed = await prisma_default.$executeRawUnsafe(
+      `UPDATE recurring_invoices SET next_run = $3::date, runs = runs + 1 WHERE id = $1::uuid AND next_run = $2::date AND active = true`,
+      row.id,
+      row.next_run,
+      nextRun
+    );
+    if (!claimed) continue;
+    try {
+      const t = row.template || {};
+      const parsed = parseDetails({ items: t.items, discount: t.discount, tax_mode: t.tax_mode, tax_percent: t.tax_percent, notes: t.notes });
+      if (!parsed || "error" in parsed) throw new Error(parsed && "error" in parsed ? parsed.error : "Bad template");
+      const totals = computeTotals(parsed.details.items, parsed.details.discount, parsed.details.tax_percent, parsed.details.tax_mode);
+      const issued = row.next_run;
+      const termsDays = Math.min(Math.max(Number(t.terms_days) || 0, 0), 120);
+      const dueDate = /* @__PURE__ */ new Date(issued + "T00:00:00Z");
+      dueDate.setUTCDate(dueDate.getUTCDate() + termsDays);
+      const prefix = String(t.prefix || "REC").replace(/[^A-Za-z0-9-]/g, "").slice(0, 12) || "REC";
+      const base2 = `${prefix}-${issued.replace(/-/g, "")}`;
+      let number = base2;
+      for (let n = 2; n < 20; n++) {
+        const exists = await prisma_default.invoices.findFirst({ where: { organization_id: row.organization_id, invoice_number: number }, select: { id: true } });
+        if (!exists) break;
+        number = `${base2}-${n}`;
+      }
+      const invoice = await prisma_default.invoices.create({
+        data: {
+          organization_id: row.organization_id,
+          customer_id: row.customer_id,
+          invoice_number: number,
+          external_invoice_id: t.deliverable ? `vault:${t.deliverable}` : void 0,
+          amount: totals.total,
+          currency: t.currency || "INR",
+          issued_at: /* @__PURE__ */ new Date(issued + "T00:00:00Z"),
+          due_at: dueDate,
+          status: "DRAFT"
+        }
+      });
+      await saveDetails(row.organization_id, invoice.id, parsed.details);
+      await prisma_default.$executeRawUnsafe(`UPDATE recurring_invoices SET last_invoice_id = $2::uuid WHERE id = $1::uuid`, row.id, invoice.id);
+      created++;
+      if (emailEnabled()) {
+        const owner = await prisma_default.users.findFirst({ where: { organization_id: row.organization_id }, orderBy: { created_at: "asc" }, select: { email: true } });
+        const cust = await prisma_default.customers.findFirst({ where: { id: row.customer_id }, select: { name: true } });
+        if (owner?.email) {
+          await sendMail({
+            to: owner.email,
+            fromName: "Paivo",
+            subject: `Draft invoice ready: ${number} for ${cust?.name || "your client"}`,
+            text: `Your recurring invoice ${number} (${t.currency || "INR"} ${totals.total.toFixed(2)}) for ${cust?.name || "your client"} has been created as a draft.
+
+Nothing has been sent to your client. Review it and press "Send" when you're happy.`,
+            payUrl: `${publicUrl}/invoices/${invoice.id}`,
+            buttonLabel: "Review the draft"
+          }).catch((e) => console.warn("draft notice email failed:", e.message));
+        }
+      }
+    } catch (e) {
+      failed++;
+      console.error("recurring run failed:", row.id, e.message);
+      await prisma_default.$executeRawUnsafe(`UPDATE recurring_invoices SET next_run = $2::date, runs = GREATEST(runs - 1, 0) WHERE id = $1::uuid`, row.id, row.next_run).catch(() => {
+      });
+    }
+  }
+  return { created, failed };
+}
+
+// backend/src/routes/recurring.routes.ts
+var UUID3 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var PUBLIC_APP_URL2 = (process.env.PUBLIC_APP_URL || "https://paivo.in").replace(/\/$/, "");
+var MAX_SCHEDULES = 25;
+var recurringRouter = Router20();
+recurringRouter.get("/", async (req, res) => {
+  const org = req.user.organization_id;
+  const rows = await prisma_default.$queryRawUnsafe(
+    `SELECT r.id, r.customer_id, c.name AS customer_name, r.frequency, to_char(r.next_run,'YYYY-MM-DD') AS next_run, r.active, r.runs, r.template
+       FROM recurring_invoices r JOIN customers c ON c.id = r.customer_id
+      WHERE r.organization_id = $1::uuid ORDER BY r.created_at DESC`,
+    org
+  );
+  res.json(rows);
+});
+recurringRouter.post("/", async (req, res) => {
+  try {
+    const org = req.user.organization_id;
+    const { customer_id, frequency, first_run, currency, terms_days, prefix, deliverable } = req.body ?? {};
+    if (!UUID3.test(String(customer_id))) return res.status(400).json({ error: "Choose a client." });
+    if (!FREQUENCIES.includes(frequency)) return res.status(400).json({ error: "Choose how often to repeat." });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(first_run))) return res.status(400).json({ error: "Choose the next date." });
+    const parsed = parseDetails(req.body);
+    if (!parsed || "error" in parsed) return res.status(400).json({ error: parsed && "error" in parsed ? parsed.error : "Add line items." });
+    const customer = await prisma_default.customers.findFirst({ where: { id: customer_id, organization_id: org }, select: { id: true } });
+    if (!customer) return res.status(404).json({ error: "Client not found." });
+    const [{ n }] = await prisma_default.$queryRawUnsafe(`SELECT count(*)::int AS n FROM recurring_invoices WHERE organization_id = $1::uuid`, org);
+    if (n >= MAX_SCHEDULES) return res.status(400).json({ error: `You can keep up to ${MAX_SCHEDULES} repeating invoices.` });
+    const template = {
+      items: parsed.details.items.map((i) => ({ description: i.description, quantity: i.quantity, rate: i.rate })),
+      discount: parsed.details.discount,
+      tax_mode: parsed.details.tax_mode,
+      tax_percent: parsed.details.tax_percent,
+      notes: parsed.details.notes,
+      currency: String(currency || "INR").slice(0, 3),
+      terms_days: Math.min(Math.max(Number(terms_days) || 0, 0), 120),
+      prefix: String(prefix || "REC").slice(0, 12),
+      deliverable: typeof deliverable === "string" ? deliverable.slice(0, 500) : void 0
+    };
+    const rows = await prisma_default.$queryRawUnsafe(
+      `INSERT INTO recurring_invoices (organization_id, customer_id, template, frequency, next_run)
+       VALUES ($1::uuid, $2::uuid, $3::jsonb, $4, $5::date) RETURNING id`,
+      org,
+      customer_id,
+      JSON.stringify(template),
+      frequency,
+      first_run
+    );
+    res.status(201).json({ id: rows[0].id });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Could not save the repeating invoice." });
+  }
+});
+recurringRouter.patch("/:id", async (req, res) => {
+  if (!UUID3.test(req.params.id)) return res.status(404).json({ error: "Not found" });
+  const active = req.body?.active === true;
+  const n = await prisma_default.$executeRawUnsafe(`UPDATE recurring_invoices SET active = $2 WHERE id = $1::uuid`, req.params.id, active);
+  if (!n) return res.status(404).json({ error: "Not found" });
+  res.json({ ok: true });
+});
+recurringRouter.delete("/:id", async (req, res) => {
+  if (!UUID3.test(req.params.id)) return res.status(404).json({ error: "Not found" });
+  const n = await prisma_default.$executeRawUnsafe(`DELETE FROM recurring_invoices WHERE id = $1::uuid`, req.params.id);
+  if (!n) return res.status(404).json({ error: "Not found" });
+  res.json({ ok: true });
+});
+var cronRouter = Router20();
+cronRouter.get("/recurring", async (req, res) => {
+  const secret = process.env.CRON_SECRET || "";
+  const given = String(req.headers.authorization || "");
+  const expected = `Bearer ${secret}`;
+  const ok = secret.length >= 16 && given.length === expected.length && crypto5.timingSafeEqual(Buffer.from(given), Buffer.from(expected));
+  if (!ok) return res.status(401).json({ error: "Unauthorized" });
+  try {
+    res.json(await runDueRecurring(PUBLIC_APP_URL2));
+  } catch (e) {
+    console.error("cron failed", e);
+    res.status(500).json({ error: "Run failed" });
+  }
+});
 
 // backend/src/server.ts
 var app = express();
@@ -4790,6 +5139,8 @@ app.use(express.json({ limit: "1mb" }));
 app.use("/api/auth", systemContext, rateLimit({ windowMs: 6e4, max: 20, message: "Too many authentication attempts. Please wait 1 minute." }), auth_routes_default);
 app.use("/api/events", systemContext, rateLimit({ windowMs: 6e4, max: 120, message: "Too many events." }), events_routes_default);
 app.use("/api/unsubscribe", systemContext, rateLimit({ windowMs: 6e4, max: 30, message: "Too many requests." }), unsubscribe_routes_default);
+app.use("/api/cron", systemContext, cronRouter);
+app.use("/api/recurring", authMiddleware, recurringRouter);
 app.use("/api/leads", systemContext, rateLimit({ windowMs: 6e4, max: 8, message: "Too many submissions. Please try again in a minute." }), leads_routes_default);
 app.use("/api/inbound", systemContext, inbound_routes_default);
 app.use(
@@ -4798,6 +5149,7 @@ app.use(
   rateLimit({ windowMs: 6e4, max: 60, message: "Too many requests. Please wait a moment." }),
   public_invoice_routes_default
 );
+app.use("/api/public/client", systemContext, rateLimit({ windowMs: 6e4, max: 60, message: "Too many requests. Please wait a moment." }), client_portal_routes_default);
 app.use("/api/invoices", authMiddleware, invoice_routes_default);
 app.use(
   "/api/payments",

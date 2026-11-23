@@ -20,7 +20,7 @@ function slugify(name: string): string {
 
 router.post("/register", turnstileGuard, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, name, organization_name, accepted_terms } = req.body ?? {};
+    const { email, password, name, organization_name, accepted_terms, heard_from } = req.body ?? {};
 
     if (accepted_terms !== true) {
       res.status(400).json({ error: "Please confirm you are 18 or older and accept the Terms and Privacy Policy." });
@@ -63,6 +63,17 @@ router.post("/register", turnstileGuard, async (req: Request, res: Response): Pr
         organization_id: organization.id,
       },
     });
+
+    // Evidence of consent (who, when, which terms) and, optionally, how they found us. Never blocks signup.
+    const SOURCES = ["friend", "whatsapp", "linkedin", "instagram", "x", "youtube", "reddit", "google", "other"];
+    await prisma
+      .$executeRawUnsafe(`INSERT INTO analytics_events (event, path, visitor) VALUES ('consent_terms', 'terms-privacy-2026-11', $1)`, user.id)
+      .catch((e) => console.warn("consent log skipped:", (e as Error).message));
+    if (typeof heard_from === "string" && SOURCES.includes(heard_from)) {
+      await prisma
+        .$executeRawUnsafe(`INSERT INTO analytics_events (event, path) VALUES ('signup_source', $1)`, heard_from)
+        .catch((e) => console.warn("source log skipped:", (e as Error).message));
+    }
 
     res.status(201).json({
       user: { id: user.id, email: user.email, name: user.name, organization_id: user.organization_id },

@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "crons": [{ "path": "/api/cron/recurring", "schedule": "30 2 * * *" }],
   "rewrites": [
     {
       "source": "/api/(.*)",

@@ -1,6 +1,7 @@
 import {
   AlertCircle,
   ArrowLeft,
+  BarChart3,
   Bell,
   CheckCircle2,
   Clock,
@@ -258,6 +259,7 @@ const nav = [
       { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { to: "/invoices", label: "Invoices", icon: Receipt },
       { to: "/customers", label: "Customers", icon: Users },
+      { to: "/analytics", label: "Analytics", icon: BarChart3 },
       { to: "/settings", label: "Settings", icon: Settings },
     ],
   },

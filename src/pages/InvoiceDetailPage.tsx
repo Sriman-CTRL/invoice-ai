@@ -506,6 +506,8 @@ export function InvoiceDetailPage() {
   const { id = "" } = useParams();
   const r = useResource(() => invoicesApi.detail(id), [id]);
   const [reminderOpen, setReminderOpen] = useState(false);
+  const detailToast = useToast();
+  const [approving, setApproving] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
@@ -537,6 +539,26 @@ export function InvoiceDetailPage() {
 
         return (
           <>
+            {inv.status === "DRAFT" && (
+              <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-300/70 bg-amber-50 p-4">
+                <div className="min-w-[14rem] flex-1">
+                  <p className="text-sm font-bold text-amber-900">This is a draft. Your client can't see it yet.</p>
+                  <p className="text-xs text-amber-800/80">Check the amount and dates. When you're happy, approve it and it becomes a normal invoice with a pay link.</p>
+                </div>
+                <button
+                  disabled={approving}
+                  onClick={async () => {
+                    setApproving(true);
+                    try { await invoicesApi.approve(inv.id); detailToast.success("Invoice approved", "It's now open, and the pay link works."); r.reload(); }
+                    catch (e: any) { detailToast.error("Could not approve", e?.message); }
+                    finally { setApproving(false); }
+                  }}
+                  className="btn-primary h-10 px-5 text-sm"
+                >
+                  {approving ? "Approving..." : "Review done, approve"}
+                </button>
+              </div>
+            )}
             <PageHeader
               title={`Invoice ${inv.invoice_number}`}
               detail={`Issued ${date(inv.issued_at)} · Due ${date(inv.due_at)}`}

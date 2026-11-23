@@ -37,6 +37,20 @@ export const TERMS: { label: string; days: number }[] = [
   { label: "Net 60", days: 60 },
 ];
 
+export type Frequency = "WEEKLY" | "MONTHLY" | "QUARTERLY" | "YEARLY";
+
+/** Same rule as the server: month-based periods clamp to the last day (31 Jan + 1 month = 28 Feb). */
+export function addPeriod(isoDate: string, freq: Frequency): string {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  if (freq === "WEEKLY") return addDays(isoDate, 7);
+  const months = freq === "MONTHLY" ? 1 : freq === "QUARTERLY" ? 3 : 12;
+  const total = m - 1 + months;
+  const ny = y + Math.floor(total / 12);
+  const nm = total % 12;
+  const last = new Date(ny, nm + 1, 0).getDate();
+  return `${ny}-${String(nm + 1).padStart(2, "0")}-${String(Math.min(d, last)).padStart(2, "0")}`;
+}
+
 export function addDays(isoDate: string, days: number): string {
   const d = new Date(isoDate + "T00:00:00");
   d.setDate(d.getDate() + days);

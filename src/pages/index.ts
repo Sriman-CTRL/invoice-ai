@@ -8,5 +8,6 @@ export { ConversationDetailPage } from "./ConversationDetailPage";
 export { ActionsPage } from "./ActionsPage";
 export { AuthPage } from "./AuthPage";
 export { SettingsPage } from "./SettingsPage";
+export { AnalyticsPage } from "./AnalyticsPage";
 export { AdminPage } from "./AdminPage";
 export { AdminGrowthPage } from "./AdminGrowthPage";

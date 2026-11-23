@@ -21,6 +21,8 @@ import adminRoutes from "./routes/admin.routes";
 import eventsRoutes from "./routes/events.routes";
 import leadsRoutes from "./routes/leads.routes";
 import unsubscribeRoutes from "./routes/unsubscribe.routes";
+import clientPortalRoutes from "./routes/client-portal.routes";
+import { recurringRouter, cronRouter } from "./routes/recurring.routes";
 import { authMiddleware } from "./middleware/auth.middleware";
 import { rateLimit } from "./middleware/rateLimit";
 
@@ -96,6 +98,8 @@ app.use("/api/events", systemContext, rateLimit({ windowMs: 60_000, max: 120, me
 
 // Public waitlist + feedback (strict rate limit; honeypot inside the route)
 app.use("/api/unsubscribe", systemContext, rateLimit({ windowMs: 60_000, max: 30, message: "Too many requests." }), unsubscribeRoutes);
+app.use("/api/cron", systemContext, cronRouter);
+app.use("/api/recurring", authMiddleware, recurringRouter);
 app.use("/api/leads", systemContext, rateLimit({ windowMs: 60_000, max: 8, message: "Too many submissions. Please try again in a minute." }), leadsRoutes);
 
 // 2. Inbound webhook endpoint
@@ -108,6 +112,8 @@ app.use(
   rateLimit({ windowMs: 60_000, max: 60, message: "Too many requests. Please wait a moment." }),
   publicInvoiceRoutes,
 );
+
+app.use("/api/public/client", systemContext, rateLimit({ windowMs: 60_000, max: 60, message: "Too many requests. Please wait a moment." }), clientPortalRoutes);
 
 // 3. Authenticated routes with fine-grained rate limits
 app.use("/api/invoices", authMiddleware, invoiceRoutes);

@@ -3,10 +3,11 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { trackPageView } from "./analytics";
 import { useAuth } from "./auth";
 import { Shell } from "./components";
-import { ActionsPage, AuthPage, ConversationDetailPage, ConversationsPage, CustomerDetailPage, CustomersPage, DashboardPage, InvoiceDetailPage, InvoicesPage, SettingsPage, AdminPage, AdminGrowthPage } from "./pages";
+import { ActionsPage, AuthPage, ConversationDetailPage, ConversationsPage, CustomerDetailPage, CustomersPage, DashboardPage, InvoiceDetailPage, InvoicesPage, SettingsPage, AnalyticsPage, AdminPage, AdminGrowthPage } from "./pages";
 import { LandingPage } from "./LandingPage";
 import { PricingPage } from "./PricingPage";
 import { PlaygroundPage } from "./playground";
+import { ClientPortalPage } from "./ClientPortalPage";
 import { PublicPayPage } from "./PublicPayPage";
 import { PrivacyPolicyPage, TermsOfServicePage } from "./LegalPages";
 
@@ -28,6 +29,7 @@ export function App() {
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/register" element={<AuthPage mode="register" />} />
       <Route path="/pay/:invoiceNumber" element={<PublicPayPage />} />
+      <Route path="/client/:customerId/:token" element={<ClientPortalPage />} />
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
       <Route path="/terms" element={<TermsOfServicePage />} />
       <Route path="/dashboard" element={<Protected><DashboardPage /></Protected>} />
@@ -39,6 +41,7 @@ export function App() {
       <Route path="/conversations/:id" element={<Protected><ConversationDetailPage /></Protected>} />
       <Route path="/collection-actions" element={<Protected><ActionsPage /></Protected>} />
       <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
+      <Route path="/analytics" element={<Protected><AnalyticsPage /></Protected>} />
       <Route path="/admin/growth" element={<Protected><AdminGrowthPage /></Protected>} />
       <Route path="/admin" element={<Protected><AdminPage /></Protected>} />
       <Route path="/playground" element={<Protected><PlaygroundPage /></Protected>} />

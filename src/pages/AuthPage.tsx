@@ -19,6 +19,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  const [heardFrom, setHeardFrom] = useState("");
   const [humanToken, setHumanToken] = useState<string | null>(null);
   const [humanReset, setHumanReset] = useState(0);
 
@@ -51,7 +52,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
         await login(form.email, form.password);
         navigate("/dashboard");
       } else {
-        await register({ ...form, accepted_terms: accepted, turnstile_token: humanToken ?? undefined });
+        await register({ ...form, accepted_terms: accepted, heard_from: heardFrom || undefined, turnstile_token: humanToken ?? undefined });
         navigate("/login", { state: { registered: true } });
       }
     } catch (err) {
@@ -302,7 +303,39 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
                   value={form.password}
                   onChange={set("password")}
                 />
+                {registering && form.password.length > 0 && (
+                  <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+                    {[
+                      ["10+ characters", form.password.length >= 10],
+                      ["A letter", /[A-Za-z]/.test(form.password)],
+                      ["A number", /[0-9]/.test(form.password)],
+                    ].map(([label, ok]) => (
+                      <li key={String(label)} className={`flex items-center gap-1 transition-colors ${ok ? "text-emerald-400" : "text-slate-500"}`}>
+                        <span className={`grid h-3.5 w-3.5 place-items-center rounded-full text-[9px] font-black ${ok ? "bg-emerald-500/20" : "bg-white/5"}`}>{ok ? "✓" : ""}</span>
+                        {label as string}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
+
+              {registering && (
+                <div>
+                  <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-400" htmlFor="heard">How did you hear about us? <span className="font-normal normal-case text-slate-500">(optional)</span></label>
+                  <select id="heard" value={heardFrom} onChange={(e) => setHeardFrom(e.target.value)} className="input border-white/10 bg-slate-950 text-xs text-white">
+                    <option value="">Choose one</option>
+                    <option value="friend">Friend or colleague</option>
+                    <option value="whatsapp">WhatsApp or Telegram group</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="x">X (Twitter)</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="reddit">Reddit</option>
+                    <option value="google">Google search</option>
+                    <option value="other">Something else</option>
+                  </select>
+                </div>
+              )}
 
               {registering && (
                 <label className="flex items-start gap-2 text-xs leading-relaxed text-slate-400">

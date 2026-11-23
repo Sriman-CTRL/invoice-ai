@@ -1,6 +1,7 @@
 import { Router } from "express";
 import prisma from "../lib/prisma";
 import { getCustomerDetails } from "../services/customerService";
+import { portalToken } from "./client-portal.routes";
 
 const router = Router();
 
@@ -43,6 +44,16 @@ router.get("/", async (req, res) => {
 });
 
 // Get one customer (tenant-scoped)
+// The private link a seller shares so a client can see all their invoices in one place.
+router.get("/:id/portal-link", async (req, res) => {
+  const { id } = req.params;
+  if (!UUID_REGEX.test(id)) return res.status(404).json({ error: "Customer not found" });
+  const c = await prisma.customers.findFirst({ where: { id, organization_id: req.user!.organization_id }, select: { id: true } });
+  if (!c) return res.status(404).json({ error: "Customer not found" });
+  const base = (process.env.PUBLIC_APP_URL || "https://paivo.in").replace(/\/$/, "");
+  res.json({ url: `${base}/client/${id}/${portalToken(id)}` });
+});
+
 router.get("/:id", async (req, res) => {
   try {
     const { organization_id } = req.query;

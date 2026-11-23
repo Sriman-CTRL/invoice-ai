@@ -27,17 +27,28 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const authApi = {
-  register: (data: { email: string; password: string; name: string; organization_name: string; accepted_terms?: boolean; turnstile_token?: string }) => request<{ user: User; organization: { id: string; name: string } }>("/auth/register", { method: "POST", body: JSON.stringify(data) }),
+  register: (data: { email: string; password: string; name: string; organization_name: string; accepted_terms?: boolean; heard_from?: string; turnstile_token?: string }) => request<{ user: User; organization: { id: string; name: string } }>("/auth/register", { method: "POST", body: JSON.stringify(data) }),
   login: (data: { email: string; password: string }) => request<{ token: string; user: User }>("/auth/login", { method: "POST", body: JSON.stringify(data) }),
 };
 export const accountApi = {
   changePassword: (data: { current_password: string; new_password: string }) => request<{ success: boolean; message: string }>("/auth/password", { method: "PUT", body: JSON.stringify(data) }),
+};
+export type AnalyticsData = {
+  months: Array<{ month: string; received: number; invoiced: number }>;
+  top_clients: Array<{ id: string; name: string; company_name: string | null; paid: number; invoices: number }>;
+  kpi: { lifetime_received: number; outstanding: number; overdue: number; avg_days_to_pay: number | null; paid_count: number; sent_count: number };
+};
+export type GstRow = { invoice_number: string; date: string; customer: string; currency: string; status: string; taxable: number; cgst: number; sgst: number; igst: number; total: number; gst_rate: number };
+export const analyticsApi = {
+  get: () => request<AnalyticsData>("/dashboard/analytics"),
+  gstReport: (from: string, to: string) => request<{ from: string; to: string; rows: GstRow[] }>(`/dashboard/gst-report?from=${from}&to=${to}`),
 };
 export const dashboardApi = { get: () => request<Dashboard>("/dashboard") };
 export const invoicesApi = {
   list: (status?: string) => request<Invoice[]>(`/invoices${status ? `?status=${encodeURIComponent(status)}` : ""}`),
   detail: (id: string) => request<InvoiceDetail>(`/invoices/${id}`),
   create: (data: { customer_id: string; invoice_number: string; amount?: number; currency?: string; issued_at: string; due_at: string; external_invoice_id?: string; status?: string; items?: Array<{ description: string; quantity: number; rate: number }>; discount?: number; tax_mode?: string; tax_percent?: number; notes?: string }) => request<Invoice>("/invoices", { method: "POST", body: JSON.stringify(data) }),
+  approve: (id: string) => request<{ ok: boolean }>(`/invoices/${id}/approve`, { method: "POST" }),
   aiItems: (prompt: string, currency: string) => request<{ items: Array<{ description: string; quantity: number; rate: number }> }>("/invoices/meta/ai-items", { method: "POST", body: JSON.stringify({ prompt, currency }) }),
   activity: () => request<{ events: ActivityEvent[]; views: Record<string, { last_viewed_at: string; count: number }> }>("/invoices/meta/activity"),
   bulkImport: (invoices: Array<{
@@ -65,10 +76,22 @@ export const invoicesApi = {
       body: JSON.stringify(data || {}),
     }),
 };
+export type RecurringRow = {
+  id: string; customer_id: string; customer_name: string; frequency: "WEEKLY" | "MONTHLY" | "QUARTERLY" | "YEARLY"; next_run: string; active: boolean; runs: number;
+  template: { items: Array<{ description: string; quantity: number; rate: number }>; discount: number; tax_mode: string; tax_percent: number; currency: string };
+};
+export const recurringApi = {
+  list: () => request<RecurringRow[]>("/recurring"),
+  create: (data: { customer_id: string; frequency: string; first_run: string; currency: string; terms_days: number; prefix: string; deliverable?: string; items: Array<{ description: string; quantity: number; rate: number }>; discount: number; tax_mode: string; tax_percent: number; notes?: string }) =>
+    request<{ id: string }>("/recurring", { method: "POST", body: JSON.stringify(data) }),
+  setActive: (id: string, active: boolean) => request<{ ok: boolean }>(`/recurring/${id}`, { method: "PATCH", body: JSON.stringify({ active }) }),
+  remove: (id: string) => request<{ ok: boolean }>(`/recurring/${id}`, { method: "DELETE" }),
+};
 export const customersApi = {
   list: () => request<Customer[]>("/customers"),
   detail: (id: string) => request<CustomerDetail>(`/customers/${id}`),
   create: (data: { name: string; email: string; company_name?: string; phone?: string }) => request<Customer>("/customers", { method: "POST", body: JSON.stringify(data) }),
+  portalLink: (id: string) => request<{ url: string }>(`/customers/${id}/portal-link`),
   erasure: (id: string) => request<{ status: string; legal_notice: string }>(`/customers/${id}/erasure`, { method: "POST" }),
   export: (id: string) => request<any>(`/customers/${id}/export`),
 };
@@ -136,6 +159,8 @@ export const adminApi = {
 };
 export const overdueApi = { process: () => request<{ invoices_detected: number; actions_created: number; created_action_ids: string[]; skipped: Array<{ invoice_id: string; reason: string }> }>("/overdue-invoices/process", { method: "POST", body: JSON.stringify({}) }) };
 export const publicApi = {
+  clientPortal: (customerId: string, token: string) =>
+    request<{ organization: { name: string; brand_color: string | null; logo_data: string | null }; customer: { name: string; company_name: string | null }; invoices: Array<{ id: string; invoice_number: string; amount: number; currency: string; status: string; issued_at: string | null; due_at: string | null; outstanding: number }>; outstanding_total: number }>(`/public/client/${customerId}/${token}`),
   getInvoice: (invoiceNumber: string) => request<PublicInvoiceDetail>(`/public/invoices/${encodeURIComponent(invoiceNumber)}`),
   submitProof: (invoiceNumber: string, data: { utr: string; amount?: number; notes?: string; screenshot?: string; turnstile_token?: string }) =>
     request<{ success: boolean; message: string; payment_id: string }>(`/public/invoices/${encodeURIComponent(invoiceNumber)}/submit-proof`, {

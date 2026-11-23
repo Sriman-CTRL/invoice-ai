@@ -404,6 +404,16 @@ router.post("/meta/ai-items", async (req, res) => {
     }
 });
 
+// A recurring invoice arrives as a DRAFT. Approving it makes it a normal open invoice the client can see and pay.
+router.post("/:id/approve", async (req, res) => {
+    const id = req.params.id;
+    if (!UUID_REGEX.test(id)) return res.status(404).json({ error: "Invoice not found" });
+    const org = req.user!.organization_id;
+    const done = await prisma.invoices.updateMany({ where: { id, organization_id: org, status: "DRAFT" }, data: { status: "OPEN", issued_at: new Date(), updated_at: new Date() } });
+    if (!done.count) return res.status(404).json({ error: "No draft invoice found." });
+    res.json({ ok: true });
+});
+
 // Send Official Payment Reminder
 router.post("/:id/send-reminder", async (req, res) => {
     try {
