@@ -56,7 +56,8 @@ export const invoicesApi = {
     skipped_count: number;
     errors: string[];
   }>("/invoices/bulk-import", { method: "POST", body: JSON.stringify({ invoices }) }),
-  sendReminder: (id: string, data?: { subject?: string; body?: string }) =>
+  emailStatus: () => request<{ email_enabled: boolean }>("/invoices/meta/email-status"),
+  sendReminder: (id: string, data?: { subject?: string; body?: string; deliver?: boolean }) =>
     request<{ success: boolean; message: any; collection_action: any }>(`/invoices/${id}/send-reminder`, {
       method: "POST",
       body: JSON.stringify(data || {}),

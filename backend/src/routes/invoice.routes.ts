@@ -3,6 +3,11 @@ import prisma from "../lib/prisma";
 import { getInvoiceDetails } from "../services/invoiceService";
 import { checkPlanLimit } from "../lib/orgSettings";
 import { safeDeliverableUrl } from "./public-invoice.routes";
+import { emailEnabled, sendMail } from "../lib/mailer";
+
+const PUBLIC_APP_URL = (process.env.PUBLIC_APP_URL || "https://paivo.in").replace(/\/$/, "");
+const REMINDER_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+const REMINDER_DAILY_CAP = Number(process.env.REMINDER_DAILY_CAP || 30);
 
 const router = Router();
 
@@ -310,12 +315,18 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+// Lets the UI know whether real email sending is switched on.
+router.get("/meta/email-status", (_req, res) => {
+    res.json({ email_enabled: emailEnabled() });
+});
+
 // Send Official Payment Reminder
 router.post("/:id/send-reminder", async (req, res) => {
     try {
         const organization_id = String(req.body?.organization_id || req.user?.organization_id || "");
         const { id } = req.params;
         const { subject, body, channel = "EMAIL" } = req.body ?? {};
+        const deliver = req.body?.deliver === true;
 
         if (!organization_id || !UUID_REGEX.test(organization_id)) {
             return res.status(400).json({ error: "Valid organization_id is required" });
@@ -346,6 +357,46 @@ router.post("/:id/send-reminder", async (req, res) => {
                 error: `Outreach blocked: Customer email ${invoice.customers.email} has opted out of communications (${isSuppressed.reason}).`,
                 suppressed: true,
             });
+        }
+
+        // Real delivery: guard rails first, so nothing is recorded as sent unless it was.
+        let deliveredId: string | null = null;
+        if (deliver) {
+            if (!emailEnabled()) {
+                return res.status(503).json({ error: "Email sending isn't switched on yet. Use Email Client or WhatsApp, then Mark as sent." });
+            }
+            if (invoice.status === "PAID" || invoice.status === "CANCELLED") {
+                return res.status(400).json({ error: "This invoice doesn't need a reminder." });
+            }
+            const since = new Date(Date.now() - REMINDER_COOLDOWN_MS);
+            const recent = await prisma.collection_actions.findMany({
+                where: { organization_id, action_type: "PAYMENT_REMINDER", status: "COMPLETED", executed_at: { gte: since } },
+                select: { invoice_id: true, metadata: true },
+            });
+            const delivered = recent.filter((a) => (a.metadata as any)?.delivered === true);
+            if (delivered.some((a) => a.invoice_id === invoice.id)) {
+                return res.status(429).json({ error: "A reminder for this invoice was already emailed in the last 24 hours." });
+            }
+            if (delivered.length >= REMINDER_DAILY_CAP) {
+                return res.status(429).json({ error: `Daily limit of ${REMINDER_DAILY_CAP} emailed reminders reached. Try again tomorrow.` });
+            }
+            const sender = req.user?.id ? await prisma.users.findFirst({ where: { id: req.user.id }, select: { email: true } }) : null;
+            try {
+                const sent = await sendMail({
+                    to: invoice.customers.email,
+                    fromName: invoice.organizations.name,
+                    replyTo: sender?.email,
+                    subject: subject || `Payment reminder: invoice ${invoice.invoice_number}`,
+                    text: String(body || "").slice(0, 5000) || `Hello ${invoice.customers.name},
+
+A friendly reminder that invoice ${invoice.invoice_number} is outstanding.`,
+                    payUrl: `${PUBLIC_APP_URL}/pay/${invoice.id}`,
+                });
+                deliveredId = sent.id;
+            } catch (e) {
+                console.error("Reminder email failed:", e);
+                return res.status(502).json({ error: "The email could not be sent. Nothing was recorded. Please try again." });
+            }
         }
 
         // Find or create conversation
@@ -382,7 +433,7 @@ router.post("/:id/send-reminder", async (req, res) => {
                 conversation_id: conversation.id,
                 direction: "OUTBOUND",
                 channel,
-                sender: `billing@${invoice.organizations.slug}.com`,
+                sender: deliver ? "reminders@paivo.in" : `billing@${invoice.organizations.slug}.com`,
                 recipient: invoice.customers.email,
                 subject: reminderSubject,
                 body: reminderBody,
@@ -402,6 +453,8 @@ router.post("/:id/send-reminder", async (req, res) => {
                 executed_at: new Date(),
                 metadata: {
                     sent_message_id: message.id,
+                    delivered: deliver,
+                    provider_id: deliveredId,
                     channel,
                     recipient: invoice.customers.email,
                 },

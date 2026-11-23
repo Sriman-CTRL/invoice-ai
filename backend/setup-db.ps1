@@ -1,4 +1,4 @@
-# One-time database setup for Ledgerlane.
+# One-time database setup for Paivo.
 # Creates (or fixes) the `invoice_admin` role and the `invoice_ai` database on
 # your local PostgreSQL (default port 5432). Run from the `backend` folder:
 #

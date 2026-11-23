@@ -299,7 +299,7 @@ function SidebarContent({ close }: { close?: () => void }) {
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-base font-extrabold tracking-tight text-white">
-                Ledgerlane
+                Paivo
               </span>
               <span className="rounded-md bg-brand-500/20 px-1.5 py-0.5 text-[10px] font-bold text-brand-300 ring-1 ring-inset ring-brand-400/30">
                 AI

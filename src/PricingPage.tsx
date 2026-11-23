@@ -6,7 +6,7 @@ import { COMPARISON, PLANS, PAYMENTS_OPEN, featureLabel, inrPlain, isSoon } from
 import { LeadForm } from "./LeadForms";
 
 const BILLING_FAQ = [
-  { q: "Is there a fee on the payments I receive?", a: "No. Clients pay you directly by UPI or bank transfer, so there's no percentage taken. Payment gateways typically charge around 2% per payment; with Ledgerlane you only pay the flat monthly price." },
+  { q: "Is there a fee on the payments I receive?", a: "No. Clients pay you directly by UPI or bank transfer, so there's no percentage taken. Payment gateways typically charge around 2% per payment; with Paivo you only pay the flat monthly price." },
   { q: "When can I buy Pro or Agency?", a: "Not yet, on purpose. Join the waitlist and we'll email you when automatic reminders and reply-reading work. Until then, Starter is free and fully usable." },
   { q: "Will I be charged automatically every month?", a: "No. Nothing is taken from your account automatically. You pay each month yourself, and you can stop whenever you like." },
   { q: "What happens to my data if I go back to Starter?", a: "Nothing is deleted. Your invoices, clients and history stay. Starter just limits you to 5 new invoices a month." },

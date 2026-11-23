@@ -1,4 +1,4 @@
-title = "Ledgerlane gitleaks config"
+title = "Paivo gitleaks config"
 
 [extend]
 useDefault = true

@@ -1,4 +1,4 @@
-# Ledgerlane (invoice-ai)
+# Paivo (invoice-ai)
 
 An AI accounts-receivable (collections) workspace. It turns the slow part of
 getting paid — reading customer replies like *"I'll pay Friday"*, *"I already

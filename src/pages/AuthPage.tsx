@@ -77,7 +77,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
               <Sparkles className="h-5 w-5 text-white" />
             </div>
             <div>
-              <span className="text-xl font-black tracking-tight text-white block">Ledgerlane</span>
+              <span className="text-xl font-black tracking-tight text-white block">Paivo</span>
               <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
                 Invoices & payments
               </span>
@@ -191,7 +191,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white shadow-glow">
                 <Sparkles className="h-5 w-5" />
               </div>
-              <span className="text-lg font-bold text-white">Ledgerlane</span>
+              <span className="text-lg font-bold text-white">Paivo</span>
             </div>
             <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
               Beta

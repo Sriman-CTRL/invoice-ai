@@ -37,7 +37,7 @@ function UpgradePanel({ plan, onClose, current }: { plan: Plan; onClose: () => v
 
   useEffect(() => {
     if (!enabled) return;
-    const uri = `upi://pay?pa=${encodeURIComponent(PLATFORM_UPI_ID)}&pn=Ledgerlane&am=${plan.price}.00&cu=INR&tn=${encodeURIComponent(`Ledgerlane ${plan.name} plan`)}`;
+    const uri = `upi://pay?pa=${encodeURIComponent(PLATFORM_UPI_ID)}&pn=Paivo&am=${plan.price}.00&cu=INR&tn=${encodeURIComponent(`Paivo ${plan.name} plan`)}`;
     QRCode.toDataURL(uri, { width: 240, margin: 1 }).then(setQr).catch(() => {});
   }, [enabled, plan]);
 

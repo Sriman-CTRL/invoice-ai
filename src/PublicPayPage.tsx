@@ -165,7 +165,7 @@ export function PublicPayPage() {
             to="/login"
             className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-brand-500 transition-colors"
           >
-            <span>Go to Ledgerlane</span>
+            <span>Go to Paivo</span>
           </Link>
         </div>
       </div>
@@ -193,7 +193,7 @@ export function PublicPayPage() {
                 {data.organization.name}
               </span>
               <span className="text-[10px] text-slate-400 font-mono">
-                Powered by Ledgerlane Secure Pay
+                Powered by Paivo Secure Pay
               </span>
             </div>
           </div>

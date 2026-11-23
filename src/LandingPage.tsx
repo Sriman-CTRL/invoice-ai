@@ -16,7 +16,7 @@ const FEATURES = [
   },
   {
     icon: BellRing, tone: "from-sky-500 to-blue-600", title: "Reminders in one tap",
-    body: "See which invoices are overdue and send a polite, ready-written reminder by email or WhatsApp with one tap. Automatic sending and reading client replies are coming next. Join the waitlist.",
+    body: "See which invoices are overdue and send a polite, ready-written reminder with one tap. Email goes out from Paivo and replies land in your own inbox; WhatsApp opens ready to send. Scheduled automatic reminders are coming next.",
   },
 ];
 
@@ -27,7 +27,7 @@ const STEPS = [
 ];
 
 const FAQ = [
-  { q: "Do you hold my money?", a: "No. Your clients pay directly into your own UPI ID or bank account. Ledgerlane only keeps track of who has paid and decides when your files are shown." },
+  { q: "Do you hold my money?", a: "No. Your clients pay directly into your own UPI ID or bank account. Paivo only keeps track of who has paid and decides when your files are shown." },
   { q: "How does the \"files unlock after payment\" part work?", a: "When you create an invoice you can paste a link to your finished work. On the client's payment page that link stays hidden. The moment you confirm the full payment, it appears for them. We don't store your files; we just control when the link is shown." },
   { q: "What is a UTR number?", a: "It's the transaction reference your client's UPI or banking app shows after paying (usually 12 digits). They type it in, and you match it against your bank statement before confirming." },
   { q: "Is there a limit on UPI payments?", a: "Most UPI apps allow up to about ₹1 lakh per payment to a personal UPI ID. For bigger invoices, add your bank details so clients can pay by NEFT/RTGS, or ask them to pay in parts." },
@@ -53,7 +53,7 @@ export function LandingPage() {
           <span className="bg-gradient-to-r from-indigo-300 via-violet-300 to-emerald-300 bg-clip-text text-transparent">Every time, without chasing.</span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-400">
-          Send an invoice, your client pays by UPI straight to your bank, and your final files unlock only after they've paid. Ledgerlane keeps track of who owes you, and helps you chase politely.
+          Send an invoice, your client pays by UPI straight to your bank, and your final files unlock only after they've paid. Paivo keeps track of who owes you, and helps you chase politely.
         </p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <Link to="/register" className="inline-flex h-12 items-center gap-2 rounded-xl bg-indigo-500 px-7 text-sm font-bold text-white shadow-[0_10px_40px_-10px_rgba(99,102,241,0.9)] transition hover:bg-indigo-400">
@@ -104,7 +104,7 @@ export function LandingPage() {
       {/* Features */}
       <section id="features" className="mx-auto max-w-6xl px-5 py-16">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl">How Ledgerlane fixes it</h2>
+          <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl">How Paivo fixes it</h2>
         </div>
         <div className="mt-12 grid gap-5 md:grid-cols-3">
           {FEATURES.map((f) => (
@@ -170,7 +170,7 @@ export function LandingPage() {
       {/* CTA */}
       <section className="mx-auto max-w-4xl px-5 pb-24 pt-8">
         <div className="rounded-3xl border border-indigo-400/30 bg-gradient-to-br from-indigo-500/20 via-violet-500/10 to-transparent p-10 text-center">
-          <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl">Send your next invoice with Ledgerlane.</h2>
+          <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl">Send your next invoice with Paivo.</h2>
           <p className="mx-auto mt-3 max-w-xl text-slate-400">Free for your first five invoices every month. Set up in about ten minutes.</p>
           <Link to="/register" className="mt-7 inline-flex h-12 items-center gap-2 rounded-xl bg-white px-8 text-sm font-bold text-slate-900 transition hover:bg-slate-200">
             Create your free account <ArrowRight className="h-4 w-4" />

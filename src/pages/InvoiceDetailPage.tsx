@@ -27,8 +27,13 @@ function SendReminderModal({
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const [emailOn, setEmailOn] = useState(false);
   const toast = useToast();
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) invoicesApi.emailStatus().then((r) => setEmailOn(r.email_enabled)).catch(() => setEmailOn(false));
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -76,10 +81,26 @@ function SendReminderModal({
     }
   };
 
+  const handleDeliver = async () => {
+    setSending(true);
+    setError(null);
+    try {
+      await invoicesApi.sendReminder(invoice.id, { subject, body, deliver: true });
+      toast.success("Email sent", `Delivered to ${customer.email}. Their reply will come to your own inbox.`);
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      toast.error("Email not sent", err?.message);
+      setError(err?.message || "Failed to send email");
+    } finally {
+      setSending(false);
+    }
+  };
+
   const mailtoUrl = `mailto:${encodeURIComponent(customer.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   const cleanPhone = (customer.phone || "").replace(/[^0-9]/g, "");
   const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-    `*Payment Reminder — Invoice ${invoice.invoice_number}*\n\n${body}\n\n👉 View & Pay Online: https://invoice-ai-nine-beta.vercel.app/pay/${invoice.id}`
+    `*Payment Reminder — Invoice ${invoice.invoice_number}*\n\n${body}\n\n👉 View & Pay Online: https://paivo.in/pay/${invoice.id}`
   )}`;
 
   return (
@@ -176,7 +197,9 @@ function SendReminderModal({
           </div>
 
           <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-900">
-            <b>Ledgerlane doesn't send messages for you yet.</b> Tap <b>Email Client</b> or <b>WhatsApp</b> to send this from your own account, then press <b>Mark as sent</b> to keep a record.
+            {emailOn
+              ? <><b>Send email now</b> delivers this to {customer.email} from Paivo, and their reply goes to your own inbox. For WhatsApp, tap the WhatsApp button and then <b>Mark as sent</b>.</>
+              : <><b>Paivo doesn't send messages for you yet.</b> Tap <b>Email Client</b> or <b>WhatsApp</b> to send this from your own account, then press <b>Mark as sent</b> to keep a record.</>}
           </p>
 
           <div className="flex items-center justify-between pt-2 border-t border-slate-100">
@@ -207,10 +230,16 @@ function SendReminderModal({
               >
                 Cancel
               </button>
+              {emailOn && (
+                <button type="button" onClick={handleDeliver} disabled={sending} className="btn-primary h-9 px-4 text-xs font-bold">
+                  <Mail className="h-3.5 w-3.5" />
+                  <span>{sending ? "Sending..." : "Send email now"}</span>
+                </button>
+              )}
               <button
                 type="submit"
                 disabled={sending}
-                className="btn-primary h-9 px-4 text-xs font-bold"
+                className={emailOn ? "btn-secondary h-9 px-4 text-xs font-bold" : "btn-primary h-9 px-4 text-xs font-bold"}
               >
                 {sending ? (
                   <>

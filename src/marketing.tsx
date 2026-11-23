@@ -12,7 +12,7 @@ export function MarketingHeader() {
         <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-[0_0_25px_-5px_rgba(99,102,241,0.8)]">
           <Sparkles className="h-4.5 w-4.5 text-white" />
         </span>
-        <span className="text-lg font-extrabold tracking-tight text-white">Ledgerlane</span>
+        <span className="text-lg font-extrabold tracking-tight text-white">Paivo</span>
       </Link>
       <nav className="hidden items-center gap-7 text-sm font-medium text-slate-400 md:flex">
         <a href="/#how" className="hover:text-white">How it works</a>
@@ -38,7 +38,7 @@ export function MarketingFooter() {
         <Link to="/login" className="hover:text-slate-300">Sign in</Link>
       </div>
       <p className="mx-auto mt-3 max-w-2xl">
-        Ledgerlane is invoicing software. Your clients pay you directly by UPI or bank transfer; we never hold or move your money.
+        Paivo is invoicing software. Your clients pay you directly by UPI or bank transfer; we never hold or move your money.
       </p>
     </footer>
   );

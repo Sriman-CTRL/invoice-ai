@@ -272,8 +272,8 @@ router.post("/", async (req, res) => {
         error: "organization_id, name and email are required"
       });
     }
-    const cleanName = String(name).trim();
-    if (cleanName.length === 0 || cleanName.length > 255) {
+    const cleanName2 = String(name).trim();
+    if (cleanName2.length === 0 || cleanName2.length > 255) {
       return res.status(400).json({ error: "Customer name must be between 1 and 255 characters" });
     }
     const cleanCompany = company_name ? String(company_name).trim().slice(0, 255) : null;
@@ -292,7 +292,7 @@ router.post("/", async (req, res) => {
     const customer = await prisma_default.customers.create({
       data: {
         organization_id,
-        name: cleanName,
+        name: cleanName2,
         email: emailTrimmed,
         company_name: cleanCompany,
         phone: cleanPhone,
@@ -1005,7 +1005,52 @@ Please verify your bank statement to confirm settlement.`,
 });
 var public_invoice_routes_default = router3;
 
+// backend/src/lib/mailer.ts
+var API_KEY = process.env.RESEND_API_KEY || "";
+var FROM_ADDRESS = process.env.MAIL_FROM_ADDRESS || "reminders@paivo.in";
+var emailEnabled = () => Boolean(process.env.RESEND_API_KEY);
+function cleanName(s) {
+  return s.replace(/[\r\n"<>\\]/g, " ").replace(/\s+/g, " ").trim().slice(0, 60) || "Paivo";
+}
+function cleanSubject(s) {
+  return s.replace(/[\r\n]+/g, " ").trim().slice(0, 200);
+}
+function esc(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+async function sendMail(input) {
+  if (!API_KEY && !process.env.RESEND_API_KEY) throw new Error("Email sending is not configured");
+  const key = process.env.RESEND_API_KEY || API_KEY;
+  const footer = `
+
+--
+Sent by ${cleanName(input.fromName)} using Paivo. Reply to this email to reach ${cleanName(input.fromName)} directly.`;
+  const text = input.text + (input.payUrl ? `
+
+View and pay online: ${input.payUrl}` : "") + footer;
+  const html = `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#0f172a;white-space:pre-wrap">${esc(input.text)}</div>` + (input.payUrl ? `<p style="margin:20px 0"><a href="${esc(input.payUrl)}" style="background:#4f46e5;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-family:Arial,sans-serif;font-size:14px;font-weight:bold">View and pay online</a></p>` : "") + `<p style="font-family:Arial,sans-serif;font-size:12px;color:#64748b">Sent by ${esc(cleanName(input.fromName))} using Paivo. Reply to this email to reach ${esc(cleanName(input.fromName))} directly.</p>`;
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: `${cleanName(input.fromName)} via Paivo <${FROM_ADDRESS}>`,
+      to: [input.to],
+      reply_to: input.replyTo ? [input.replyTo] : void 0,
+      subject: cleanSubject(input.subject),
+      text,
+      html
+    }),
+    signal: AbortSignal.timeout(15e3)
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.message || `Email provider error (${res.status})`);
+  return { id: String(data.id || "") };
+}
+
 // backend/src/routes/invoice.routes.ts
+var PUBLIC_APP_URL = (process.env.PUBLIC_APP_URL || "https://paivo.in").replace(/\/$/, "");
+var REMINDER_COOLDOWN_MS = 24 * 60 * 60 * 1e3;
+var REMINDER_DAILY_CAP = Number(process.env.REMINDER_DAILY_CAP || 30);
 var router4 = Router4();
 var UUID_REGEX2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var INVOICE_STATUSES = ["OPEN", "PAID", "PARTIALLY_PAID", "CANCELLED", "DRAFT"];
@@ -1253,11 +1298,15 @@ router4.get("/:id", async (req, res) => {
     });
   }
 });
+router4.get("/meta/email-status", (_req, res) => {
+  res.json({ email_enabled: emailEnabled() });
+});
 router4.post("/:id/send-reminder", async (req, res) => {
   try {
     const organization_id = String(req.body?.organization_id || req.user?.organization_id || "");
     const { id } = req.params;
     const { subject, body, channel = "EMAIL" } = req.body ?? {};
+    const deliver = req.body?.deliver === true;
     if (!organization_id || !UUID_REGEX2.test(organization_id)) {
       return res.status(400).json({ error: "Valid organization_id is required" });
     }
@@ -1282,6 +1331,44 @@ router4.post("/:id/send-reminder", async (req, res) => {
         error: `Outreach blocked: Customer email ${invoice.customers.email} has opted out of communications (${isSuppressed.reason}).`,
         suppressed: true
       });
+    }
+    let deliveredId = null;
+    if (deliver) {
+      if (!emailEnabled()) {
+        return res.status(503).json({ error: "Email sending isn't switched on yet. Use Email Client or WhatsApp, then Mark as sent." });
+      }
+      if (invoice.status === "PAID" || invoice.status === "CANCELLED") {
+        return res.status(400).json({ error: "This invoice doesn't need a reminder." });
+      }
+      const since = new Date(Date.now() - REMINDER_COOLDOWN_MS);
+      const recent = await prisma_default.collection_actions.findMany({
+        where: { organization_id, action_type: "PAYMENT_REMINDER", status: "COMPLETED", executed_at: { gte: since } },
+        select: { invoice_id: true, metadata: true }
+      });
+      const delivered = recent.filter((a) => a.metadata?.delivered === true);
+      if (delivered.some((a) => a.invoice_id === invoice.id)) {
+        return res.status(429).json({ error: "A reminder for this invoice was already emailed in the last 24 hours." });
+      }
+      if (delivered.length >= REMINDER_DAILY_CAP) {
+        return res.status(429).json({ error: `Daily limit of ${REMINDER_DAILY_CAP} emailed reminders reached. Try again tomorrow.` });
+      }
+      const sender = req.user?.id ? await prisma_default.users.findFirst({ where: { id: req.user.id }, select: { email: true } }) : null;
+      try {
+        const sent = await sendMail({
+          to: invoice.customers.email,
+          fromName: invoice.organizations.name,
+          replyTo: sender?.email,
+          subject: subject || `Payment reminder: invoice ${invoice.invoice_number}`,
+          text: String(body || "").slice(0, 5e3) || `Hello ${invoice.customers.name},
+
+A friendly reminder that invoice ${invoice.invoice_number} is outstanding.`,
+          payUrl: `${PUBLIC_APP_URL}/pay/${invoice.id}`
+        });
+        deliveredId = sent.id;
+      } catch (e) {
+        console.error("Reminder email failed:", e);
+        return res.status(502).json({ error: "The email could not be sent. Nothing was recorded. Please try again." });
+      }
     }
     let conversation = await prisma_default.conversations.findFirst({
       where: {
@@ -1315,7 +1402,7 @@ ${invoice.organizations.name}`;
         conversation_id: conversation.id,
         direction: "OUTBOUND",
         channel,
-        sender: `billing@${invoice.organizations.slug}.com`,
+        sender: deliver ? "reminders@paivo.in" : `billing@${invoice.organizations.slug}.com`,
         recipient: invoice.customers.email,
         subject: reminderSubject,
         body: reminderBody
@@ -1333,6 +1420,8 @@ ${invoice.organizations.name}`;
         executed_at: /* @__PURE__ */ new Date(),
         metadata: {
           sent_message_id: message.id,
+          delivered: deliver,
+          provider_id: deliveredId,
           channel,
           recipient: invoice.customers.email
         }

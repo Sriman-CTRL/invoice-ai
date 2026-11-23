@@ -1,4 +1,4 @@
--- Ledgerlane schema (matches backend/prisma/schema.prisma).
+-- Paivo schema (matches backend/prisma/schema.prisma).
 -- Apply with:  npx prisma db push   OR   psql -U invoice_admin -d invoice_ai -f prisma/sql/schema.sql
 
 CREATE TABLE IF NOT EXISTS organizations (
