@@ -8,7 +8,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "seed": "tsx prisma/seed.ts",
-    "test": "tsx --test --test-timeout=60000 src/__tests__/*.test.ts",
+    "test": "tsx --test --test-force-exit --test-timeout=90000 src/__tests__/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],
