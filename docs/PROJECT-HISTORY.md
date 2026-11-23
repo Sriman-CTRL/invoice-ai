@@ -37,6 +37,7 @@ Last updated: 24 Nov 2026.
 | 24 Nov | Pinned dependency versions: root `package.json` uses caret ranges matching the lockfile instead of `latest`. |
 | 24 Nov | Fixed shared rate limiting under the restricted DB role: `rate_limits` is now created by `enable-rls.cjs` (the app role cannot run DDL), the runtime CREATE is tried once per process, and the in-memory fallback logs one warning. Corrected `AGENTS.md` (api/index.js is git-ignored, inbound timestamp, public-repo rule). |
 | 24 Nov (night build) | T0: `night-build` branch, local DB set up, green baseline recorded (54/54 integration tests, build OK). |
+| 24 Nov (night build) | R1: market research in `docs/research/MARKET-2026-11.md`. |
 
 ## 3. Key decisions (and why)
 

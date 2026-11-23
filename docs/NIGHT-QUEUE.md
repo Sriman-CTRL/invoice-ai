@@ -61,7 +61,7 @@ integration tests silently skip (they read `process.env` before dotenv loads). R
 chunk warning, handled by T4). Local re-runs within a few minutes hit stored rate limits (429), so before each test run:
 `truncate rate_limits, auth_failures` on the local DB.
 
-## [ ] R1. Market research: what is genuinely unique about Paivo
+## [x] R1. Market research: what is genuinely unique about Paivo
 
 Use WebSearch/WebFetch. Paraphrase; never copy competitor text, code or design. Cite every claim with a URL.
 Spend at most ~75 minutes, then write up what you have.
@@ -78,6 +78,8 @@ Spend at most ~75 minutes, then write up what you have.
 4. Write `docs/research/MARKET-2026-11.md`: comparison table, what is truly differentiated, what is table stakes,
    threats, pricing benchmarks, and **10 ranked differentiator ideas** (each: user pain, evidence, effort S/M/L,
    needs an API key or not).
+
+**Notes (R1):** about 8 searches; snippets were thin, so competitor prices are marked unverified in the doc. Doc-only task, tests unchanged from T0 baseline.
 
 ## [ ] R4. Competitor teardown ("reverse engineering" the public products)
 
