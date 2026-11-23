@@ -87,6 +87,9 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
 - **One daily cron, two jobs**: `/api/cron/recurring` (`vercel.json`, 02:30 UTC) runs recurring invoices and then automatic
   overdue reminders (`services/reminderService.ts`, steps +1/+7/+14 days, off per seller until `organizations.auto_reminders`
   is switched on). Each job's failure must not stop the other. Reminder guards are shared with the manual send button.
+- **Bank alerts only suggest**: a credit-alert email forwarded by one of the business's own users (inbound pipeline,
+  `lib/bankAlert.ts`, `services/bankAlertService.ts`) can only create a `PAYMENT_MATCH_SUGGESTED` action; the seller settles it
+  with the normal one-click confirmation. Never create a payment or change invoice status from an alert. Not advertised to users.
 - **Shared rate limits** (`shared: true` in middleware/rateLimit.ts) use the `rate_limits` table, created by enable-rls.cjs.
 
 ## Environment variables

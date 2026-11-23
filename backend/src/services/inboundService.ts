@@ -4,6 +4,7 @@ import { validateClassificationResult } from "./ai/types";
 import { runCollectionActionEngine } from "./collectionActionEngine";
 import { redactPaymentCardData } from "../lib/pciSanitizer";
 import { checkIsOptOut, addSuppression } from "./complianceService";
+import { tryBankAlert, type BankAlertOutcome } from "./bankAlertService";
 
 export interface InboundEmail {
   to?: string;
@@ -32,6 +33,8 @@ export interface InboundResult {
     reason: string | null;
   };
   collection_action?: unknown;
+  /** Set when the email was a bank credit alert from the seller; a suggestion may have been queued. Never a payment. */
+  bank_alert?: BankAlertOutcome;
   errors: string[];
 }
 
@@ -198,6 +201,22 @@ export async function processInboundEmail(input: InboundEmail): Promise<InboundR
 
   // PCI-DSS SAQ A: Sanitize any credit/debit card numbers before persistence or AI ingestion
   const text = redactPaymentCardData(rawText);
+
+  // A bank "amount credited" alert forwarded by the seller becomes a payment SUGGESTION in the Action Queue (never a payment).
+  const alert = await tryBankAlert({ organization_id: input.organization_id, to, from: input.from, subject: input.subject, text });
+  if (alert) {
+    return {
+      matched: true,
+      organization_id: alert.organization_id,
+      customer_id: null,
+      invoice_id: alert.invoice_id ?? null,
+      conversation_id: "",
+      message_id: "",
+      classified: false,
+      bank_alert: alert,
+      errors: [],
+    };
+  }
 
   const resolved = await resolveThread({
     organization_id: input.organization_id,

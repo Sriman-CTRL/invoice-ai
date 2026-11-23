@@ -397,7 +397,7 @@ area. Lazy-loaded. Add it to `sitemap.xml`.
 
 **Notes (T8):** src/changelog.ts: 4 dated entries (21, 22, 23, 24 Nov 2026) written from git log, plain language, user-visible only, newest first; the 24 Nov entry covers this night's user-visible changes that go live on merge (pay page reassurance and mobile button, amount in words, GSTIN/IFSC checks, no double-recording of a confirmation, faster pages). It deliberately does NOT mention automatic reminders, Google sign-in or AI replies (not live). src/WhatsNewPage.tsx in the marketing shell, lazy-loaded route /whats-new, linked from the marketing footer and the app sidebar, added to public/sitemap.xml. tests/changelog.test.ts checks order/dates and that no unbuilt feature is claimed. When something new ships, add an entry at the top of CHANGELOG. DoD: typecheck pass; backend 99 run/99 pass/0 skip; build pass; test:web 14 pass.
 
-## [ ] T9. Bank-alert payment suggestions (stretch, suggest-only)
+## [x] T9. Bank-alert payment suggestions (stretch, suggest-only)
 
 Only if T0–T8 are done. Sellers may forward bank credit-alert emails to their inbound address.
 
@@ -408,6 +408,8 @@ Only if T0–T8 are done. Sellers may forward bank credit-alert emails to their 
    open invoice whose outstanding amount equals the credited amount (weak). Create a `PAYMENT_MATCH_SUGGESTED`
    collection action with the evidence; the seller settles it with the existing one-click flow.
 3. **Never** create a payment or change invoice status from an alert (AGENTS.md rule 1). Tests prove it.
+
+**Notes (T9):** lib/bankAlert.ts: conservative parser (must say credited, not debited or future/failed, exactly one non-balance amount, exactly one reference with 6+ digits; otherwise null). services/bankAlertService.ts + a hook at the top of processInboundEmail: only when the sender is one of the business's own users (a stranger's email, or any debit alert, takes the normal pipeline). Match: STRONG when an open invoice has a PENDING client proof whose UTR equals the alert reference; WEAK when exactly one open invoice has an outstanding balance equal to the credited amount; otherwise no suggestion; repeated alerts are de-duplicated. Output is only a PAYMENT_MATCH_SUGGESTED collection action (metadata: match, utr, amount, payment_id for strong, evidence) in the Action Queue, shown with an evidence line and settled by the existing one-click verify-proof (same keys as a client proof). It NEVER creates a payment or changes invoice status; tests assert zero SUCCEEDED payments, no extra payment row and unchanged status after an alert, and that settlement happens only via the seller's confirmation. Tenant-scoped (another business's invoices are never matched); inbound key and timestamp still required. Fixtures are synthetic ('Example Bank'); no bank-specific accuracy is claimed. Landing/pricing/changelog do not mention it. Tests: 7 in bank-alert.test.ts. DoD: typecheck pass; backend 106 run/106 pass/0 skip; build pass.
 
 ## [ ] R3. Build from the research (your own judgement, flagged off)
 

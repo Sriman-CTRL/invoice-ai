@@ -76,7 +76,8 @@ Client replies reach `POST /api/inbound/email` (for example from the Cloudflare 
 - `x-inbound-timestamp`: unix seconds, accepted within 5 minutes of the server clock
 
 The JSON body takes `to` (or `recipient`), `from` (or `sender`), `subject`, `text` (or `textBody`/`body`), optional `html`,
-`organization_id`, `invoice_number` and `channel`. Replies are classified by the configured classifier
+`organization_id`, `invoice_number` and `channel`. A bank "amount credited" alert forwarded by the seller's own login email
+is recognised by a conservative parser and only becomes a suggestion in the Action Queue (never a payment). Replies are classified by the configured classifier
 (`CLASSIFIER=mock|gemini|ollama`) and become suggested actions in the Action Queue; they never change an invoice's status.
 
 ## Documentation
