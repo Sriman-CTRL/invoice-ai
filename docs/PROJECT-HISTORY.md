@@ -48,6 +48,7 @@ Last updated: 24 Nov 2026.
 | 24 Nov (night build) | T2: README rewritten for visitors; docs fixes. |
 | 24 Nov (night build) | T3: `schema.prisma` now mirrors the real database. |
 | 24 Nov (night build) | T4: route code-splitting; first download cut from 632 kB to 251 kB (173 to 79 kB gzip). |
+| 24 Nov (night build) | T5: money-path tests (17 new) and two real bugs fixed. |
 
 ## 3. Key decisions (and why)
 
