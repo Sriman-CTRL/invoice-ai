@@ -158,7 +158,7 @@ Create `docs/gtm/` with:
 
 **Notes (G1):** Community sizes are only what third-party listings reported; most pages could not be opened, so CHANNELS.md says to verify rules/activity first. No personal data stored. G2 will make the UTM tags in MESSAGES.md live. Doc-only, tests unchanged.
 
-## [ ] R2. Open-source and API scouting: what can be integrated
+## [x] R2. Open-source and API scouting: what can be integrated
 
 Spend at most ~60 minutes. Only consider MIT / Apache-2.0 / BSD / ISC licensed code. Record licence, stars, last
 release/commit date and weekly npm downloads for each candidate.
@@ -171,6 +171,8 @@ release/commit date and weekly npm downloads for each candidate.
 2. Write `docs/research/OSS-INTEGRATIONS.md`: table of candidates, fit for Paivo, effort, risks, and a
    recommendation (integrate now / later / no). List every API key or account any recommendation would need.
 3. Do not add dependencies in this task; B1/B2/R3 use the findings.
+
+**Notes (R2):** Licence/date/downloads from the public npm registry; stars only for razorpay/ifsc. Recommendation: write GSTIN and amount-in-words ourselves, IFSC regex plus the ifsc package only if small. Doc-only, no deps added.
 
 ## [ ] T1. SEO, link previews and og:image
 
