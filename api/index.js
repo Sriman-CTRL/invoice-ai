@@ -5118,7 +5118,7 @@ app.use((_req, res, next) => {
   next();
 });
 var rawCorsOrigin = process.env.CORS_ORIGIN || "https://invoice-ai-nine-beta.vercel.app,http://localhost:5173";
-var allowedOrigins = rawCorsOrigin.split(",").map((o) => o.trim()).filter(Boolean);
+var allowedOrigins = [...rawCorsOrigin.split(",").map((o) => o.trim()).filter(Boolean), "https://paivo.in", "https://www.paivo.in"];
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -5136,7 +5136,7 @@ app.use(
   })
 );
 app.use(express.json({ limit: "1mb" }));
-app.use("/api/auth", systemContext, rateLimit({ windowMs: 6e4, max: 20, message: "Too many authentication attempts. Please wait 1 minute." }), auth_routes_default);
+app.use("/api/auth", systemContext, rateLimit({ windowMs: 6e4, max: Number(process.env.AUTH_RATE_LIMIT_MAX || 20), message: "Too many authentication attempts. Please wait 1 minute." }), auth_routes_default);
 app.use("/api/events", systemContext, rateLimit({ windowMs: 6e4, max: 120, message: "Too many events." }), events_routes_default);
 app.use("/api/unsubscribe", systemContext, rateLimit({ windowMs: 6e4, max: 30, message: "Too many requests." }), unsubscribe_routes_default);
 app.use("/api/cron", systemContext, cronRouter);
@@ -5204,6 +5204,10 @@ app.use((_req, res) => {
   res.status(404).json({ error: "Not found" });
 });
 app.use((err, _req, res, _next) => {
+  if (err instanceof Error && err.message.startsWith("CORS blocked")) {
+    res.status(403).json({ error: "This site is not allowed to call the API." });
+    return;
+  }
   console.error("Unhandled error:", err);
   res.status(500).json({ error: "Internal server error" });
 });

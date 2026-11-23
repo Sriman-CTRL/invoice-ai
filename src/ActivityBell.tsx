@@ -26,10 +26,10 @@ function Line({ e }: { e: ActivityEvent }) {
       ? { icon: Eye, tone: "bg-sky-50 text-sky-600", text: <><b>{e.customer_name}</b> opened invoice {e.invoice_number}</> }
       : e.type === "paid"
         ? { icon: CheckCircle2, tone: "bg-emerald-50 text-emerald-600", text: <><b>{e.customer_name}</b> paid {e.amount ? money(e.amount, e.currency) : ""} on {e.invoice_number}</> }
-        : { icon: FileCheck2, tone: "bg-amber-50 text-amber-600", text: <><b>{e.customer_name}</b> sent a payment reference for {e.invoice_number}. Check your bank, then confirm.</> };
+        : { icon: FileCheck2, tone: "bg-amber-50 text-amber-600", text: <><b>{e.customer_name}</b> sent a payment reference for {e.invoice_number}. Check your bank, then press 1-Click Settle in the Action Queue.</> };
   const Icon = meta.icon;
   return (
-    <Link to={`/invoices/${e.invoice_id}`} className="flex items-start gap-3 px-4 py-3 transition hover:bg-slate-50">
+    <Link to={e.type === "proof" ? "/collection-actions" : `/invoices/${e.invoice_id}`} className="flex items-start gap-3 px-4 py-3 transition hover:bg-slate-50">
       <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg ${meta.tone}`}><Icon className="h-3.5 w-3.5" /></span>
       <span className="min-w-0 text-xs leading-relaxed text-slate-600">
         {meta.text}
