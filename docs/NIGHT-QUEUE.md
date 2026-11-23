@@ -81,7 +81,7 @@ Spend at most ~75 minutes, then write up what you have.
 
 **Notes (R1):** about 8 searches; snippets were thin, so competitor prices are marked unverified in the doc. Doc-only task, tests unchanged from T0 baseline.
 
-## [ ] R4. Competitor teardown ("reverse engineering" the public products)
+## [x] R4. Competitor teardown ("reverse engineering" the public products)
 
 Goal: learn *why* competitors convert visitors and get paid faster, then apply the lessons to Paivo in our own words,
 code and design. Spend at most ~75 minutes.
@@ -105,6 +105,8 @@ decompiling apps, using leaked code, copying any text, code, images, icons or vi
 3. Write `docs/research/TEARDOWN.md`: per-competitor notes (paraphrased, with URLs), then **"Patterns to adopt"**
    (each: what, why it works, evidence, how Paivo would do it honestly, effort) and **"Patterns to avoid"**
    (dark patterns, fake urgency, unverifiable claims).
+
+**Notes (R4):** Zoho, Refrens, Razorpay read from public pages (head tags via one plain curl each). The Kwill domain reachable (kwill.app) is not an invoicing product; flagged in the doc as unverified. Pay page already has a UPI deep link. Doc-only, tests unchanged.
 
 ## [ ] G1. Go-to-market pack: who to contact, where, and exactly what to send
 
