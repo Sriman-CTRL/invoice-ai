@@ -672,6 +672,83 @@ async function getInvoiceDetails(organization_id, invoice_id) {
 
 // backend/src/routes/public-invoice.routes.ts
 import { Router as Router3 } from "express";
+
+// backend/src/lib/turnstile.ts
+var VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+function turnstileEnabled() {
+  return Boolean(process.env.TURNSTILE_SECRET);
+}
+async function verifyTurnstileToken(token, ip) {
+  const secret = process.env.TURNSTILE_SECRET;
+  if (!secret) return { ok: true };
+  if (typeof token !== "string" || token.length < 10 || token.length > 2048) return { ok: false, reason: "missing" };
+  try {
+    const body = new URLSearchParams({ secret, response: token });
+    if (ip) body.set("remoteip", ip);
+    const res = await fetch(VERIFY_URL, { method: "POST", body, signal: AbortSignal.timeout(5e3) });
+    if (!res.ok) return { ok: false, reason: "unavailable" };
+    const data = await res.json();
+    return data.success ? { ok: true } : { ok: false, reason: "invalid" };
+  } catch {
+    return { ok: false, reason: "unavailable" };
+  }
+}
+async function turnstileGuard(req, res, next) {
+  if (!turnstileEnabled()) return next();
+  const result = await verifyTurnstileToken(req.body?.turnstile_token, req.ip);
+  if (result.ok) return next();
+  if (result.reason === "unavailable") {
+    res.status(503).json({ error: "We couldn't verify you're human right now. Please try again in a moment." });
+    return;
+  }
+  res.status(400).json({ error: "Please complete the human check and try again." });
+}
+
+// backend/src/lib/extraSchema.ts
+var ready2 = null;
+function ensureExtraSchema() {
+  if (!ready2) {
+    ready2 = (async () => {
+      await prisma_default.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS analytics_events (
+        id BIGSERIAL PRIMARY KEY,
+        at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        event VARCHAR(40) NOT NULL,
+        path VARCHAR(200) NOT NULL,
+        referrer VARCHAR(100),
+        visitor VARCHAR(40)
+      )`);
+      await prisma_default.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS analytics_events_at ON analytics_events (at)`);
+      await prisma_default.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS payment_proof_images (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        organization_id UUID NOT NULL,
+        payment_id UUID NOT NULL,
+        mime VARCHAR(20) NOT NULL,
+        data TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )`);
+      await prisma_default.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS payment_proof_images_payment ON payment_proof_images (payment_id)`);
+    })().catch((e) => {
+      console.warn("ensureExtraSchema: skipped DDL:", e.message);
+    });
+  }
+  return ready2;
+}
+function parseScreenshot(input) {
+  if (input === void 0 || input === null || input === "") return null;
+  if (typeof input !== "string") return { error: "Invalid screenshot." };
+  const m = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/.exec(input);
+  if (!m) return { error: "Screenshot must be a PNG, JPEG or WebP image." };
+  const bytes = Buffer.from(m[2], "base64");
+  if (bytes.length === 0 || bytes.length > 400 * 1024) return { error: "Screenshot is too large. Please use an image under 400 KB." };
+  const isPng = bytes.length > 8 && bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  const isJpeg = bytes.length > 3 && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+  const isWebp = bytes.length > 12 && bytes.subarray(0, 4).toString("ascii") === "RIFF" && bytes.subarray(8, 12).toString("ascii") === "WEBP";
+  const expected = m[1] === "image/png" ? isPng : m[1] === "image/jpeg" ? isJpeg : isWebp;
+  if (!expected) return { error: "That file doesn't look like a valid image." };
+  return { mime: m[1], base64: m[2] };
+}
+
+// backend/src/routes/public-invoice.routes.ts
 var router3 = Router3();
 var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var SAFE_URL_RE = /^https?:\/\/[^\s"'<>]+$/i;
@@ -769,10 +846,15 @@ router3.get("/:invoice_number", async (req, res) => {
     res.status(500).json({ error: "Failed to load invoice." });
   }
 });
-router3.post("/:invoice_number/submit-proof", async (req, res) => {
+router3.post("/:invoice_number/submit-proof", turnstileGuard, async (req, res) => {
   try {
     const invoiceId = publicInvoiceId(req.params.invoice_number);
     const { utr, amount, notes, paid_at } = req.body ?? {};
+    const screenshot = parseScreenshot(req.body?.screenshot);
+    if (screenshot && "error" in screenshot) {
+      res.status(400).json({ error: screenshot.error });
+      return;
+    }
     if (!invoiceId) {
       res.status(404).json({ error: STALE_LINK });
       return;
@@ -837,6 +919,16 @@ router3.post("/:invoice_number/submit-proof", async (req, res) => {
         paid_at: paidAt
       }
     });
+    if (screenshot && !("error" in screenshot)) {
+      await ensureExtraSchema();
+      await prisma_default.$executeRawUnsafe(
+        "INSERT INTO payment_proof_images (organization_id, payment_id, mime, data) VALUES ($1::uuid, $2::uuid, $3, $4)",
+        invoice.organization_id,
+        payment.id,
+        screenshot.mime,
+        screenshot.base64
+      );
+    }
     let conversation = await prisma_default.conversations.findFirst({
       where: {
         organization_id: invoice.organization_id,
@@ -887,7 +979,8 @@ Please verify your bank statement to confirm settlement.`,
           payment_id: payment.id,
           utr: cleanUtr,
           amount: reportedAmount,
-          customer_notes: notes || null
+          customer_notes: notes || null,
+          has_screenshot: Boolean(screenshot)
         }
       }
     });
@@ -3100,6 +3193,40 @@ router8.patch("/:id/status", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+router8.get("/:id/proof-image", async (req, res) => {
+  try {
+    const id = String(req.params.id);
+    const organization_id = req.user?.organization_id;
+    if (!organization_id || !/^[0-9a-f-]{36}$/i.test(id)) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    const action = await prisma_default.collection_actions.findFirst({ where: { id, organization_id } });
+    const meta = action?.metadata && typeof action.metadata === "object" ? action.metadata : {};
+    const paymentId = typeof meta.payment_id === "string" && /^[0-9a-f-]{36}$/i.test(meta.payment_id) ? meta.payment_id : null;
+    if (!action || !paymentId) {
+      res.status(404).json({ error: "No screenshot attached" });
+      return;
+    }
+    const rows = await prisma_default.$queryRawUnsafe(
+      "SELECT mime, data FROM payment_proof_images WHERE payment_id = $1::uuid AND organization_id = $2::uuid ORDER BY created_at DESC LIMIT 1",
+      paymentId,
+      organization_id
+    );
+    if (!rows.length) {
+      res.status(404).json({ error: "No screenshot attached" });
+      return;
+    }
+    res.setHeader("Content-Type", rows[0].mime);
+    res.setHeader("Cache-Control", "private, no-store");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Content-Security-Policy", "default-src 'none'; sandbox");
+    res.send(Buffer.from(rows[0].data, "base64"));
+  } catch (error) {
+    console.error("proof-image error:", error);
+    res.status(500).json({ error: "Failed to load screenshot" });
+  }
+});
 router8.post("/:id/verify-proof", async (req, res) => {
   try {
     const id = String(req.params.id);
@@ -3490,10 +3617,10 @@ import jwt from "jsonwebtoken";
 var WINDOW_MINUTES = 15;
 var MAX_PER_EMAIL = 8;
 var MAX_PER_IP = 30;
-var ready2 = null;
+var ready3 = null;
 function ensureTable() {
-  if (!ready2) {
-    ready2 = (async () => {
+  if (!ready3) {
+    ready3 = (async () => {
       await prisma_default.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS auth_failures (
         id BIGSERIAL PRIMARY KEY,
         email VARCHAR(255) NOT NULL,
@@ -3506,7 +3633,7 @@ function ensureTable() {
       console.warn("ensureTable(auth_failures): skipped DDL:", e.message);
     });
   }
-  return ready2;
+  return ready3;
 }
 async function loginLockoutSeconds(email, ip) {
   await ensureTable();
@@ -3542,7 +3669,7 @@ function slugify(name) {
   const base2 = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32) || "org";
   return `${base2}-${Date.now().toString(36)}`;
 }
-router11.post("/register", async (req, res) => {
+router11.post("/register", turnstileGuard, async (req, res) => {
   try {
     const { email, password, name, organization_name } = req.body ?? {};
     if (!email || !password || !organization_name) {
@@ -3956,6 +4083,36 @@ router15.get("/plan-requests", requireAdmin, async (_req, res) => {
     res.status(500).json({ error: "Failed to load plan requests" });
   }
 });
+router15.get("/analytics", requireAdmin, async (req, res) => {
+  try {
+    await ensureExtraSchema();
+    const days = Math.min(Math.max(parseInt(String(req.query.days ?? "30"), 10) || 30, 1), 365);
+    const q = (sql) => prisma_default.$queryRawUnsafe(sql, days);
+    const [daily, pages, referrers, visitorsFor, signups, activated, pending, orgsTotal, paidOrgs] = await Promise.all([
+      q(`SELECT to_char(date_trunc('day', at), 'YYYY-MM-DD') AS day, count(*)::int AS views, count(DISTINCT visitor)::int AS visitors FROM analytics_events WHERE at > now() - ($1::int * interval '1 day') GROUP BY 1 ORDER BY 1`),
+      q(`SELECT path, count(*)::int AS views FROM analytics_events WHERE at > now() - ($1::int * interval '1 day') GROUP BY 1 ORDER BY 2 DESC LIMIT 10`),
+      q(`SELECT referrer, count(DISTINCT visitor)::int AS visits FROM analytics_events WHERE referrer IS NOT NULL AND at > now() - ($1::int * interval '1 day') GROUP BY 1 ORDER BY 2 DESC LIMIT 8`),
+      q(`SELECT path, count(DISTINCT visitor)::int AS visitors FROM analytics_events WHERE path IN ('/', '/pricing', '/register') AND at > now() - ($1::int * interval '1 day') GROUP BY 1`),
+      q(`SELECT count(*)::int AS n FROM users WHERE created_at > now() - ($1::int * interval '1 day')`),
+      q(`SELECT count(DISTINCT i.organization_id)::int AS n FROM invoices i JOIN organizations o ON o.id = i.organization_id WHERE o.created_at > now() - ($1::int * interval '1 day')`),
+      q(`SELECT count(*)::int AS n FROM plan_requests WHERE status = 'PENDING' AND $1::int > 0`),
+      q(`SELECT count(*)::int AS n FROM organizations WHERE $1::int > 0`),
+      q(`SELECT count(*)::int AS n FROM organizations WHERE plan <> 'FREE' AND $1::int > 0`)
+    ]);
+    const v = (p) => visitorsFor.find((x) => x.path === p)?.visitors ?? 0;
+    res.json({
+      days,
+      daily,
+      pages,
+      referrers,
+      funnel: { landing: v("/"), pricing: v("/pricing"), register_page: v("/register"), signups: signups[0]?.n ?? 0, activated: activated[0]?.n ?? 0 },
+      totals: { organizations: orgsTotal[0]?.n ?? 0, paid_organizations: paidOrgs[0]?.n ?? 0, pending_upgrades: pending[0]?.n ?? 0 }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to load analytics" });
+  }
+});
 var UUID_RE2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 router15.post("/plan-requests/:id/:decision", requireAdmin, async (req, res) => {
   try {
@@ -3986,6 +4143,44 @@ router15.post("/plan-requests/:id/:decision", requireAdmin, async (req, res) => 
   }
 });
 var admin_routes_default = router15;
+
+// backend/src/routes/events.routes.ts
+import { Router as Router16 } from "express";
+var router16 = Router16();
+var UUID_SEG = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+var VISITOR_RE = /^[A-Za-z0-9_-]{8,40}$/;
+router16.post("/", async (req, res) => {
+  try {
+    const { event, path, referrer, visitor } = req.body ?? {};
+    if (event !== "pageview" || typeof path !== "string" || !path.startsWith("/") || path.length > 200) {
+      res.status(204).end();
+      return;
+    }
+    const cleanPath = path.split("?")[0].split("#")[0].replace(UUID_SEG, ":id").slice(0, 200);
+    let ref = null;
+    if (typeof referrer === "string" && referrer) {
+      try {
+        ref = new URL(referrer).hostname.slice(0, 100);
+      } catch {
+        ref = null;
+      }
+    }
+    const vis = typeof visitor === "string" && VISITOR_RE.test(visitor) ? visitor : null;
+    await ensureExtraSchema();
+    await prisma_default.$executeRawUnsafe(
+      "INSERT INTO analytics_events (event, path, referrer, visitor) VALUES ($1, $2, $3, $4)",
+      "pageview",
+      cleanPath,
+      ref,
+      vis
+    );
+    res.status(204).end();
+  } catch (error) {
+    console.error("events error:", error);
+    res.status(204).end();
+  }
+});
+var events_routes_default = router16;
 
 // backend/src/middleware/auth.middleware.ts
 import jwt2 from "jsonwebtoken";
@@ -4083,6 +4278,7 @@ app.use(
 );
 app.use(express.json({ limit: "1mb" }));
 app.use("/api/auth", systemContext, rateLimit({ windowMs: 6e4, max: 20, message: "Too many authentication attempts. Please wait 1 minute." }), auth_routes_default);
+app.use("/api/events", systemContext, rateLimit({ windowMs: 6e4, max: 120, message: "Too many events." }), events_routes_default);
 app.use("/api/inbound", systemContext, inbound_routes_default);
 app.use(
   "/api/public/invoices",

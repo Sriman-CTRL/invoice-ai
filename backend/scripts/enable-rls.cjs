@@ -13,14 +13,13 @@
 require("dotenv").config();
 const { Client } = require("pg");
 
-const TENANT_TABLES = ["collection_actions", "conversations", "credit_notes", "customers", "invoices", "messages", "payments", "suppressions", "users"];
+const TENANT_TABLES = ["payment_proof_images", "collection_actions", "conversations", "credit_notes", "customers", "invoices", "messages", "payments", "suppressions", "users"];
 
 (async () => {
   const url = process.env.DATABASE_URL;
   const password = process.env.APP_DB_PASSWORD;
   if (!url) throw new Error("DATABASE_URL (owner) is required");
-  if (!password || password.length < 24) throw new Error("APP_DB_PASSWORD (24+ chars) is required");
-  if (!/^[A-Za-z0-9_-]+$/.test(password)) throw new Error("APP_DB_PASSWORD must be URL-safe (letters, digits, _ and -)");
+  if (password && (password.length < 24 || !/^[A-Za-z0-9_-]+$/.test(password))) throw new Error("APP_DB_PASSWORD must be 24+ URL-safe chars (letters, digits, _ and -)");
 
   const c = new Client({ connectionString: url, ssl: /localhost|127\.0\.0\.1/.test(url) ? false : { rejectUnauthorized: false } });
   await c.connect();
@@ -35,6 +34,10 @@ const TENANT_TABLES = ["collection_actions", "conversations", "credit_notes", "c
   await run(`CREATE TABLE IF NOT EXISTS auth_failures (id BIGSERIAL PRIMARY KEY, email VARCHAR(255) NOT NULL, ip VARCHAR(64) NOT NULL, at TIMESTAMPTZ NOT NULL DEFAULT now())`);
   await run(`CREATE INDEX IF NOT EXISTS auth_failures_email_at ON auth_failures (email, at)`);
   await run(`CREATE INDEX IF NOT EXISTS auth_failures_ip_at ON auth_failures (ip, at)`);
+  await run(`CREATE TABLE IF NOT EXISTS analytics_events (id BIGSERIAL PRIMARY KEY, at TIMESTAMPTZ NOT NULL DEFAULT now(), event VARCHAR(40) NOT NULL, path VARCHAR(200) NOT NULL, referrer VARCHAR(100), visitor VARCHAR(40))`);
+  await run(`CREATE INDEX IF NOT EXISTS analytics_events_at ON analytics_events (at)`);
+  await run(`CREATE TABLE IF NOT EXISTS payment_proof_images (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), organization_id UUID NOT NULL, payment_id UUID NOT NULL, mime VARCHAR(20) NOT NULL, data TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+  await run(`CREATE INDEX IF NOT EXISTS payment_proof_images_payment ON payment_proof_images (payment_id)`);
   await run(`CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_unique ON users (lower(email))`);
 
   await run(`CREATE OR REPLACE FUNCTION app_current_org_id() RETURNS uuid LANGUAGE plpgsql STABLE AS $$
@@ -44,7 +47,14 @@ const TENANT_TABLES = ["collection_actions", "conversations", "credit_notes", "c
     SELECT COALESCE(current_setting('app.system', true), 'off') = 'on' $$`);
 
   const exists = (await run(`SELECT 1 FROM pg_roles WHERE rolname = 'app_user'`)).rowCount > 0;
-  await run(`${exists ? "ALTER" : "CREATE"} ROLE app_user LOGIN NOBYPASSRLS NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD '${password}'`);
+  if (!exists && !password) throw new Error("APP_DB_PASSWORD is required the first time (role does not exist yet)");
+  // Role attributes are set once at creation (managed Postgres won't let the owner re-alter them).
+  // An existing role is only touched when a new password is supplied (rotation).
+  if (!exists) {
+    await run(`CREATE ROLE app_user LOGIN NOBYPASSRLS NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD '${password}'`);
+  } else if (password) {
+    await run(`ALTER ROLE app_user PASSWORD '${password}'`);
+  }
 
   await run(`GRANT USAGE ON SCHEMA public TO app_user`);
   await run(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_user`);

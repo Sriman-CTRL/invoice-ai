@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response, Router } from "express";
 import prisma from "../lib/prisma";
 import { ensureOrgSettingsSchema } from "../lib/orgSettings";
+import { ensureExtraSchema } from "../lib/extraSchema";
 
 const router = Router();
 
@@ -50,6 +51,36 @@ router.get("/plan-requests", requireAdmin, async (_req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to load plan requests" });
+  }
+});
+
+/** Growth dashboard: visits from first-party events, signups/activation straight from the database. */
+router.get("/analytics", requireAdmin, async (req, res) => {
+  try {
+    await ensureExtraSchema();
+    const days = Math.min(Math.max(parseInt(String(req.query.days ?? "30"), 10) || 30, 1), 365);
+    const q = <T,>(sql: string) => prisma.$queryRawUnsafe<T[]>(sql, days);
+    const [daily, pages, referrers, visitorsFor, signups, activated, pending, orgsTotal, paidOrgs] = await Promise.all([
+      q<{ day: string; views: number; visitors: number }>(`SELECT to_char(date_trunc('day', at), 'YYYY-MM-DD') AS day, count(*)::int AS views, count(DISTINCT visitor)::int AS visitors FROM analytics_events WHERE at > now() - ($1::int * interval '1 day') GROUP BY 1 ORDER BY 1`),
+      q<{ path: string; views: number }>(`SELECT path, count(*)::int AS views FROM analytics_events WHERE at > now() - ($1::int * interval '1 day') GROUP BY 1 ORDER BY 2 DESC LIMIT 10`),
+      q<{ referrer: string; visits: number }>(`SELECT referrer, count(DISTINCT visitor)::int AS visits FROM analytics_events WHERE referrer IS NOT NULL AND at > now() - ($1::int * interval '1 day') GROUP BY 1 ORDER BY 2 DESC LIMIT 8`),
+      q<{ path: string; visitors: number }>(`SELECT path, count(DISTINCT visitor)::int AS visitors FROM analytics_events WHERE path IN ('/', '/pricing', '/register') AND at > now() - ($1::int * interval '1 day') GROUP BY 1`),
+      q<{ n: number }>(`SELECT count(*)::int AS n FROM users WHERE created_at > now() - ($1::int * interval '1 day')`),
+      q<{ n: number }>(`SELECT count(DISTINCT i.organization_id)::int AS n FROM invoices i JOIN organizations o ON o.id = i.organization_id WHERE o.created_at > now() - ($1::int * interval '1 day')`),
+      q<{ n: number }>(`SELECT count(*)::int AS n FROM plan_requests WHERE status = 'PENDING' AND $1::int > 0`),
+      q<{ n: number }>(`SELECT count(*)::int AS n FROM organizations WHERE $1::int > 0`),
+      q<{ n: number }>(`SELECT count(*)::int AS n FROM organizations WHERE plan <> 'FREE' AND $1::int > 0`),
+    ]);
+    const v = (p: string) => visitorsFor.find((x) => x.path === p)?.visitors ?? 0;
+    res.json({
+      days,
+      daily, pages, referrers,
+      funnel: { landing: v("/"), pricing: v("/pricing"), register_page: v("/register"), signups: signups[0]?.n ?? 0, activated: activated[0]?.n ?? 0 },
+      totals: { organizations: orgsTotal[0]?.n ?? 0, paid_organizations: paidOrgs[0]?.n ?? 0, pending_upgrades: pending[0]?.n ?? 0 },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to load analytics" });
   }
 });
 

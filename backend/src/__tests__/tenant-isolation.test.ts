@@ -72,7 +72,7 @@ after(async () => {
   const runAsSystem = prismaModule.runAsSystem;
   await runAsSystem(async () => {
     for (const org of created.orgIds) {
-      for (const table of ["payments", "collection_actions", "messages", "conversations", "invoices", "customers", "suppressions", "credit_notes", "users"]) {
+      for (const table of ["payment_proof_images", "payments", "collection_actions", "messages", "conversations", "invoices", "customers", "suppressions", "credit_notes", "users"]) {
         await prisma.$executeRawUnsafe(`DELETE FROM ${table} WHERE organization_id = $1::uuid`, org).catch(() => undefined);
       }
       await prisma.$executeRawUnsafe(`DELETE FROM plan_requests WHERE organization_id = $1::uuid`, org).catch(() => undefined);
@@ -187,4 +187,58 @@ test("AUTH: weak passwords are rejected and repeated bad logins are locked out",
 test("CORS: arbitrary *.vercel.app origins are not trusted", opts, async () => {
   const res = await fetch(`${base}/api/invoices`, { method: "OPTIONS", headers: { Origin: "https://evil-site.vercel.app", "Access-Control-Request-Method": "GET" } });
   assert.equal(res.headers.get("access-control-allow-origin"), null);
+});
+
+const TINY_PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+
+test("SCREENSHOT: only real PNG/JPEG/WebP images are accepted", opts, async () => {
+  const path = `/api/public/invoices/${b.invoiceId}/submit-proof`;
+  const fakePng = "data:image/png;base64," + Buffer.from("<html><script>alert(1)</script></html>").toString("base64");
+  assert.equal((await call("POST", path, { utr: "FAKEIMG12345", screenshot: fakePng })).status, 400, "text disguised as png");
+  const svg = "data:image/svg+xml;base64," + Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>').toString("base64");
+  assert.equal((await call("POST", path, { utr: "SVGIMG123456", screenshot: svg })).status, 400, "svg is never accepted");
+  const huge = "data:image/png;base64," + Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(500 * 1024)]).toString("base64");
+  assert.equal((await call("POST", path, { utr: "HUGEIMG12345", screenshot: huge })).status, 400, "over 400 KB");
+});
+
+test("SCREENSHOT: a valid screenshot is stored and only the owning business can view it", opts, async () => {
+  const sent = await call("POST", `/api/public/invoices/${b.invoiceId}/submit-proof`, { utr: "SHOT12345678", amount: 100, screenshot: TINY_PNG });
+  assert.equal(sent.status, 200);
+  const actions = await call("GET", "/api/collection-actions", undefined, b.token);
+  const action = (actions.json.value as any[]).find((x) => x.action_type === "VERIFY_PAYMENT_PROOF" && x.metadata?.has_screenshot);
+  assert.ok(action, "proof action flagged with has_screenshot");
+
+  const img = await fetch(`${base}/api/collection-actions/${action.id}/proof-image`, { headers: { Authorization: `Bearer ${b.token}` } });
+  assert.equal(img.status, 200);
+  assert.equal(img.headers.get("content-type"), "image/png");
+  assert.equal(img.headers.get("x-content-type-options"), "nosniff");
+  assert.match(img.headers.get("cache-control") || "", /no-store/);
+  assert.match(img.headers.get("content-security-policy") || "", /sandbox/);
+
+  assert.equal((await call("GET", `/api/collection-actions/${action.id}/proof-image`, undefined, a.token)).status, 404, "other business cannot see it");
+  assert.equal((await call("GET", `/api/collection-actions/${action.id}/proof-image`)).status, 401, "anonymous cannot see it");
+});
+
+test("ANALYTICS: page views are recorded without personal data and the report is admin-only", opts, async () => {
+  const ok = await call("POST", "/api/events", { event: "pageview", path: `/pay/${a.invoiceId}`, referrer: "https://www.linkedin.com/feed/?x=1", visitor: "abcdef1234567890" });
+  assert.equal(ok.status, 204);
+  assert.equal((await call("POST", "/api/events", { event: "evil", path: "/x" })).status, 204, "unknown events are ignored, not errors");
+  assert.equal((await call("GET", "/api/admin/analytics", undefined, a.token)).status, 403, "non-admin refused");
+
+  // Make tenant A's owner a platform admin for this test only.
+  const prismaModule: any = await import("../lib/prisma.js");
+  const prisma = prismaModule.default?.default ?? prismaModule.default;
+  const email = await prismaModule.runAsSystem(async () => (await prisma.$queryRawUnsafe("SELECT email FROM users WHERE organization_id = $1::uuid LIMIT 1", a.orgId))[0].email);
+  const previous = process.env.PLATFORM_ADMIN_EMAILS;
+  process.env.PLATFORM_ADMIN_EMAILS = email;
+  try {
+    const report = await call("GET", "/api/admin/analytics?days=7", undefined, a.token);
+    assert.equal(report.status, 200);
+    assert.ok(report.json.funnel && report.json.totals, "report has funnel and totals");
+    assert.ok(report.json.pages.find((p: any) => p.path === "/pay/:id"), "invoice uuid in the path was normalised to :id");
+    assert.ok(!JSON.stringify(report.json).includes(a.invoiceId), "raw invoice ids are never stored");
+    assert.ok(report.json.referrers.some((r: any) => r.referrer === "www.linkedin.com"), "referrer reduced to hostname");
+  } finally {
+    if (previous === undefined) delete process.env.PLATFORM_ADMIN_EMAILS; else process.env.PLATFORM_ADMIN_EMAILS = previous;
+  }
 });

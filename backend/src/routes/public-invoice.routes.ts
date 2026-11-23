@@ -1,6 +1,8 @@
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { getOrgSettings } from "../lib/orgSettings";
+import { turnstileGuard } from "../lib/turnstile";
+import { ensureExtraSchema, parseScreenshot } from "../lib/extraSchema";
 
 const router = Router();
 
@@ -126,10 +128,15 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
  * POST /api/public/invoices/:invoice_number/submit-proof
  * Public endpoint for clients to submit their UTR / payment reference.
  */
-router.post("/:invoice_number/submit-proof", async (req: Request, res: Response): Promise<void> => {
+router.post("/:invoice_number/submit-proof", turnstileGuard, async (req: Request, res: Response): Promise<void> => {
     try {
         const invoiceId = publicInvoiceId(req.params.invoice_number);
         const { utr, amount, notes, paid_at } = req.body ?? {};
+        const screenshot = parseScreenshot(req.body?.screenshot);
+        if (screenshot && "error" in screenshot) {
+            res.status(400).json({ error: screenshot.error });
+            return;
+        }
 
         if (!invoiceId) {
             res.status(404).json({ error: STALE_LINK });
@@ -202,6 +209,14 @@ router.post("/:invoice_number/submit-proof", async (req: Request, res: Response)
             },
         });
 
+        if (screenshot && !("error" in screenshot)) {
+            await ensureExtraSchema();
+            await prisma.$executeRawUnsafe(
+                "INSERT INTO payment_proof_images (organization_id, payment_id, mime, data) VALUES ($1::uuid, $2::uuid, $3, $4)",
+                invoice.organization_id, payment.id, screenshot.mime, screenshot.base64,
+            );
+        }
+
         // 2. Ensure conversation thread exists
         let conversation = await prisma.conversations.findFirst({
             where: {
@@ -254,6 +269,7 @@ router.post("/:invoice_number/submit-proof", async (req: Request, res: Response)
                     utr: cleanUtr,
                     amount: reportedAmount,
                     customer_notes: notes || null,
+                    has_screenshot: Boolean(screenshot),
                 },
             },
         });

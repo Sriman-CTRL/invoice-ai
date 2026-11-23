@@ -3,6 +3,7 @@ import prisma from "../lib/prisma";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET, JWT_EXPIRES_IN } from "../lib/config";
+import { turnstileGuard } from "../lib/turnstile";
 import { clearLoginFailures, loginLockoutSeconds, recordLoginFailure } from "../lib/loginThrottle";
 
 const router = Router();
@@ -15,7 +16,7 @@ function slugify(name: string): string {
   return `${base}-${Date.now().toString(36)}`;
 }
 
-router.post("/register", async (req: Request, res: Response): Promise<void> => {
+router.post("/register", turnstileGuard, async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password, name, organization_name } = req.body ?? {};
 

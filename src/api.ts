@@ -27,7 +27,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const authApi = {
-  register: (data: { email: string; password: string; name: string; organization_name: string }) => request<{ user: User; organization: { id: string; name: string } }>("/auth/register", { method: "POST", body: JSON.stringify(data) }),
+  register: (data: { email: string; password: string; name: string; organization_name: string; turnstile_token?: string }) => request<{ user: User; organization: { id: string; name: string } }>("/auth/register", { method: "POST", body: JSON.stringify(data) }),
   login: (data: { email: string; password: string }) => request<{ token: string; user: User }>("/auth/login", { method: "POST", body: JSON.stringify(data) }),
 };
 export const dashboardApi = { get: () => request<Dashboard>("/dashboard") };
@@ -101,15 +101,31 @@ export const settingsApi = {
   upgrade: (data: { plan: "PRO" | "AGENCY"; utr: string }) => request<{ success: boolean; message: string }>("/organizations/upgrade-request", { method: "POST", body: JSON.stringify(data) }),
 };
 export type PlanRequest = { id: string; plan: string; utr: string; status: string; created_at: string; organization_id: string; organization_name: string; current_plan: string; owner_email: string | null };
+export type AdminAnalytics = {
+  days: number;
+  daily: Array<{ day: string; views: number; visitors: number }>;
+  pages: Array<{ path: string; views: number }>;
+  referrers: Array<{ referrer: string; visits: number }>;
+  funnel: { landing: number; pricing: number; register_page: number; signups: number; activated: number };
+  totals: { organizations: number; paid_organizations: number; pending_upgrades: number };
+};
+/** Fetches the payment screenshot for a proof action as a short-lived blob URL (auth header required). */
+export async function fetchProofImage(actionId: string): Promise<string> {
+  const token = localStorage.getItem("ledgerlane_token");
+  const res = await fetch(`${BASE_URL}/collection-actions/${encodeURIComponent(actionId)}/proof-image`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  if (!res.ok) throw new ApiError(res.status, res.status === 404 ? "No screenshot was attached to this payment." : "Could not load the screenshot.");
+  return URL.createObjectURL(await res.blob());
+}
 export const adminApi = {
   me: () => request<{ is_admin: boolean }>("/admin/me"),
   planRequests: () => request<PlanRequest[]>("/admin/plan-requests"),
+  analytics: (days: number) => request<AdminAnalytics>(`/admin/analytics?days=${days}`),
   decide: (id: string, decision: "approve" | "reject") => request<{ success: boolean }>(`/admin/plan-requests/${id}/${decision}`, { method: "POST", body: JSON.stringify({}) }),
 };
 export const overdueApi = { process: () => request<{ invoices_detected: number; actions_created: number; created_action_ids: string[]; skipped: Array<{ invoice_id: string; reason: string }> }>("/overdue-invoices/process", { method: "POST", body: JSON.stringify({}) }) };
 export const publicApi = {
   getInvoice: (invoiceNumber: string) => request<PublicInvoiceDetail>(`/public/invoices/${encodeURIComponent(invoiceNumber)}`),
-  submitProof: (invoiceNumber: string, data: { utr: string; amount?: number; notes?: string }) =>
+  submitProof: (invoiceNumber: string, data: { utr: string; amount?: number; notes?: string; screenshot?: string; turnstile_token?: string }) =>
     request<{ success: boolean; message: string; payment_id: string }>(`/public/invoices/${encodeURIComponent(invoiceNumber)}/submit-proof`, {
       method: "POST",
       body: JSON.stringify(data),

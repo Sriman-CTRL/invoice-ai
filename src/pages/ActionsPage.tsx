@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2, RefreshCw, Zap } from "lucide-react";
-import { actionsApi, overdueApi } from "../api";
+import { actionsApi, fetchProofImage, overdueApi } from "../api";
 import { Badge, EmptyState, ErrorState, PageHeader, TableSkeleton } from "../components";
 import { dateTime, titleCase } from "../lib";
 import type { CollectionAction, Customer, Invoice } from "../types";
@@ -56,6 +56,16 @@ export function ActionsPage() {
     }
   };
 
+  const [shot, setShot] = useState<{ url: string; title: string } | null>(null);
+  const viewShot = async (action: CollectionAction) => {
+    try {
+      const url = await fetchProofImage(action.id);
+      setShot({ url, title: String((action.metadata as Record<string, unknown> | undefined)?.utr ?? "Payment screenshot") });
+    } catch (e: any) {
+      toast.error("Could not open screenshot", e?.message);
+    }
+  };
+
   const handleVerifyProof = async (actionId: string) => {
     setBusy(actionId);
     setNotice(null);
@@ -78,6 +88,18 @@ export function ActionsPage() {
 
   return (
     <>
+      {shot && (
+        <div className="fade-in fixed inset-0 z-[80] grid place-items-center bg-slate-950/70 p-4 backdrop-blur-sm" onClick={() => { URL.revokeObjectURL(shot.url); setShot(null); }}>
+          <div className="pop-in max-h-[90vh] max-w-2xl overflow-auto rounded-2xl bg-white p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-bold text-slate-900">Client's payment screenshot <span className="ml-1 font-mono text-xs font-normal text-slate-500">UTR {shot.title}</span></p>
+              <button className="btn-secondary h-8 px-3 text-xs" onClick={() => { URL.revokeObjectURL(shot.url); setShot(null); }}>Close</button>
+            </div>
+            <img src={shot.url} alt="Payment screenshot from client" className="mx-auto max-h-[70vh] rounded-lg border border-slate-200" />
+            <p className="mt-3 text-xs text-slate-500">Always match the amount and UTR against your bank statement before confirming. A screenshot alone can be faked.</p>
+          </div>
+        </div>
+      )}
       <PageHeader
         title="Collection Action Engine"
         detail="Scheduled autonomous outreach, dispute escalations, and payment verifications."
@@ -233,6 +255,11 @@ export function ActionsPage() {
                       </td>
                       <td className="table-cell text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {isProof && Boolean((action.metadata as Record<string, unknown> | undefined)?.has_screenshot) && (
+                            <button onClick={() => viewShot(action)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50">
+                              View screenshot
+                            </button>
+                          )}
                           {canSettle && (
                             <button
                               onClick={() => handleVerifyProof(action.id)}

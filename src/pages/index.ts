@@ -9,3 +9,4 @@ export { ActionsPage } from "./ActionsPage";
 export { AuthPage } from "./AuthPage";
 export { SettingsPage } from "./SettingsPage";
 export { AdminPage } from "./AdminPage";
+export { AdminGrowthPage } from "./AdminGrowthPage";

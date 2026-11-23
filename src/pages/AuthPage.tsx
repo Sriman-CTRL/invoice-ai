@@ -1,3 +1,4 @@
+import { TURNSTILE_SITE_KEY, TurnstileWidget } from "../TurnstileWidget";
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Check, CheckCircle2, RefreshCw, Sparkles, X, Zap } from "lucide-react";
@@ -17,6 +18,8 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [humanToken, setHumanToken] = useState<string | null>(null);
+  const [humanReset, setHumanReset] = useState(0);
 
   if (user) return <Navigate to="/dashboard" replace />;
 
@@ -33,17 +36,22 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
       return;
     }
 
+    if (mode === "register" && TURNSTILE_SITE_KEY && !humanToken) {
+      setError("Please complete the human check below.");
+      return;
+    }
     setLoading(true);
     try {
       if (mode === "login") {
         await login(form.email, form.password);
         navigate("/dashboard");
       } else {
-        await register(form);
+        await register({ ...form, turnstile_token: humanToken ?? undefined });
         navigate("/login", { state: { registered: true } });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to authenticate.");
+      if (mode === "register") setHumanReset((n) => n + 1);
     } finally {
       setLoading(false);
     }
@@ -307,6 +315,8 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
                   onChange={set("password")}
                 />
               </div>
+
+              {registering && <TurnstileWidget onToken={setHumanToken} resetKey={humanReset} />}
 
               {error && (
                 <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3.5 py-2.5 text-xs font-semibold text-rose-300 flex items-center justify-between animate-fade-in">

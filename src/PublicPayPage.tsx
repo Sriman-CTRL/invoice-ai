@@ -20,6 +20,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { publicApi } from "./api";
+import { compressImage } from "./imageUtil";
+import { TURNSTILE_SITE_KEY, TurnstileWidget } from "./TurnstileWidget";
 import type { PublicInvoiceDetail } from "./types";
 
 function buildUpiUri(d: PublicInvoiceDetail) {
@@ -53,6 +55,9 @@ export function PublicPayPage() {
   const [proofAmount, setProofAmount] = useState("");
   const [notes, setNotes] = useState("");
   const [submittingProof, setSubmittingProof] = useState(false);
+  const [screenshot, setScreenshot] = useState<string | null>(null);
+  const [humanToken, setHumanToken] = useState<string | null>(null);
+  const [humanReset, setHumanReset] = useState(0);
   const [proofSuccess, setProofSuccess] = useState<string | null>(null);
   const [proofError, setProofError] = useState<string | null>(null);
 
@@ -106,6 +111,10 @@ export function PublicPayPage() {
       setProofError("Please enter your 12-digit UTR or Transaction Reference number.");
       return;
     }
+    if (TURNSTILE_SITE_KEY && !humanToken) {
+      setProofError("Please complete the human check below.");
+      return;
+    }
     setSubmittingProof(true);
     setProofError(null);
     setProofSuccess(null);
@@ -114,13 +123,17 @@ export function PublicPayPage() {
         utr: utr.trim(),
         amount: parseFloat(proofAmount) || undefined,
         notes: notes.trim() || undefined,
+        screenshot: screenshot || undefined,
+        turnstile_token: humanToken || undefined,
       });
       setProofSuccess(res.message);
       setUtr("");
       setNotes("");
+      setScreenshot(null);
       fetchInvoice();
     } catch (err: any) {
       setProofError(err?.message || "Failed to submit payment reference.");
+      setHumanReset((n) => n + 1);
     } finally {
       setSubmittingProof(false);
     }
@@ -577,6 +590,32 @@ export function PublicPayPage() {
                       className="input w-full bg-slate-950 border-white/10 text-white text-xs resize-none"
                     />
                   </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                      Payment screenshot (optional, helps get confirmed faster)
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) { setScreenshot(null); return; }
+                        try {
+                          setScreenshot(await compressImage(file));
+                          setProofError(null);
+                        } catch (err: any) {
+                          setScreenshot(null);
+                          e.target.value = "";
+                          setProofError(err?.message || "Could not read that image.");
+                        }
+                      }}
+                      className="block w-full text-[11px] text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white hover:file:bg-white/20"
+                    />
+                    {screenshot && <img src={screenshot} alt="Screenshot preview" className="mt-2 max-h-32 rounded-lg border border-white/10" />}
+                  </div>
+
+                  <TurnstileWidget onToken={setHumanToken} resetKey={humanReset} />
 
                   <button
                     type="submit"

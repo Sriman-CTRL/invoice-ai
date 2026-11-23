@@ -285,7 +285,7 @@ function SidebarContent({ close }: { close?: () => void }) {
     adminApi.me().then((r) => setIsAdmin(r.is_admin)).catch(() => setIsAdmin(false));
   }, [user?.id]);
   const groups = isAdmin
-    ? [...nav, { label: "Platform", items: [{ to: "/admin", label: "Plan payments", icon: ShieldCheck }] }]
+    ? [...nav, { label: "Platform", items: [{ to: "/admin/growth", label: "Growth", icon: LayoutDashboard }, { to: "/admin", label: "Plan payments", icon: ShieldCheck }] }]
     : nav;
 
   return (

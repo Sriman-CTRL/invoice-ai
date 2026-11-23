@@ -311,6 +311,44 @@ router.patch("/:id/status", async (req: Request, res: Response): Promise<void> =
  * Converts pending payment to SUCCEEDED, marks invoice as PAID, unlocks deliverable vault,
  * and sets action status to COMPLETED.
  */
+/**
+ * GET /api/collection-actions/:id/proof-image
+ * Returns the payment screenshot a client attached to their proof (tenant-scoped, never cached).
+ */
+router.get("/:id/proof-image", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = String(req.params.id);
+    const organization_id = req.user?.organization_id;
+    if (!organization_id || !/^[0-9a-f-]{36}$/i.test(id)) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    const action = await prisma.collection_actions.findFirst({ where: { id, organization_id } });
+    const meta = (action?.metadata && typeof action.metadata === "object" ? action.metadata : {}) as Record<string, unknown>;
+    const paymentId = typeof meta.payment_id === "string" && /^[0-9a-f-]{36}$/i.test(meta.payment_id) ? meta.payment_id : null;
+    if (!action || !paymentId) {
+      res.status(404).json({ error: "No screenshot attached" });
+      return;
+    }
+    const rows = await prisma.$queryRawUnsafe<{ mime: string; data: string }[]>(
+      "SELECT mime, data FROM payment_proof_images WHERE payment_id = $1::uuid AND organization_id = $2::uuid ORDER BY created_at DESC LIMIT 1",
+      paymentId, organization_id,
+    );
+    if (!rows.length) {
+      res.status(404).json({ error: "No screenshot attached" });
+      return;
+    }
+    res.setHeader("Content-Type", rows[0].mime);
+    res.setHeader("Cache-Control", "private, no-store");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Content-Security-Policy", "default-src 'none'; sandbox");
+    res.send(Buffer.from(rows[0].data, "base64"));
+  } catch (error) {
+    console.error("proof-image error:", error);
+    res.status(500).json({ error: "Failed to load screenshot" });
+  }
+});
+
 router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<void> => {
   try {
     const id = String(req.params.id);
