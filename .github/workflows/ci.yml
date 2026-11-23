@@ -65,7 +65,15 @@ jobs:
           DATABASE_URL: "postgresql://invoice_admin:invoice_dev_password@localhost:5432/invoice_ai"
           DATABASE_URL_APP: "postgresql://app_user:ci_throwaway_role_password_not_a_secret@localhost:5432/invoice_ai"
           JWT_SECRET: "test_secret_for_ci_pipeline_verification_32chars"
-        run: npm test
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee test.log
+
+      - name: Show which tests failed
+        if: failure()
+        working-directory: ./backend
+        run: |
+          grep -E "^[[:space:]]*(✖|not ok)|Error:|expected|actual|timed out|failureType" test.log | head -40 | while IFS= read -r l; do echo "::error::$l"; done || true
 
       - name: Verify Backend TypeScript Build
         working-directory: ./backend
