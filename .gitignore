@@ -20,4 +20,5 @@ src/generated/
 
 # security audit output (lists weaknesses; delete when done)
 AUDIT.md
+SECURITY-TODO.md
 api/index.js

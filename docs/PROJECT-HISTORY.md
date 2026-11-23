@@ -33,7 +33,9 @@ Last updated: 24 Nov 2026.
 | 23 Nov | **Renamed to Paivo.** Real email reminders via Resend (Reply-To = seller). Self-hosted fonts, 18+/terms consent at signup, unsubscribe link + `List-Unsubscribe`. |
 | 23 Nov | Line items, GST and discount, payment terms, AI line-item drafting, branding (logo + colour), client activity feed + notification bell. Recurring invoices (created as drafts, daily cron at 02:30 UTC), analytics and GST report, client portal, "how did you hear about us" at signup. |
 | 23 Nov (evening) | CI stability (timeouts, force-exit, failing-test annotations, configurable auth rate limit). Fixed CORS refusing `paivo.in`. Bell: payment-reference events open the Action Queue for settlement. |
+| 23 Nov (night) | `e5e6e56` **Security hardening from pre-launch audit**: shared database rate limiting, admin-email sign-up block, org-scoped recurring-invoice edits, account deletion, pinned dependency versions, required inbound-webhook timestamp, `security.txt`, removed stale RLS SQL, build bundle (`api/index.js`) no longer committed. `382f5dc` privacy/security contact moved to `paivo.in`. |
 | 24 Nov | Pinned dependency versions: root `package.json` uses caret ranges matching the lockfile instead of `latest`. |
+| 24 Nov | Fixed shared rate limiting under the restricted DB role: `rate_limits` is now created by `enable-rls.cjs` (the app role cannot run DDL), the runtime CREATE is tried once per process, and the in-memory fallback logs one warning. Corrected `AGENTS.md` (api/index.js is git-ignored, inbound timestamp, public-repo rule). |
 
 ## 3. Key decisions (and why)
 
@@ -56,7 +58,7 @@ Last updated: 24 Nov 2026.
 pay page with UPI QR + bank details + UTR/screenshot proof, files unlock on full payment, one-click confirmation,
 partial payments, credit notes, PDF invoices, email reminders (manual send) + WhatsApp, recurring invoices (draft
 approval), client portal, CSV import, cash-flow forecast, analytics, GST report, activity feed + bell, data
-export/erasure, admin plan approvals, analytics/growth page.
+export/erasure, account deletion, admin plan approvals, analytics/growth page.
 
 **Built but not offered to users yet ("soon"):** reading client replies with AI (inbound email → classify → action
 queue), automatic scheduled reminders, per-seller billing email address.

@@ -42,8 +42,8 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
 4. **New tables/columns go in `backend/scripts/enable-rls.cjs`** (idempotent `IF NOT EXISTS`), and tenant tables must be
    added to its `TENANT_TABLES` list. The production app role cannot run DDL, so `prisma db push` alone is not enough.
    `lib/extraSchema.ts` is only a dev fallback.
-5. **Do not hand-edit `api/index.js` or `backend/src/generated/**`.** They are build/codegen output
-   (`npm run build`, `prisma generate`). Rebuild and commit `api/index.js` with backend changes — Vercel serves it.
+5. **Do not hand-edit or commit `api/index.js` or edit `backend/src/generated/**`.**
+   `api/index.js` is build output (`npm run build`) and is git-ignored; Vercel builds it on deploy.
 6. **Public links use the invoice's random UUID** (`/pay/:uuid`, `/client/:customerId/:token`), never invoice numbers
    (guessable, unique only per org).
 7. **Every marketing claim must be true.** Unbuilt features carry `[soon]` in `src/plans.ts`; paid plans stay waitlist-only
@@ -81,6 +81,9 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
 - **`DEPLOYMENT_SECURITY.md` is an aspirational blueprint**, partly written before the code (mentions AWS, Postmark,
   quiet hours, AI-Act footer). Verify against code before repeating any claim from it.
 - **The README is outdated** (says PDFs/payment links are unbuilt, uses old `ledgerlane` naming).
+- **Inbound webhook requires `x-inbound-timestamp`** (unix seconds, ±5 min) as well as `x-inbound-key`; the Cloudflare worker sends both.
+- **Public repo**: never commit audit/security notes (AUDIT.md, SECURITY-TODO.md are git-ignored).
+- **Shared rate limits** (`shared: true` in middleware/rateLimit.ts) use the `rate_limits` table, created by enable-rls.cjs.
 
 ## Environment variables
 

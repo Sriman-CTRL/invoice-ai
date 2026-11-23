@@ -69,29 +69,43 @@ export function rateLimit(options: {
           next();
         }
       })
-      .catch(() => memoryHit(req, res, next));
+      .catch((e) => {
+        warnFallbackOnce(e);
+        memoryHit(req, res, next);
+      });
   };
 }
 
-let tableReady: Promise<void> | null = null;
-function ensureRateTable(): Promise<void> {
-  tableReady ??= prisma
-    .$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS rate_limits (
+let fallbackWarned = false;
+function warnFallbackOnce(e: unknown): void {
+  if (fallbackWarned) return;
+  fallbackWarned = true;
+  console.warn(
+    "[rateLimit] shared limiter unavailable, using per-instance memory counters:",
+    e instanceof Error ? e.message : e,
+  );
+}
+
+// The table is created by backend/scripts/enable-rls.cjs. The restricted app role cannot run DDL, so this
+// best-effort CREATE (dev convenience) is attempted at most once per process, never retried on failure.
+let createAttempted = false;
+async function ensureRateTableOnce(): Promise<void> {
+  if (createAttempted) return;
+  createAttempted = true;
+  try {
+    await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS rate_limits (
       key TEXT PRIMARY KEY,
       count INT NOT NULL,
       reset_at TIMESTAMPTZ NOT NULL
-    )`)
-    .then(() => undefined)
-    .catch((e) => {
-      tableReady = null;
-      throw e;
-    });
-  return tableReady;
+    )`);
+  } catch {
+    // Expected under the restricted role; the INSERT below proves whether the table exists.
+  }
 }
 
 /** Atomic fixed-window counter shared by every server instance. */
-async function sharedHit(key: string, windowMs: number): Promise<{ count: number; retryAfter: number }> {
-  await ensureRateTable();
+export async function sharedHit(key: string, windowMs: number): Promise<{ count: number; retryAfter: number }> {
+  await ensureRateTableOnce();
   const rows = await prisma.$queryRawUnsafe<{ count: number; retry: number }[]>(
     `INSERT INTO rate_limits (key, count, reset_at) VALUES ($1, 1, now() + ($2::int * interval '1 millisecond'))
      ON CONFLICT (key) DO UPDATE SET

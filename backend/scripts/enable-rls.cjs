@@ -95,6 +95,9 @@ const TENANT_TABLES = ["invoice_details", "invoice_views", "recurring_invoices",
     await run(`ALTER ROLE app_user PASSWORD '${password}'`);
   }
 
+  // Shared rate-limit counters (middleware/rateLimit.ts). Not a tenant table: no organization_id, no RLS.
+  await run(`CREATE TABLE IF NOT EXISTS rate_limits (key TEXT PRIMARY KEY, count INT NOT NULL, reset_at TIMESTAMPTZ NOT NULL)`);
+
   await run(`GRANT USAGE ON SCHEMA public TO app_user`);
   await run(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_user`);
   await run(`GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_user`);
