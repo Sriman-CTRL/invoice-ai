@@ -49,4 +49,5 @@ export type OrgSettings = {
   brand_color?: string | null;
   logo_data?: string | null;
   plan: "FREE" | "PRO" | "AGENCY";
+  auto_reminders?: boolean;
 };

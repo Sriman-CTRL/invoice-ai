@@ -16,6 +16,8 @@ export interface OrgSettings {
   brand_color: string | null;
   logo_data: string | null;
   plan: "FREE" | "PRO" | "AGENCY";
+  /** Automatic overdue reminders (1, 7 and 14 days after the due date). Off by default. */
+  auto_reminders: boolean;
 }
 
 export const SETTING_FIELDS = ["upi_id", "payee_name", "bank_account_name", "bank_account_number", "bank_ifsc", "bank_name", "gstin", "brand_color", "logo_data"] as const;
@@ -29,6 +31,7 @@ export function ensureOrgSettingsSchema(): Promise<void> {
         await prisma.$executeRawUnsafe(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS ${col} VARCHAR(255)`);
       }
       await prisma.$executeRawUnsafe(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS plan VARCHAR(20) NOT NULL DEFAULT 'FREE'`);
+      await prisma.$executeRawUnsafe(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS auto_reminders BOOLEAN NOT NULL DEFAULT false`);
       await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS plan_requests (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         organization_id UUID NOT NULL,
@@ -48,15 +51,20 @@ export function ensureOrgSettingsSchema(): Promise<void> {
 
 const EMPTY: OrgSettings = {
   upi_id: null, payee_name: null, bank_account_name: null, bank_account_number: null,
-  bank_ifsc: null, bank_name: null, gstin: null, brand_color: null, logo_data: null, plan: "FREE",
+  bank_ifsc: null, bank_name: null, gstin: null, brand_color: null, logo_data: null, plan: "FREE", auto_reminders: false,
 };
 
 export async function getOrgSettings(organizationId: string): Promise<OrgSettings> {
   await ensureOrgSettingsSchema();
-  const rows = await prisma.$queryRawUnsafe<OrgSettings[]>(
-    `SELECT upi_id, payee_name, bank_account_name, bank_account_number, bank_ifsc, bank_name, gstin, brand_color, logo_data, plan FROM organizations WHERE id = $1::uuid`,
-    organizationId,
-  );
+  const base = "upi_id, payee_name, bank_account_name, bank_account_number, bank_ifsc, bank_name, gstin, brand_color, logo_data, plan";
+  let rows: OrgSettings[];
+  try {
+    rows = await prisma.$queryRawUnsafe<OrgSettings[]>(`SELECT ${base}, auto_reminders FROM organizations WHERE id = $1::uuid`, organizationId);
+  } catch (e) {
+    // Deployed before scripts/enable-rls.cjs added the auto_reminders column: keep the pay page and settings working.
+    if (!/auto_reminders|42703/.test(String((e as Error)?.message) + String((e as { code?: string })?.code))) throw e;
+    rows = (await prisma.$queryRawUnsafe<Omit<OrgSettings, "auto_reminders">[]>(`SELECT ${base} FROM organizations WHERE id = $1::uuid`, organizationId)).map((r) => ({ ...r, auto_reminders: false }));
+  }
   return rows[0] ?? EMPTY;
 }
 
@@ -78,8 +86,14 @@ function logoProblem(raw: unknown): string | null {
 }
 
 /** Validates & normalises a settings patch. Returns cleaned values or an error message. */
-export function validateSettingsPatch(body: Record<string, unknown>, existing: Partial<Record<Field, string | null>> = {}): { data: Partial<Record<Field, string | null>> } | { error: string } {
-  const data: Partial<Record<Field, string | null>> = {};
+export type SettingsPatch = Partial<Record<Field, string | null>> & { auto_reminders?: boolean };
+
+export function validateSettingsPatch(body: Record<string, unknown>, existing: Partial<Record<Field, string | null>> = {}): { data: SettingsPatch } | { error: string } {
+  const data: SettingsPatch = {};
+  if ("auto_reminders" in body) {
+    if (typeof body.auto_reminders !== "boolean") return { error: "auto_reminders must be true or false" };
+    data.auto_reminders = body.auto_reminders;
+  }
   for (const field of SETTING_FIELDS) {
     if (!(field in body)) continue;
     const raw = body[field];
@@ -103,9 +117,9 @@ export function validateSettingsPatch(body: Record<string, unknown>, existing: P
   return { data };
 }
 
-export async function updateOrgSettings(organizationId: string, patch: Partial<Record<Field, string | null>>): Promise<OrgSettings> {
+export async function updateOrgSettings(organizationId: string, patch: SettingsPatch): Promise<OrgSettings> {
   await ensureOrgSettingsSchema();
-  const keys = (Object.keys(patch) as Field[]).filter((k) => (SETTING_FIELDS as readonly string[]).includes(k));
+  const keys = (Object.keys(patch) as Array<Field | "auto_reminders">).filter((k) => k === "auto_reminders" || (SETTING_FIELDS as readonly string[]).includes(k));
   if (keys.length) {
     const sets = keys.map((k, i) => `${k} = $${i + 2}`).join(", "); // column names come from the fixed whitelist
     await prisma.$executeRawUnsafe(

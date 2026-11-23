@@ -1,3 +1,4 @@
+import { emailEnabled } from "../lib/mailer";
 import { Router } from "express";
 import prisma from "../lib/prisma";
 import { ensureOrgSettingsSchema, getOrgSettings, updateOrgSettings, validateSettingsPatch } from "../lib/orgSettings";
@@ -88,8 +89,17 @@ router.get("/settings", async (req, res) => {
 
 router.put("/settings", async (req, res) => {
   try {
-    const checked = validateSettingsPatch(req.body ?? {}, await getOrgSettings(req.user!.organization_id));
+    const current = await getOrgSettings(req.user!.organization_id);
+    const checked = validateSettingsPatch(req.body ?? {}, current);
     if ("error" in checked) return res.status(400).json({ error: checked.error });
+    if (checked.data.auto_reminders === true) {
+      // Switching automatic reminders on only makes sense when mail can go out and the client has a way to pay.
+      const has = (k: "upi_id" | "bank_account_number" | "bank_ifsc") => (k in checked.data ? checked.data[k] : current[k]);
+      if (!emailEnabled()) return res.status(400).json({ error: "Email sending isn't switched on yet, so automatic reminders can't be turned on." });
+      if (!(has("upi_id") || (has("bank_account_number") && has("bank_ifsc")))) {
+        return res.status(400).json({ error: "Add your UPI ID or bank details first, so clients can pay when they read a reminder." });
+      }
+    }
     res.json(await updateOrgSettings(req.user!.organization_id, checked.data));
   } catch (error) {
     console.error(error);

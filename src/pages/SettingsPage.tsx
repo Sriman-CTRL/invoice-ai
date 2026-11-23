@@ -2,6 +2,7 @@ import { gstinProblem, ifscProblem } from "../gstin";
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { BrandingCard } from "./BrandingCard";
+import { AutoRemindersCard } from "./AutoRemindersCard";
 import { Banknote, Check, CreditCard, Crown, Landmark, ShieldCheck } from "lucide-react";
 import { accountApi, settingsApi } from "../api";
 import { PageHeader, TableSkeleton, ErrorState } from "../components";
@@ -313,6 +314,8 @@ export function SettingsPage() {
           </ul>
         </aside>
       </div>
+
+      <AutoRemindersCard settings={r.data} onSaved={r.reload} />
 
       <BrandingCard key={`${r.data.brand_color || ""}-${r.data.logo_data?.length || 0}`} settings={r.data} onSaved={r.reload} />
 

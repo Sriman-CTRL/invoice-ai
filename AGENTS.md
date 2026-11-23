@@ -84,6 +84,9 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
   quiet hours, AI-Act footer). Verify against code before repeating any claim from it.
 - **Inbound webhook requires `x-inbound-timestamp`** (unix seconds, ±5 min) as well as `x-inbound-key`; the Cloudflare worker sends both.
 - **Public repo**: never commit audit/security notes (AUDIT.md, SECURITY-TODO.md are git-ignored).
+- **One daily cron, two jobs**: `/api/cron/recurring` (`vercel.json`, 02:30 UTC) runs recurring invoices and then automatic
+  overdue reminders (`services/reminderService.ts`, steps +1/+7/+14 days, off per seller until `organizations.auto_reminders`
+  is switched on). Each job's failure must not stop the other. Reminder guards are shared with the manual send button.
 - **Shared rate limits** (`shared: true` in middleware/rateLimit.ts) use the `rate_limits` table, created by enable-rls.cjs.
 
 ## Environment variables
@@ -92,6 +95,7 @@ Backend: `DATABASE_URL` (owner), `DATABASE_URL_APP` (restricted `app_user`; turn
 `CORS_ORIGIN`, `PUBLIC_APP_URL`, `CLASSIFIER` (`mock|gemini|ollama`), `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_TIMEOUT_MS`,
 `OLLAMA_*`, `AI_CONFIDENCE_THRESHOLD` (default 0.75 → below goes to MANUAL_REVIEW), `INBOUND_WEBHOOK_SECRET`,
 `INBOUND_DOMAIN`, `RESEND_API_KEY`, `MAIL_FROM_ADDRESS` (default `reminders@paivo.in`), `REMINDER_DAILY_CAP`,
+`CRON_TIME_BUDGET_MS` (default 8000), `AUTO_REMINDER_RUN_CAP` (default 200), `AUTO_REMINDERS_DRY_RUN` (`1` = log, don't send),
 `TURNSTILE_SECRET`, `CRON_SECRET`, `PLATFORM_ADMIN_EMAILS`, `AUTH_RATE_LIMIT_MAX`, `INTEGRATION_TESTS`.
 
 Frontend (Vite): `VITE_API_BASE_URL`, `VITE_PAYMENTS_OPEN`, `VITE_PLATFORM_UPI_ID`, `VITE_SUPPORT_EMAIL`, `VITE_TURNSTILE_SITE_KEY`.

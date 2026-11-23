@@ -40,6 +40,7 @@ export type OrganizationsMinAggregateOutputType = {
   plan: string | null
   brand_color: string | null
   logo_data: string | null
+  auto_reminders: boolean | null
 }
 
 export type OrganizationsMaxAggregateOutputType = {
@@ -58,6 +59,7 @@ export type OrganizationsMaxAggregateOutputType = {
   plan: string | null
   brand_color: string | null
   logo_data: string | null
+  auto_reminders: boolean | null
 }
 
 export type OrganizationsCountAggregateOutputType = {
@@ -76,6 +78,7 @@ export type OrganizationsCountAggregateOutputType = {
   plan: number
   brand_color: number
   logo_data: number
+  auto_reminders: number
   _all: number
 }
 
@@ -96,6 +99,7 @@ export type OrganizationsMinAggregateInputType = {
   plan?: true
   brand_color?: true
   logo_data?: true
+  auto_reminders?: true
 }
 
 export type OrganizationsMaxAggregateInputType = {
@@ -114,6 +118,7 @@ export type OrganizationsMaxAggregateInputType = {
   plan?: true
   brand_color?: true
   logo_data?: true
+  auto_reminders?: true
 }
 
 export type OrganizationsCountAggregateInputType = {
@@ -132,6 +137,7 @@ export type OrganizationsCountAggregateInputType = {
   plan?: true
   brand_color?: true
   logo_data?: true
+  auto_reminders?: true
   _all?: true
 }
 
@@ -223,6 +229,7 @@ export type OrganizationsGroupByOutputType = {
   plan: string
   brand_color: string | null
   logo_data: string | null
+  auto_reminders: boolean
   _count: OrganizationsCountAggregateOutputType | null
   _min: OrganizationsMinAggregateOutputType | null
   _max: OrganizationsMaxAggregateOutputType | null
@@ -262,6 +269,7 @@ export type organizationsWhereInput = {
   plan?: Prisma.StringFilter<"organizations"> | string
   brand_color?: Prisma.StringNullableFilter<"organizations"> | string | null
   logo_data?: Prisma.StringNullableFilter<"organizations"> | string | null
+  auto_reminders?: Prisma.BoolFilter<"organizations"> | boolean
   collection_actions?: Prisma.Collection_actionsListRelationFilter
   conversations?: Prisma.ConversationsListRelationFilter
   credit_notes?: Prisma.Credit_notesListRelationFilter
@@ -289,6 +297,7 @@ export type organizationsOrderByWithRelationInput = {
   plan?: Prisma.SortOrder
   brand_color?: Prisma.SortOrderInput | Prisma.SortOrder
   logo_data?: Prisma.SortOrderInput | Prisma.SortOrder
+  auto_reminders?: Prisma.SortOrder
   collection_actions?: Prisma.collection_actionsOrderByRelationAggregateInput
   conversations?: Prisma.conversationsOrderByRelationAggregateInput
   credit_notes?: Prisma.credit_notesOrderByRelationAggregateInput
@@ -319,6 +328,7 @@ export type organizationsWhereUniqueInput = Prisma.AtLeast<{
   plan?: Prisma.StringFilter<"organizations"> | string
   brand_color?: Prisma.StringNullableFilter<"organizations"> | string | null
   logo_data?: Prisma.StringNullableFilter<"organizations"> | string | null
+  auto_reminders?: Prisma.BoolFilter<"organizations"> | boolean
   collection_actions?: Prisma.Collection_actionsListRelationFilter
   conversations?: Prisma.ConversationsListRelationFilter
   credit_notes?: Prisma.Credit_notesListRelationFilter
@@ -346,6 +356,7 @@ export type organizationsOrderByWithAggregationInput = {
   plan?: Prisma.SortOrder
   brand_color?: Prisma.SortOrderInput | Prisma.SortOrder
   logo_data?: Prisma.SortOrderInput | Prisma.SortOrder
+  auto_reminders?: Prisma.SortOrder
   _count?: Prisma.organizationsCountOrderByAggregateInput
   _max?: Prisma.organizationsMaxOrderByAggregateInput
   _min?: Prisma.organizationsMinOrderByAggregateInput
@@ -370,6 +381,7 @@ export type organizationsScalarWhereWithAggregatesInput = {
   plan?: Prisma.StringWithAggregatesFilter<"organizations"> | string
   brand_color?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
   logo_data?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
+  auto_reminders?: Prisma.BoolWithAggregatesFilter<"organizations"> | boolean
 }
 
 export type organizationsCreateInput = {
@@ -388,6 +400,7 @@ export type organizationsCreateInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
@@ -415,6 +428,7 @@ export type organizationsUncheckedCreateInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
@@ -442,6 +456,7 @@ export type organizationsUpdateInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
@@ -469,6 +484,7 @@ export type organizationsUncheckedUpdateInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
@@ -496,6 +512,7 @@ export type organizationsCreateManyInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
 }
 
 export type organizationsUpdateManyMutationInput = {
@@ -514,6 +531,7 @@ export type organizationsUpdateManyMutationInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type organizationsUncheckedUpdateManyInput = {
@@ -532,6 +550,7 @@ export type organizationsUncheckedUpdateManyInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type OrganizationsScalarRelationFilter = {
@@ -555,6 +574,7 @@ export type organizationsCountOrderByAggregateInput = {
   plan?: Prisma.SortOrder
   brand_color?: Prisma.SortOrder
   logo_data?: Prisma.SortOrder
+  auto_reminders?: Prisma.SortOrder
 }
 
 export type organizationsMaxOrderByAggregateInput = {
@@ -573,6 +593,7 @@ export type organizationsMaxOrderByAggregateInput = {
   plan?: Prisma.SortOrder
   brand_color?: Prisma.SortOrder
   logo_data?: Prisma.SortOrder
+  auto_reminders?: Prisma.SortOrder
 }
 
 export type organizationsMinOrderByAggregateInput = {
@@ -591,6 +612,7 @@ export type organizationsMinOrderByAggregateInput = {
   plan?: Prisma.SortOrder
   brand_color?: Prisma.SortOrder
   logo_data?: Prisma.SortOrder
+  auto_reminders?: Prisma.SortOrder
 }
 
 export type organizationsCreateNestedOneWithoutCollection_actionsInput = {
@@ -735,6 +757,7 @@ export type organizationsCreateWithoutCollection_actionsInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersCreateNestedManyWithoutOrganizationsInput
@@ -761,6 +784,7 @@ export type organizationsUncheckedCreateWithoutCollection_actionsInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersUncheckedCreateNestedManyWithoutOrganizationsInput
@@ -803,6 +827,7 @@ export type organizationsUpdateWithoutCollection_actionsInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUpdateManyWithoutOrganizationsNestedInput
@@ -829,6 +854,7 @@ export type organizationsUncheckedUpdateWithoutCollection_actionsInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUncheckedUpdateManyWithoutOrganizationsNestedInput
@@ -855,6 +881,7 @@ export type organizationsCreateWithoutConversationsInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersCreateNestedManyWithoutOrganizationsInput
@@ -881,6 +908,7 @@ export type organizationsUncheckedCreateWithoutConversationsInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersUncheckedCreateNestedManyWithoutOrganizationsInput
@@ -923,6 +951,7 @@ export type organizationsUpdateWithoutConversationsInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUpdateManyWithoutOrganizationsNestedInput
@@ -949,6 +978,7 @@ export type organizationsUncheckedUpdateWithoutConversationsInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUncheckedUpdateManyWithoutOrganizationsNestedInput
@@ -975,6 +1005,7 @@ export type organizationsCreateWithoutCustomersInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
@@ -1001,6 +1032,7 @@ export type organizationsUncheckedCreateWithoutCustomersInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
@@ -1043,6 +1075,7 @@ export type organizationsUpdateWithoutCustomersInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
@@ -1069,6 +1102,7 @@ export type organizationsUncheckedUpdateWithoutCustomersInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
@@ -1095,6 +1129,7 @@ export type organizationsCreateWithoutInvoicesInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
@@ -1121,6 +1156,7 @@ export type organizationsUncheckedCreateWithoutInvoicesInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
@@ -1163,6 +1199,7 @@ export type organizationsUpdateWithoutInvoicesInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
@@ -1189,6 +1226,7 @@ export type organizationsUncheckedUpdateWithoutInvoicesInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
@@ -1215,6 +1253,7 @@ export type organizationsCreateWithoutMessagesInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
@@ -1241,6 +1280,7 @@ export type organizationsUncheckedCreateWithoutMessagesInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
@@ -1283,6 +1323,7 @@ export type organizationsUpdateWithoutMessagesInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
@@ -1309,6 +1350,7 @@ export type organizationsUncheckedUpdateWithoutMessagesInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
@@ -1335,6 +1377,7 @@ export type organizationsCreateWithoutPaymentsInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
@@ -1361,6 +1404,7 @@ export type organizationsUncheckedCreateWithoutPaymentsInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
@@ -1403,6 +1447,7 @@ export type organizationsUpdateWithoutPaymentsInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
@@ -1429,6 +1474,7 @@ export type organizationsUncheckedUpdateWithoutPaymentsInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
@@ -1455,6 +1501,7 @@ export type organizationsCreateWithoutUsersInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
@@ -1481,6 +1528,7 @@ export type organizationsUncheckedCreateWithoutUsersInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
@@ -1523,6 +1571,7 @@ export type organizationsUpdateWithoutUsersInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
@@ -1549,6 +1598,7 @@ export type organizationsUncheckedUpdateWithoutUsersInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
@@ -1575,6 +1625,7 @@ export type organizationsCreateWithoutSuppressionsInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesCreateNestedManyWithoutOrganizationsInput
@@ -1601,6 +1652,7 @@ export type organizationsUncheckedCreateWithoutSuppressionsInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
   credit_notes?: Prisma.credit_notesUncheckedCreateNestedManyWithoutOrganizationsInput
@@ -1643,6 +1695,7 @@ export type organizationsUpdateWithoutSuppressionsInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUpdateManyWithoutOrganizationsNestedInput
@@ -1669,6 +1722,7 @@ export type organizationsUncheckedUpdateWithoutSuppressionsInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
   credit_notes?: Prisma.credit_notesUncheckedUpdateManyWithoutOrganizationsNestedInput
@@ -1695,6 +1749,7 @@ export type organizationsCreateWithoutCredit_notesInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersCreateNestedManyWithoutOrganizationsInput
@@ -1721,6 +1776,7 @@ export type organizationsUncheckedCreateWithoutCredit_notesInput = {
   plan?: string
   brand_color?: string | null
   logo_data?: string | null
+  auto_reminders?: boolean
   collection_actions?: Prisma.collection_actionsUncheckedCreateNestedManyWithoutOrganizationsInput
   conversations?: Prisma.conversationsUncheckedCreateNestedManyWithoutOrganizationsInput
   customers?: Prisma.customersUncheckedCreateNestedManyWithoutOrganizationsInput
@@ -1763,6 +1819,7 @@ export type organizationsUpdateWithoutCredit_notesInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUpdateManyWithoutOrganizationsNestedInput
@@ -1789,6 +1846,7 @@ export type organizationsUncheckedUpdateWithoutCredit_notesInput = {
   plan?: Prisma.StringFieldUpdateOperationsInput | string
   brand_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logo_data?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auto_reminders?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collection_actions?: Prisma.collection_actionsUncheckedUpdateManyWithoutOrganizationsNestedInput
   conversations?: Prisma.conversationsUncheckedUpdateManyWithoutOrganizationsNestedInput
   customers?: Prisma.customersUncheckedUpdateManyWithoutOrganizationsNestedInput
@@ -1918,6 +1976,7 @@ export type organizationsSelect<ExtArgs extends runtime.Types.Extensions.Interna
   plan?: boolean
   brand_color?: boolean
   logo_data?: boolean
+  auto_reminders?: boolean
   collection_actions?: boolean | Prisma.organizations$collection_actionsArgs<ExtArgs>
   conversations?: boolean | Prisma.organizations$conversationsArgs<ExtArgs>
   credit_notes?: boolean | Prisma.organizations$credit_notesArgs<ExtArgs>
@@ -1946,6 +2005,7 @@ export type organizationsSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   plan?: boolean
   brand_color?: boolean
   logo_data?: boolean
+  auto_reminders?: boolean
 }, ExtArgs["result"]["organizations"]>
 
 export type organizationsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1964,6 +2024,7 @@ export type organizationsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   plan?: boolean
   brand_color?: boolean
   logo_data?: boolean
+  auto_reminders?: boolean
 }, ExtArgs["result"]["organizations"]>
 
 export type organizationsSelectScalar = {
@@ -1982,9 +2043,10 @@ export type organizationsSelectScalar = {
   plan?: boolean
   brand_color?: boolean
   logo_data?: boolean
+  auto_reminders?: boolean
 }
 
-export type organizationsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "created_at" | "updated_at" | "upi_id" | "payee_name" | "bank_account_name" | "bank_account_number" | "bank_ifsc" | "bank_name" | "gstin" | "plan" | "brand_color" | "logo_data", ExtArgs["result"]["organizations"]>
+export type organizationsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "created_at" | "updated_at" | "upi_id" | "payee_name" | "bank_account_name" | "bank_account_number" | "bank_ifsc" | "bank_name" | "gstin" | "plan" | "brand_color" | "logo_data" | "auto_reminders", ExtArgs["result"]["organizations"]>
 export type organizationsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   collection_actions?: boolean | Prisma.organizations$collection_actionsArgs<ExtArgs>
   conversations?: boolean | Prisma.organizations$conversationsArgs<ExtArgs>
@@ -2029,6 +2091,7 @@ export type $organizationsPayload<ExtArgs extends runtime.Types.Extensions.Inter
     plan: string
     brand_color: string | null
     logo_data: string | null
+    auto_reminders: boolean
   }, ExtArgs["result"]["organizations"]>
   composites: {}
 }
@@ -2476,6 +2539,7 @@ export interface organizationsFieldRefs {
   readonly plan: Prisma.FieldRef<"organizations", 'String'>
   readonly brand_color: Prisma.FieldRef<"organizations", 'String'>
   readonly logo_data: Prisma.FieldRef<"organizations", 'String'>
+  readonly auto_reminders: Prisma.FieldRef<"organizations", 'Boolean'>
 }
     
 

@@ -51,6 +51,7 @@ Last updated: 24 Nov 2026.
 | 24 Nov (night build) | T5: money-path tests (17 new) and two real bugs fixed. |
 | 24 Nov (night build) | B1: GSTIN check-digit validation, clearer IFSC errors, inline errors in Settings. |
 | 24 Nov (night build) | B2: amount in words (Indian numbering) on the PDF and the pay page. |
+| 24 Nov (night build) | T6: automatic overdue reminders (built, off by default; [soon] labels untouched). |
 
 ## 3. Key decisions (and why)
 

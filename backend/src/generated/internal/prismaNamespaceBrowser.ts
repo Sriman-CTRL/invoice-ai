@@ -188,7 +188,8 @@ export const OrganizationsScalarFieldEnum = {
   gstin: 'gstin',
   plan: 'plan',
   brand_color: 'brand_color',
-  logo_data: 'logo_data'
+  logo_data: 'logo_data',
+  auto_reminders: 'auto_reminders'
 } as const
 
 export type OrganizationsScalarFieldEnum = (typeof OrganizationsScalarFieldEnum)[keyof typeof OrganizationsScalarFieldEnum]

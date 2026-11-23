@@ -3,14 +3,11 @@ import prisma from "../lib/prisma";
 import { getInvoiceDetails } from "../services/invoiceService";
 import { checkPlanLimit } from "../lib/orgSettings";
 import { safeDeliverableUrl } from "./public-invoice.routes";
-import { emailEnabled, sendMail } from "../lib/mailer";
-import { unsubscribeUrl } from "../lib/unsubscribe";
+import { emailEnabled } from "../lib/mailer";
+import { deliveryGuard, findSuppression, sendReminderEmail } from "../services/reminderService";
 import { computeTotals, parseDetails, saveDetails } from "../lib/invoiceDetails";
 import { getOrgSettings } from "../lib/orgSettings";
 
-const PUBLIC_APP_URL = (process.env.PUBLIC_APP_URL || "https://paivo.in").replace(/\/$/, "");
-const REMINDER_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-const REMINDER_DAILY_CAP = Number(process.env.REMINDER_DAILY_CAP || 30);
 
 const router = Router();
 
@@ -439,12 +436,7 @@ router.post("/:id/send-reminder", async (req, res) => {
         }
 
         // Check suppressions (CAN-SPAM / Reg F opt-outs)
-        const isSuppressed = await prisma.suppressions.findFirst({
-            where: {
-                organization_id,
-                address: invoice.customers.email.toLowerCase(),
-            },
-        });
+        const isSuppressed = await findSuppression(organization_id, invoice.customers.email);
 
         if (isSuppressed) {
             return res.status(403).json({
@@ -456,41 +448,20 @@ router.post("/:id/send-reminder", async (req, res) => {
         // Real delivery: guard rails first, so nothing is recorded as sent unless it was.
         let deliveredId: string | null = null;
         if (deliver) {
-            if (!emailEnabled()) {
-                return res.status(503).json({ error: "Email sending isn't switched on yet. Use Email Client or WhatsApp, then Mark as sent." });
-            }
             const orgSettings = await getOrgSettings(organization_id);
-            if (!(orgSettings.upi_id || (orgSettings.bank_account_number && orgSettings.bank_ifsc))) {
-                return res.status(400).json({ error: "Add your UPI ID or bank details in Settings first, so the client can pay when they read this." });
-            }
-            if (invoice.status === "PAID" || invoice.status === "CANCELLED") {
-                return res.status(400).json({ error: "This invoice doesn't need a reminder." });
-            }
-            const since = new Date(Date.now() - REMINDER_COOLDOWN_MS);
-            const recent = await prisma.collection_actions.findMany({
-                where: { organization_id, action_type: "PAYMENT_REMINDER", status: "COMPLETED", executed_at: { gte: since } },
-                select: { invoice_id: true, metadata: true },
-            });
-            const delivered = recent.filter((a) => (a.metadata as any)?.delivered === true);
-            if (delivered.some((a) => a.invoice_id === invoice.id)) {
-                return res.status(429).json({ error: "A reminder for this invoice was already emailed in the last 24 hours." });
-            }
-            if (delivered.length >= REMINDER_DAILY_CAP) {
-                return res.status(429).json({ error: `Daily limit of ${REMINDER_DAILY_CAP} emailed reminders reached. Try again tomorrow.` });
-            }
+            const blocked = await deliveryGuard({ organizationId: organization_id, invoice, settings: orgSettings });
+            if (blocked) return res.status(blocked.status).json({ error: blocked.error });
             const sender = req.user?.id ? await prisma.users.findFirst({ where: { id: req.user.id }, select: { email: true } }) : null;
             try {
-                const sent = await sendMail({
-                    to: invoice.customers.email,
-                    fromName: invoice.organizations.name,
+                const sent = await sendReminderEmail({
+                    organizationId: organization_id,
+                    invoice,
+                    settings: orgSettings,
                     replyTo: sender?.email,
                     subject: subject || `Payment reminder: invoice ${invoice.invoice_number}`,
                     text: String(body || "").slice(0, 5000) || `Hello ${invoice.customers.name},
 
 A friendly reminder that invoice ${invoice.invoice_number} is outstanding.`,
-                    payUrl: `${PUBLIC_APP_URL}/pay/${invoice.id}`,
-                    brandColor: orgSettings.brand_color,
-                    unsubscribeUrl: unsubscribeUrl(PUBLIC_APP_URL, organization_id, invoice.customers.email),
                 });
                 deliveredId = sent.id;
             } catch (e) {

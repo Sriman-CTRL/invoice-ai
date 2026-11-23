@@ -43,6 +43,8 @@ const TENANT_TABLES = ["invoice_details", "invoice_views", "recurring_invoices",
   // Branding on the organisation (logo is a small compressed data URL, validated by the API).
   await run(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS brand_color VARCHAR(9)`);
   await run(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS logo_data TEXT`);
+  // Automatic overdue reminders are off until the seller switches them on in Settings.
+  await run(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS auto_reminders BOOLEAN NOT NULL DEFAULT false`);
   // Line items, discount, GST and notes live beside the invoice so the core table is untouched.
   await run(`CREATE TABLE IF NOT EXISTS invoice_details (
     invoice_id UUID PRIMARY KEY,
