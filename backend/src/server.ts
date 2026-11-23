@@ -64,7 +64,8 @@ app.use((_req, res, next) => {
 // LAYER 2: Production-grade CORS
 // In production, never reflect origin: true with credentials: true.
 const rawCorsOrigin = process.env.CORS_ORIGIN || "https://invoice-ai-nine-beta.vercel.app,http://localhost:5173";
-const allowedOrigins = rawCorsOrigin.split(",").map((o) => o.trim()).filter(Boolean);
+// Our own site addresses are always trusted, on top of anything set in CORS_ORIGIN.
+const allowedOrigins = [...rawCorsOrigin.split(",").map((o) => o.trim()).filter(Boolean), "https://paivo.in", "https://www.paivo.in"];
 
 app.use(
   cors({
@@ -184,6 +185,11 @@ app.use((_req, res) => {
 
 // Last-resort error handler: never leak stack traces to clients.
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  // A blocked browser origin is a refusal, not a server fault.
+  if (err instanceof Error && err.message.startsWith("CORS blocked")) {
+    res.status(403).json({ error: "This site is not allowed to call the API." });
+    return;
+  }
   console.error("Unhandled error:", err);
   res.status(500).json({ error: "Internal server error" });
 });
