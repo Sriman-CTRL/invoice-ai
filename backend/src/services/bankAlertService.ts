@@ -44,10 +44,10 @@ export async function suggestForAlert(organizationId: string, alert: BankAlert, 
   } else {
     const open = await prisma.invoices.findMany({
       where: { organization_id: organizationId, status: { in: OPEN_STATUSES } },
-      include: { payments: { where: { status: "SUCCEEDED" }, select: { amount: true } } },
+      include: { payments: { where: { status: "SUCCEEDED" }, select: { amount: true, tds_amount: true } } },
       take: 1000,
     });
-    const equal = open.filter((i) => paise(Number(i.amount) - i.payments.reduce((s, p) => s + Number(p.amount), 0)) === paise(alert.amount));
+    const equal = open.filter((i) => paise(Number(i.amount) - i.payments.reduce((s, p) => s + Number(p.amount) + Number(p.tds_amount), 0)) === paise(alert.amount));
     if (equal.length === 1) {
       match = "WEAK";
       invoiceId = equal[0].id;

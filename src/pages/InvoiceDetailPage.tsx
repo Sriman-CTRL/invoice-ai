@@ -278,7 +278,9 @@ function RecordPaymentModal({
   onSuccess: () => void;
 }) {
   const [amount, setAmount] = useState(String(outstandingAmount));
-  const [tdsPct, setTdsPct] = useState<number>(0);
+  const [tdsAmount, setTdsAmount] = useState("");
+  const [tdsRate, setTdsRate] = useState("");
+  const [tdsSection, setTdsSection] = useState("");
   const [paidAt, setPaidAt] = useState(new Date().toISOString().slice(0, 10));
   const [externalPaymentId, setExternalPaymentId] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -288,21 +290,27 @@ function RecordPaymentModal({
   useEffect(() => {
     if (isOpen) {
       setAmount(String(outstandingAmount));
-      setTdsPct(0);
+      setTdsAmount("");
+      setTdsRate("");
+      setTdsSection("");
       setPaidAt(new Date().toISOString().slice(0, 10));
       setExternalPaymentId("");
       setError(null);
     }
   }, [isOpen, outstandingAmount]);
 
-  const applyTds = (pct: number) => {
-    setTdsPct(pct);
-    if (pct === 0) {
-      setAmount(String(outstandingAmount));
-    } else {
-      const net = Math.round(outstandingAmount * (1 - pct / 100) * 100) / 100;
-      setAmount(String(net));
-    }
+  const tdsNum = Math.max(0, parseFloat(tdsAmount) || 0);
+  // The TDS is part of what settles the invoice; the cash amount is what reached the bank.
+  const setTds = (value: string) => {
+    setTdsAmount(value);
+    const t = Math.max(0, parseFloat(value) || 0);
+    setAmount(String(Math.max(0, Math.round((outstandingAmount - t) * 100) / 100)));
+  };
+  const applyRate = (value: string) => {
+    setTdsRate(value);
+    const pct = parseFloat(value);
+    if (!Number.isFinite(pct) || pct <= 0 || pct >= 100) { setTds(""); return; }
+    setTds(String(Math.round(outstandingAmount * pct) / 100));
   };
 
   if (!isOpen) return null;
@@ -314,8 +322,8 @@ function RecordPaymentModal({
       setError("Please enter a valid payment amount greater than zero.");
       return;
     }
-    if (num > outstandingAmount + 0.001) {
-      setError(`Payment cannot exceed remaining outstanding balance of ${currency} ${outstandingAmount}.`);
+    if (num + tdsNum > outstandingAmount + 0.001) {
+      setError(`Cash received plus TDS cannot exceed the remaining balance of ${currency} ${outstandingAmount}.`);
       return;
     }
     setSubmitting(true);
@@ -324,10 +332,11 @@ function RecordPaymentModal({
       await paymentsApi.create({
         invoice_id: invoice.id,
         amount: num,
+        ...(tdsNum > 0 ? { tds_amount: tdsNum, tds_section: tdsSection.trim() || undefined } : {}),
         paid_at: paidAt ? new Date(paidAt).toISOString() : new Date().toISOString(),
         external_payment_id: externalPaymentId.trim() || undefined,
       });
-      toast.success("Payment recorded", `${currency} ${num} applied to ${invoice.invoice_number}.`);
+      toast.success("Payment recorded", `${currency} ${num}${tdsNum > 0 ? ` + TDS ${currency} ${tdsNum}` : ""} applied to ${invoice.invoice_number}.`);
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -376,7 +385,7 @@ function RecordPaymentModal({
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
-              Settlement Amount ({currency}) *
+              Cash received in bank ({currency}) *
             </label>
             <input
               type="number"
@@ -391,7 +400,7 @@ function RecordPaymentModal({
             <div className="flex gap-2 mt-1.5">
               <button
                 type="button"
-                onClick={() => applyTds(0)}
+                onClick={() => { setTdsAmount(""); setTdsRate(""); setAmount(String(outstandingAmount)); }}
                 className="text-[11px] font-semibold text-brand-600 hover:underline"
               >
                 Full Balance ({currency} {outstandingAmount})
@@ -400,7 +409,7 @@ function RecordPaymentModal({
                 <button
                   type="button"
                   onClick={() => {
-                    setTdsPct(0);
+                    setTdsAmount(""); setTdsRate("");
                     setAmount(String(Math.round(outstandingAmount / 2 * 100) / 100));
                   }}
                   className="text-[11px] font-semibold text-slate-500 hover:underline"
@@ -410,35 +419,28 @@ function RecordPaymentModal({
               )}
             </div>
 
-            {/* TDS / Withholding Quick Presets */}
+            {/* TDS the client deducted before paying: it settles the invoice but is not cash in the bank. */}
             <div className="mt-2.5 rounded-xl bg-slate-50 border border-slate-200/80 p-2.5">
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                Client Deducted TDS at Source?
+                Did the client deduct TDS? (optional)
               </span>
-              <div className="grid grid-cols-4 gap-1.5 text-center">
-                {[
-                  { pct: 0, label: "0% (Full)" },
-                  { pct: 1, label: "1% (194C)" },
-                  { pct: 2, label: "2% (194C)" },
-                  { pct: 10, label: "10% (194J)" },
-                ].map((t) => (
-                  <button
-                    key={t.pct}
-                    type="button"
-                    onClick={() => applyTds(t.pct)}
-                    className={`rounded-lg py-1 text-[11px] font-bold border transition-all ${
-                      tdsPct === t.pct
-                        ? "bg-brand-600 text-white border-brand-600 shadow-sm"
-                        : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
+              <div className="grid grid-cols-3 gap-1.5">
+                <label className="text-[10px] font-semibold text-slate-500">
+                  TDS amount ({currency})
+                  <input type="number" step="0.01" min="0" value={tdsAmount} onChange={(e) => setTds(e.target.value)} className="input mt-0.5 w-full text-xs font-mono" placeholder="0" />
+                </label>
+                <label className="text-[10px] font-semibold text-slate-500">
+                  or rate %
+                  <input type="number" step="0.01" min="0" max="99" value={tdsRate} onChange={(e) => applyRate(e.target.value)} className="input mt-0.5 w-full text-xs font-mono" placeholder="from their TDS slip" />
+                </label>
+                <label className="text-[10px] font-semibold text-slate-500">
+                  Section
+                  <input type="text" maxLength={10} value={tdsSection} onChange={(e) => setTdsSection(e.target.value)} className="input mt-0.5 w-full text-xs font-mono" placeholder="e.g. 194J" />
+                </label>
               </div>
-              {tdsPct > 0 && (
+              {tdsNum > 0 && (
                 <p className="text-[10px] text-slate-600 mt-1.5 font-medium leading-tight">
-                  Applied {tdsPct}% TDS ({currency} {Math.round(outstandingAmount * (tdsPct / 100) * 100) / 100}). Net received in bank: <strong className="text-slate-900">{currency} {amount}</strong>
+                  Cash <strong className="text-slate-900">{currency} {amount}</strong> + TDS {currency} {tdsNum} settles {currency} {Math.round((parseFloat(amount || "0") + tdsNum) * 100) / 100}. The TDS is not money in your bank: claim it with your tax filing (check Form 26AS / AIS). Rates are on the balance; type the exact amount from your client's TDS certificate if it differs. Not tax advice.
                 </p>
               )}
             </div>
@@ -535,7 +537,8 @@ export function InvoiceDetailPage() {
         const totalAmount = Number(fin.invoice_amount) || 1;
         const paidAmount = Number(fin.paid_amount) || 0;
         const creditedAmount = Number(fin.credited_amount) || 0;
-        const progressPct = Math.min(100, Math.round(((paidAmount + creditedAmount) / totalAmount) * 100));
+        const tdsDeducted = Number(fin.tds_amount) || 0;
+        const progressPct = Math.min(100, Math.round(((paidAmount + tdsDeducted + creditedAmount) / totalAmount) * 100));
         const outstanding = Number(fin.outstanding_amount) || 0;
 
         return (
@@ -636,8 +639,9 @@ export function InvoiceDetailPage() {
                     <div className="pr-4">
                       <p className="text-xs font-medium text-slate-400">Total Settled</p>
                       <p className="mt-1 font-mono text-lg font-bold text-emerald-600">
-                        {money(paidAmount + creditedAmount, fin.currency)}
+                        {money(paidAmount + tdsDeducted + creditedAmount, fin.currency)}
                       </p>
+                      {tdsDeducted > 0 && <p className="mt-0.5 text-[11px] text-slate-500">Received {money(paidAmount, fin.currency)} + TDS {money(tdsDeducted, fin.currency)} deducted by client</p>}
                       {creditedAmount > 0 && <p className="mt-0.5 text-[11px] text-slate-400">incl. credit notes {money(creditedAmount, fin.currency)}</p>}
                     </div>
                     <div className="px-4">
@@ -675,6 +679,7 @@ export function InvoiceDetailPage() {
                             <tr key={p.id}>
                               <td className="table-cell font-mono font-bold text-slate-900">
                                 {money(p.amount, p.currency)}
+                                {Number(p.tds_amount) > 0 && <span className="block text-[11px] font-sans font-medium text-slate-500">+ TDS {money(p.tds_amount ?? 0, p.currency)}{p.tds_section ? ` (${p.tds_section})` : ""} deducted by client</span>}
                               </td>
                               <td className="table-cell">
                                 <Badge value={p.status} />

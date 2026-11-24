@@ -158,6 +158,8 @@ model payments {
   invoice_id          String        @db.Uuid
   external_payment_id String?       @db.VarChar(255)
   amount              Decimal       @db.Decimal(14, 2)
+  tds_amount          Decimal       @default(0) @db.Decimal(14, 2)
+  tds_section         String?       @db.VarChar(16)
   currency            String        @default("INR") @db.VarChar(3)
   status              String        @default("PENDING") @db.VarChar(30)
   paid_at             DateTime?     @db.Timestamptz(6)

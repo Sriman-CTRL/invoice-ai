@@ -3,7 +3,7 @@
 Read this at the start of a new Claude Code session (after `/clear` or on a new machine). It records what was built,
 why, and what comes next. Update the "Status" and "Next" sections whenever a piece of work lands.
 
-Last updated: 24 Nov 2026.
+Last updated: 25 Nov 2026.
 
 ## 1. What Paivo is
 
@@ -66,6 +66,7 @@ Last updated: 24 Nov 2026.
 | 24 Nov (night build, phase 2) | P6: whole-night review; fixed unsourced claims and UPI-for-non-INR bug. P7: night report updated with phase 2 and review. |
 | 24 Nov | `feat/sentry` (PR open, not deployed): privacy-first error reporting (Sentry, errors only) for the web app and the API, with scrubbers, admin test buttons and a privacy-page section. Inert until `SENTRY_DSN` / `VITE_SENTRY_DSN` are set; needs the real ingest host in `vercel.json` first. |
 | 24 Nov | `feat/logo` (PR open, not deployed): Paivo logo kit in `brand/` (open-loop P, closed "paid" state) and wired into the site: favicon set + manifest, new link-preview image, header/footer/sidebar/auth/legal/portal logos, "Powered by Paivo" on the pay page and invoice PDF, one-time open→closed animation next to the paid state. |
+| 25 Nov | `fix/tds-settlement` (PR open, NOT merged: needs a production `enable-rls.cjs` run first): TDS the client deducts now settles an invoice. New `payments.tds_amount` / `tds_section`; settled = cash + TDS + credit notes everywhere (status, pay page, UPI amount, PDF, portal, credit notes, reminders, files unlock). The client's TDS claim on the proof form is only a claim until the seller confirms it. "TDS to claim" per financial year on the analytics page. |
 
 ## 3. Key decisions (and why)
 
@@ -95,6 +96,8 @@ export/erasure, account deletion, admin plan approvals, analytics/growth page.
 **Error reporting (Sentry), code complete on `feat/sentry`, off until DSNs are set:** errors only, scrubbed of emails, UPI IDs, UTRs, IFSC, account numbers, GSTINs, tokens and URL ids before sending. Owner must create the Sentry projects, put the ingest origin in `vercel.json` `connect-src`, fill the data region on the privacy page, and add the env vars in Vercel (see the PR).
 
 **Brand (`feat/logo`, PR open):** the primary logo is the wordmark "paivo" whose p is the open-loop mark (a symbol beside the wordmark read as "Ppaivo"); the standalone P mark (bowl open until the money arrives, closed once paid) is for icons, the pay-page credit and the paid animation. Source of truth is `brand/build_kit.py` (SVG masters, icons, link preview, `brand/GUIDELINES.md`); the site uses `src/Brand.tsx` (inline SVG, path data copied from the generator) and static copies in `public/` (favicon set, `site.webmanifest`, `og.png`, `brand/`). Still open: trademark search (classes 9, 36, 42), print colour values.
+
+**TDS settlement (PR `fix/tds-settlement`, awaiting review and a production migration):** an invoice where the client deducted TDS (45,000 cash + 5,000 TDS on 50,000) becomes PAID and unlocks the files. `payments.tds_amount` is part of what settles an invoice but is never counted as money received (analytics "received" stays cash). The client can claim TDS on the pay-page proof form; it sits on the PENDING payment, the seller sees "Client says ₹X TDS deducted" in the Action Queue, and nothing settles until the seller confirms. Release order: owner `enable-rls.cjs` on production, then deploy. Known leftover: the invoice PDF still prints a fixed "TDS deduction summary" (10% / 194J) on every invoice; it is an example, not a fact about the client, and should be reworded or removed.
 
 **Built but not offered to users yet ("soon"):** reading client replies with AI (inbound email → classify → action
 queue), automatic scheduled reminders, per-seller billing email address.

@@ -182,6 +182,7 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   if (dt && data.details?.tax_mode === "GST_INTER") row(`IGST ${data.details?.tax_percent}%`, inr(dt.igst, currency));
   if (dt && dt.tax > 0) row("Invoice total", inr(dt.total, currency), false, INK);
   if (fin.paid_amount > 0) row("Payments received", `- ${inr(fin.paid_amount, currency)}`, false, GREEN);
+  if ((fin.tds_amount ?? 0) > 0) row("TDS deducted by client", `- ${inr(Number(fin.tds_amount), currency)}`, false, GREEN);
   if ((fin.credited_amount ?? 0) > 0) row("Credit notes", `- ${inr(Number(fin.credited_amount), currency)}`, false, GREEN);
   doc.setDrawColor(...INK);
   doc.line(tx, y - 3, W - M, y - 3);

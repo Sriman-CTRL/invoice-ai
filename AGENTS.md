@@ -71,6 +71,10 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
   `auth_failures`, `analytics_events`, `leads`, `rate_limits`), but `enable-rls.cjs` is what applies changes in
   production (the app role has no DDL). Every new table or column must be added to **both**. Existing code still reads the
   extra tables with raw SQL (see `lib/orgSettings.ts`); regenerate the client with `npx prisma generate` after schema edits.
+- **TDS settles like cash, but is not cash.** `payments.tds_amount` (+ `tds_section`) is part of what settles an invoice: settled =
+  `amount + tds_amount` (use `settledTotals` / `outstandingOf` in `lib/invoiceBalance.ts`; raw SQL needs `p.amount + p.tds_amount`).
+  Money-received figures (analytics `received`, `lifetime_received`) stay cash only. A client's TDS claim on the proof form lives on the
+  PENDING payment and counts only after the seller confirms it (rule 1). Never hard-code TDS rates or sections as facts.
 - **Deliverable link is stored in `invoices.external_invoice_id` with a `vault:` prefix.** Only plain http(s) URLs are
   shown (`safeDeliverableUrl` in `public-invoice.routes.ts`).
 - **CORS**: allowed = `CORS_ORIGIN` env + hard-coded `paivo.in`/`www.paivo.in` + this project's Vercel preview URLs
