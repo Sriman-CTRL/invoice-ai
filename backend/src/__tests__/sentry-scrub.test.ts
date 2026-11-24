@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import { scrubBreadcrumb, scrubEvent, scrubText, scrubUrl } from "../lib/sentryScrub";
 
 // All samples below are made up. None belongs to a real person, account or token.
-const JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyMyIsIm9yZ2FuaXphdGlvbl9pZCI6IjQ1NiJ9.dGhpc2lzYWZha2VzaWduYXR1cmU";
+// Built at runtime so no token-shaped literal sits in the source. Made-up payload, signature is the text "thisisafakesignature".
+const b64 = (s: string | object) => Buffer.from(typeof s === "string" ? s : JSON.stringify(s)).toString("base64url");
+const JWT = [b64({ alg: "HS256", typ: "JWT" }), b64({ id: "123", organization_id: "456" }), b64("thisisafakesignature")].join(".");
 
 const SAMPLES: Array<[string, string, string]> = [
   ["email", "Could not email priya.nair+billing@studiofake.co.in about the invoice", "priya.nair"],
