@@ -61,6 +61,7 @@ Last updated: 24 Nov 2026.
 | 24 Nov (night build, phase 2) | P1: market research verified against vendors' own pages; pay-to-unlock and late-payment evidence updated in `docs/research/MARKET-2026-11.md`. |
 | 24 Nov (night build, phase 2) | P2: free tools (GST calculator, TDS calculator, payment reminder writer) at `/tools/*`, no login, all in the browser. |
 | 24 Nov (night build, phase 2) | P3: five static guides in `public/guides/` (invoicing, TDS, UPI limits, late-payment follow-up, getting paid before sending files) with sitemap and footer link. |
+| 24 Nov (night build, phase 2) | P4: end-to-end test of the core money flow (`npm run e2e`, local only, not in CI). |
 
 ## 3. Key decisions (and why)
 

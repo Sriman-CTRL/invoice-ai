@@ -18,6 +18,7 @@ cd backend && npm install && npx prisma db push && npm run seed && npm run dev  
 cd backend && npm test          # node:test via tsx; integration tests need a LOCAL DATABASE_URL
 cd backend && npm run typecheck
 npm run test:web      # frontend unit tests in tests/ (UPI link, campaign tags); not run in CI yet
+npm run e2e           # Playwright core money flow against the LOCAL stack (starts backend + Vite); not run in CI
 
 # Frontend (repo root)
 npm install && npm run dev      # UI :5173, proxies /api to the backend

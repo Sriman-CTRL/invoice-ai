@@ -118,13 +118,15 @@ swallow `/guides/*.html` (exclude them if needed, without loosening headers).
 
 **Notes (P3):** Five original static guides plus an index in public/guides/ (one shared guides.css, dark theme, no scripts or inline styles so the CSP is untouched, canonical + OG tags, "Updated 24 Nov 2026", sources list, not-advice note, sign-up CTA tagged utm_source=guide so G2 attribution counts it). 840-980 words each (tests/guides.test.ts enforces 800-1,500). vercel.json: the SPA catch-all rewrite now also excludes `guides/` (no header changed); checked with vite preview that /guides/ and /guides/*.html return the static pages. Sitemap lists all six; marketing footer links "Guides". HONESTY CHOICES you should know about: the guides contain NO GST registration threshold, NO UPI limit amounts and NO TDS rates or section-rate details, because none could be confirmed from an official page on 24 Nov 2026 (gst.gov.in / cbic / gstcouncil pages had no threshold text; NPCI pages returned an empty shell to the fetch tool; incometax.gov.in did not resolve). Each guide says so, says where to check and links the official site. When you can open those pages in a browser, add the figures with a source and a check date (a test fails if a lakh/crore figure or 10/20/40 lakh appears, so remove that assertion when you add them). The invoice guide describes invoice fields in general terms and does not cite CGST rule numbers (could not fetch the rules). The follow-up guide describes automatic reminders as coming soon (the [soon] label is unchanged) and the final-files guide describes only what the code does and states plainly that it is not escrow; bank-alert matching is not mentioned (not advertised). Also fixed the reminder-writer CTA so it does not present automatic reminders as live. 121 backend/121 pass/0 skip, build pass, test:web 26.
 
-## [ ] P4. End-to-end test of the core money flow
+## [x] P4. End-to-end test of the core money flow
 
 Using Playwright (installed in G3; if G3 failed, install `@playwright/test` and Chromium now), write
 `e2e/core-flow.spec.ts` against the local stack with fictional data: register → add UPI ID in Settings → create an
 invoice with a deliverable link → open the public pay page (link hidden) → submit a UTR → seller confirms in the
 Action Queue → pay page shows the files link. Add `npm run e2e` at the root. Do not add it to CI. Make it pass
 reliably (run 3 times).
+
+**Notes (P4):** e2e/core-flow.spec.ts + playwright.config.ts + `npm run e2e` (not in CI). Drives the real UI with fictional data: register -> Settings UPI ID -> New Invoice with a final-files link -> client (a separate, signed-out browser context) opens the pay page and the link is absent from the page and the HTML -> client submits a UTR -> the files link is STILL absent (a UTR alone unlocks nothing) -> seller clicks 1-Click Settle in the Action Queue -> pay page shows the link. Passed 3 runs out of 3 (10-11 s each). The config starts the backend and Vite itself if they are not running and refuses to run unless backend/.env points at a local database. On Windows the backend child process survives Playwright's teardown, so stop it afterwards (kill the node process on :5000). Also added test-results/ and playwright-report/ to .gitignore. 121 backend/121 pass/0 skip, build pass, test:web 26.
 
 ## [ ] P5. Client pay page in Hindi
 

@@ -25,3 +25,6 @@ api/index.js
 
 .claude/settings.local.json
 night-logs/
+
+test-results/
+playwright-report/
