@@ -540,6 +540,26 @@ export function InvoiceDetailPage() {
 
         return (
           <>
+            {data.payment_details_changed && inv.status !== "DRAFT" && inv.status !== "PAID" && inv.status !== "CANCELLED" && (
+              <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-sky-300/70 bg-sky-50 p-4">
+                <div className="min-w-[14rem] flex-1">
+                  <p className="text-sm font-bold text-sky-900">Your payment details changed after this invoice was issued.</p>
+                  <p className="text-xs text-sky-800/80">This invoice and its pay link still show the UPI ID and bank details it was issued with. If you want this one to use your current details, update it here.</p>
+                </div>
+                <button
+                  disabled={approving}
+                  onClick={async () => {
+                    setApproving(true);
+                    try { await invoicesApi.updatePaymentDetails(inv.id); detailToast.success("Payment details updated", "This invoice now uses your current UPI ID and bank details."); r.reload(); }
+                    catch (e: any) { detailToast.error("Could not update", e?.message); }
+                    finally { setApproving(false); }
+                  }}
+                  className="btn-secondary h-10 px-5 text-sm"
+                >
+                  Update payment details on this invoice
+                </button>
+              </div>
+            )}
             {inv.status === "DRAFT" && (
               <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-300/70 bg-amber-50 p-4">
                 <div className="min-w-[14rem] flex-1">

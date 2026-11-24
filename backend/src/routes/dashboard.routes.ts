@@ -84,7 +84,8 @@ router.get("/analytics", async (req: Request, res: Response): Promise<void> => {
 
 /**
  * GET /api/dashboard/gst-report?from=YYYY-MM-DD&to=YYYY-MM-DD
- * One row per issued invoice with its taxable value and GST split, ready for an accountant.
+ * One row per issued invoice with its taxable value and GST split, ready for an accountant. Client name and line items come from the
+ * snapshot frozen at issue, so later edits to a client never change a past report.
  */
 router.get("/gst-report", async (req: Request, res: Response): Promise<void> => {
     try {
@@ -94,11 +95,18 @@ router.get("/gst-report", async (req: Request, res: Response): Promise<void> => 
         const to = String(req.query.to || "");
         if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) { res.status(400).json({ error: "from and to must be dates (YYYY-MM-DD)" }); return; }
         const rows = await prisma.$queryRawUnsafe<any[]>(
-            `SELECT i.invoice_number, to_char(COALESCE(i.issued_at, i.created_at), 'YYYY-MM-DD') AS date, c.name AS customer, c.company_name, i.currency, i.status,
-                    i.amount::float8 AS total, d.items, d.discount::float8 AS discount, d.tax_percent::float8 AS tax_percent, d.tax_mode
+            `SELECT i.invoice_number, to_char(COALESCE(i.issued_at, i.created_at), 'YYYY-MM-DD') AS date,
+                    CASE WHEN s.invoice_id IS NOT NULL THEN s.client->>'name' ELSE c.name END AS customer,
+                    CASE WHEN s.invoice_id IS NOT NULL THEN s.client->>'company_name' ELSE c.company_name END AS company_name,
+                    i.currency, i.status, i.amount::float8 AS total,
+                    CASE WHEN s.details IS NOT NULL THEN s.details->'items' ELSE d.items END AS items,
+                    CASE WHEN s.details IS NOT NULL THEN (s.details->>'discount')::float8 ELSE d.discount::float8 END AS discount,
+                    CASE WHEN s.details IS NOT NULL THEN (s.details->>'tax_percent')::float8 ELSE d.tax_percent::float8 END AS tax_percent,
+                    CASE WHEN s.details IS NOT NULL THEN s.details->>'tax_mode' ELSE d.tax_mode END AS tax_mode
                FROM invoices i
                JOIN customers c ON c.id = i.customer_id
                LEFT JOIN invoice_details d ON d.invoice_id = i.id
+               LEFT JOIN invoice_snapshots s ON s.invoice_id = i.id
               WHERE i.organization_id = $1::uuid AND i.status NOT IN ('DRAFT','CANCELLED')
                 AND COALESCE(i.issued_at, i.created_at)::date BETWEEN $2::date AND $3::date
               ORDER BY COALESCE(i.issued_at, i.created_at), i.invoice_number`,

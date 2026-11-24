@@ -105,6 +105,11 @@ export type auth_failures = Prisma.auth_failuresModel
  */
 export type invoice_details = Prisma.invoice_detailsModel
 /**
+ * Model invoice_snapshots
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type invoice_snapshots = Prisma.invoice_snapshotsModel
+/**
  * Model auto_reminder_claims
  * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
  */

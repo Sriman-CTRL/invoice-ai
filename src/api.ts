@@ -52,6 +52,7 @@ export const invoicesApi = {
   detail: (id: string) => request<InvoiceDetail>(`/invoices/${id}`),
   create: (data: { customer_id: string; invoice_number: string; amount?: number; currency?: string; issued_at: string; due_at: string; external_invoice_id?: string; status?: string; items?: Array<{ description: string; quantity: number; rate: number }>; discount?: number; tax_mode?: string; tax_percent?: number; notes?: string }) => request<Invoice>("/invoices", { method: "POST", body: JSON.stringify(data) }),
   approve: (id: string) => request<{ ok: boolean }>(`/invoices/${id}/approve`, { method: "POST" }),
+  updatePaymentDetails: (id: string) => request<{ ok: boolean }>(`/invoices/${id}/update-payment-details`, { method: "POST" }),
   aiItems: (prompt: string, currency: string) => request<{ items: Array<{ description: string; quantity: number; rate: number }> }>("/invoices/meta/ai-items", { method: "POST", body: JSON.stringify({ prompt, currency }) }),
   activity: () => request<{ events: ActivityEvent[]; views: Record<string, { last_viewed_at: string; count: number }> }>("/invoices/meta/activity"),
   bulkImport: (invoices: Array<{

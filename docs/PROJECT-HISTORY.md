@@ -68,6 +68,7 @@ Last updated: 24 Nov 2026.
 | 24 Nov | `feat/logo` (PR open, not deployed): Paivo logo kit in `brand/` (open-loop P, closed "paid" state) and wired into the site: favicon set + manifest, new link-preview image, header/footer/sidebar/auth/legal/portal logos, "Powered by Paivo" on the pay page and invoice PDF, one-time open→closed animation next to the paid state. |
 | 25 Nov | `chore/release-script`: `release.ps1` at the repo root, run by the owner (Windows PowerShell 5.1). Builds `origin/main` in a temp worktree, optional `-Migrate` (owner URL, `enable-rls.cjs`), deploys with `--skip-domain`, probes, asks before promoting, live-checks paivo.in and rolls back on failure. `-DryRun` prints every vercel/database command. Claude Code no longer needs Vercel access. |
 | 25 Nov | `docs/first-10`: `docs/gtm/FIRST-10.md`, the one-page outreach plan: first segment (freelance designers and video editors), 3 places, search queries, 10 EN/Hinglish messages with a `{something they made}` slot, follow-up schedule, tracker rules. |
+| 25 Nov | `feat/invoice-snapshots` (PR open, NOT merged, needs `-Migrate`): issued invoices keep the seller, client and line items they were issued with (`invoice_snapshots`, backfilled in `enable-rls.cjs`). Pay page, PDF and GST report read the snapshot; drafts stay live; UPI/bank follow the snapshot unless the seller clicks "Update payment details on this invoice". |
 
 ## 3. Key decisions (and why)
 
