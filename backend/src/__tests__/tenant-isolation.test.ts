@@ -231,6 +231,8 @@ test("ANALYTICS: page views are recorded without personal data and the report is
   const email = await prismaModule.runAsSystem(async () => (await prisma.$queryRawUnsafe("SELECT email FROM users WHERE organization_id = $1::uuid LIMIT 1", a.orgId))[0].email);
   // Campaign attribution: one visit event and one sign-up carrying the same (sanitised) tags.
   const tag = `src${Date.now()}`;
+  // The admin "sources" report shows the top 20 only; leftovers from earlier local runs of this test must not crowd it out.
+  await prismaModule.runAsSystem(async () => await prisma.$executeRawUnsafe(`DELETE FROM analytics_events WHERE event IN ('attribution', 'signup_attr') AND path LIKE 'src%|dm|first10%'`));
   assert.equal((await call("POST", "/api/events", { event: "attribution", path: "/", visitor: "attrvisitor12345", attribution: { utm_source: tag.toUpperCase(), utm_medium: "DM", utm_campaign: "first10<" } })).status, 204);
   const attrEmail = `attr-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
   const attrReg = await call("POST", "/api/auth/register", { email: attrEmail, password: "Attribution-Pass-4821", organization_name: "Attr Org", accepted_terms: true, attribution: { utm_source: tag, utm_medium: "dm", utm_campaign: "first10" } });
