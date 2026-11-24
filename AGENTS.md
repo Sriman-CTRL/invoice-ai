@@ -71,6 +71,9 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
   `auth_failures`, `analytics_events`, `leads`, `rate_limits`), but `enable-rls.cjs` is what applies changes in
   production (the app role has no DDL). Every new table or column must be added to **both**. Existing code still reads the
   extra tables with raw SQL (see `lib/orgSettings.ts`); regenerate the client with `npx prisma generate` after schema edits.
+- **Export invoices:** supported currencies live in `SUPPORTED_CURRENCIES` (`invoice.routes.ts`). Org columns `swift_code`, `payment_link`, `lut_number`, `export_declaration`
+  (added in `enable-rls.cjs`) show only on non-INR invoices. Paivo ships **no** export-declaration wording (could not be verified from an official source; see
+  `docs/legal/EXPORT-INVOICES.md`). Analytics never add currencies together; the dashboard summary still does.
 - **Deliverable link is stored in `invoices.external_invoice_id` with a `vault:` prefix.** Only plain http(s) URLs are
   shown (`safeDeliverableUrl` in `public-invoice.routes.ts`).
 - **CORS**: allowed = `CORS_ORIGIN` env + hard-coded `paivo.in`/`www.paivo.in` + this project's Vercel preview URLs
@@ -103,7 +106,8 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
   must list `λ api/index` (about 2.5-2.7 MB), check `vercel curl /health --deployment <url>` (200, database connected),
   a random login (401) and a random `/api/public/invoices/<uuid>` (JSON 404), then `vercel promote <url>`. Rollback:
   `vercel rollback <previous production url> --yes`. In Git Bash set `MSYS_NO_PATHCONV=1` before `vercel curl /path`.
-- **Releases are run by the owner with `.elease.ps1`** (add `-Migrate` when `enable-rls.cjs` changed; `-DryRun` prints every vercel and
+- **Releases are run by the owner with `.
+elease.ps1`** (add `-Migrate` when `enable-rls.cjs` changed; `-DryRun` prints every vercel and
   database command instead of running it). It builds `origin/main` in a temp worktree, deploys with `--skip-domain`, probes the
   deployment, asks before promoting, checks paivo.in and rolls back on failure; logs go to `release-logs/` (git-ignored).
   **Claude Code never runs `vercel` or touches the production database.** The manual steps above are what the script automates.

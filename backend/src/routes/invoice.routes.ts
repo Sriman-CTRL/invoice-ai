@@ -9,6 +9,9 @@ import { computeTotals, parseDetails, saveDetails } from "../lib/invoiceDetails"
 import { getOrgSettings } from "../lib/orgSettings";
 import { serverError } from "../lib/monitoring";
 
+/** Currencies an invoice can be issued in. Amounts in different currencies are never added together. */
+export const SUPPORTED_CURRENCIES = ["INR", "USD", "EUR", "GBP", "AUD", "CAD", "SGD", "AED"];
+
 
 const router = Router();
 
@@ -194,6 +197,10 @@ router.post("/", async (req, res) => {
             return res.status(400).json({ error: "Invalid organization_id or customer_id" });
         }
 
+        if (currency !== undefined && currency !== null && !SUPPORTED_CURRENCIES.includes(String(currency).toUpperCase())) {
+            return res.status(400).json({ error: `Currency must be one of: ${SUPPORTED_CURRENCIES.join(", ")}` });
+        }
+
         const limitError = await checkPlanLimit(organization_id);
         if (limitError) return res.status(402).json({ error: limitError });
 
@@ -237,7 +244,7 @@ router.post("/", async (req, res) => {
                 invoice_number,
                 external_invoice_id,
                 amount: invoiceAmount,
-                currency: currency || "INR",
+                currency: currency ? String(currency).toUpperCase() : "INR",
                 issued_at: issuedDate,
                 due_at: dueDate,
                 status: normalizedStatus,

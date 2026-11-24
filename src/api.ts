@@ -39,6 +39,8 @@ export const accountApi = {
 export type AnalyticsData = {
   months: Array<{ month: string; received: number; invoiced: number }>;
   top_clients: Array<{ id: string; name: string; company_name: string | null; paid: number; invoices: number }>;
+  /** Totals for every currency other than INR; never added to the INR figures. */
+  other_currencies?: Array<{ currency: string; invoiced: number; received: number; outstanding: number; invoices: number }>;
   kpi: { lifetime_received: number; outstanding: number; overdue: number; avg_days_to_pay: number | null; paid_count: number; sent_count: number };
 };
 export type GstRow = { invoice_number: string; date: string; customer: string; currency: string; status: string; taxable: number; cgst: number; sgst: number; igst: number; total: number; gst_rate: number };

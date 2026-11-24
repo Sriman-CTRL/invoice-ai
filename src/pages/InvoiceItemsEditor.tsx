@@ -60,6 +60,10 @@ export function InvoiceItemsEditor({
           <option value="USD">$ USD</option>
           <option value="EUR">€ EUR</option>
           <option value="GBP">£ GBP</option>
+          <option value="AUD">A$ AUD</option>
+          <option value="CAD">C$ CAD</option>
+          <option value="SGD">S$ SGD</option>
+          <option value="AED">AED</option>
         </select>
       </div>
 

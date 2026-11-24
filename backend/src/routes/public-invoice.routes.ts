@@ -134,9 +134,17 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
                           account_number: settings.bank_account_number,
                           ifsc: settings.bank_ifsc,
                           bank_name: settings.bank_name,
+                          // SWIFT only matters for a client abroad.
+                          swift_code: invoice.currency !== "INR" ? settings.swift_code : null,
                       }
                     : null,
+                // Another way to pay (PayPal, Wise...) is offered only on non-INR invoices, and only as a plain https link.
+                payment_link: invoice.currency !== "INR" && settings.payment_link && /^https:\/\/[^\s<>"']+$/.test(settings.payment_link) ? settings.payment_link : null,
             },
+            // The seller's own export wording and LUT number, shown only on non-INR invoices and only when the seller entered them.
+            export: invoice.currency !== "INR" && (settings.lut_number || settings.export_declaration)
+                ? { lut_number: settings.lut_number, declaration: settings.export_declaration }
+                : null,
             has_deliverable: hasDeliverable,
             deliverable_url: deliverableUrl,
             deliverable_locked: hasDeliverable && !deliverableUrl,

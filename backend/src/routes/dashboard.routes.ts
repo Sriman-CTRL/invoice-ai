@@ -37,8 +37,8 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
 
 /**
  * GET /api/dashboard/analytics
- * Revenue by month, top clients, how fast clients pay, and what is overdue. Money is in the org's invoice currencies
- * summed as-is, so mixed-currency accounts see INR-equivalent only when everything is INR (the common case here).
+ * Revenue by month, top clients, how fast clients pay, and what is overdue, in INR. Other currencies are totalled separately
+ * (`other_currencies`), never added to the INR figures.
  */
 router.get("/analytics", async (req: Request, res: Response): Promise<void> => {
     try {
@@ -47,15 +47,15 @@ router.get("/analytics", async (req: Request, res: Response): Promise<void> => {
         const months = await prisma.$queryRawUnsafe<any[]>(
             `WITH m AS (SELECT generate_series(date_trunc('month', now()) - interval '11 months', date_trunc('month', now()), interval '1 month') AS month)
              SELECT to_char(m.month, 'YYYY-MM') AS month,
-                    COALESCE((SELECT sum(p.amount) FROM payments p WHERE p.organization_id = $1::uuid AND p.status = 'SUCCEEDED' AND date_trunc('month', COALESCE(p.paid_at, p.created_at)) = m.month), 0)::float8 AS received,
-                    COALESCE((SELECT sum(i.amount) FROM invoices i WHERE i.organization_id = $1::uuid AND i.status <> 'DRAFT' AND i.status <> 'CANCELLED' AND date_trunc('month', COALESCE(i.issued_at, i.created_at)) = m.month), 0)::float8 AS invoiced
+                    COALESCE((SELECT sum(p.amount) FROM payments p WHERE p.organization_id = $1::uuid AND p.status = 'SUCCEEDED' AND p.currency = 'INR' AND date_trunc('month', COALESCE(p.paid_at, p.created_at)) = m.month), 0)::float8 AS received,
+                    COALESCE((SELECT sum(i.amount) FROM invoices i WHERE i.organization_id = $1::uuid AND i.status <> 'DRAFT' AND i.status <> 'CANCELLED' AND i.currency = 'INR' AND date_trunc('month', COALESCE(i.issued_at, i.created_at)) = m.month), 0)::float8 AS invoiced
                FROM m ORDER BY m.month`,
             org,
         );
         const top = await prisma.$queryRawUnsafe<any[]>(
             `SELECT c.id, c.name, c.company_name, COALESCE(sum(p.amount), 0)::float8 AS paid, count(DISTINCT i.id)::int AS invoices
                FROM customers c
-               LEFT JOIN invoices i ON i.customer_id = c.id AND i.status <> 'DRAFT' AND i.status <> 'CANCELLED'
+               LEFT JOIN invoices i ON i.customer_id = c.id AND i.status <> 'DRAFT' AND i.status <> 'CANCELLED' AND i.currency = 'INR'
                LEFT JOIN payments p ON p.invoice_id = i.id AND p.status = 'SUCCEEDED'
               WHERE c.organization_id = $1::uuid
               GROUP BY c.id ORDER BY paid DESC, invoices DESC LIMIT 5`,
@@ -63,11 +63,11 @@ router.get("/analytics", async (req: Request, res: Response): Promise<void> => {
         );
         const kpi = await prisma.$queryRawUnsafe<any[]>(
             `SELECT
-                COALESCE((SELECT sum(amount) FROM payments WHERE organization_id = $1::uuid AND status = 'SUCCEEDED'), 0)::float8 AS lifetime_received,
+                COALESCE((SELECT sum(amount) FROM payments WHERE organization_id = $1::uuid AND status = 'SUCCEEDED' AND currency = 'INR'), 0)::float8 AS lifetime_received,
                 COALESCE((SELECT sum(i.amount - COALESCE((SELECT sum(p.amount) FROM payments p WHERE p.invoice_id = i.id AND p.status = 'SUCCEEDED'), 0))
-                           FROM invoices i WHERE i.organization_id = $1::uuid AND i.status IN ('OPEN','PARTIALLY_PAID')), 0)::float8 AS outstanding,
+                           FROM invoices i WHERE i.organization_id = $1::uuid AND i.currency = 'INR' AND i.status IN ('OPEN','PARTIALLY_PAID')), 0)::float8 AS outstanding,
                 COALESCE((SELECT sum(i.amount - COALESCE((SELECT sum(p.amount) FROM payments p WHERE p.invoice_id = i.id AND p.status = 'SUCCEEDED'), 0))
-                           FROM invoices i WHERE i.organization_id = $1::uuid AND i.status IN ('OPEN','PARTIALLY_PAID') AND i.due_at < now()), 0)::float8 AS overdue,
+                           FROM invoices i WHERE i.organization_id = $1::uuid AND i.currency = 'INR' AND i.status IN ('OPEN','PARTIALLY_PAID') AND i.due_at < now()), 0)::float8 AS overdue,
                 (SELECT round(avg(EXTRACT(EPOCH FROM (COALESCE(p.paid_at, p.created_at) - COALESCE(i.issued_at, i.created_at))) / 86400)::numeric, 1)::float8
                    FROM invoices i JOIN payments p ON p.invoice_id = i.id AND p.status = 'SUCCEEDED'
                   WHERE i.organization_id = $1::uuid AND i.status = 'PAID') AS avg_days_to_pay,
@@ -75,7 +75,21 @@ router.get("/analytics", async (req: Request, res: Response): Promise<void> => {
                 (SELECT count(*)::int FROM invoices WHERE organization_id = $1::uuid AND status NOT IN ('DRAFT','CANCELLED')) AS sent_count`,
             org,
         );
-        res.json({ months, top_clients: top, kpi: kpi[0] });
+        // Every other currency gets its own totals. Amounts in different currencies are never added together,
+        // so the figures above are INR only and these rows carry USD, EUR and so on separately.
+        const other = await prisma.$queryRawUnsafe<any[]>(
+            `SELECT i.currency,
+                    COALESCE(sum(i.amount) FILTER (WHERE i.status NOT IN ('DRAFT','CANCELLED')), 0)::float8 AS invoiced,
+                    COALESCE(sum(pp.paid) FILTER (WHERE i.status NOT IN ('DRAFT','CANCELLED')), 0)::float8 AS received,
+                    COALESCE(sum(i.amount - COALESCE(pp.paid, 0)) FILTER (WHERE i.status IN ('OPEN','PARTIALLY_PAID')), 0)::float8 AS outstanding,
+                    count(*) FILTER (WHERE i.status NOT IN ('DRAFT','CANCELLED'))::int AS invoices
+               FROM invoices i
+               LEFT JOIN (SELECT invoice_id, sum(amount) AS paid FROM payments WHERE status = 'SUCCEEDED' GROUP BY invoice_id) pp ON pp.invoice_id = i.id
+              WHERE i.organization_id = $1::uuid AND i.currency <> 'INR'
+              GROUP BY i.currency ORDER BY i.currency`,
+            org,
+        );
+        res.json({ months, top_clients: top, kpi: kpi[0], other_currencies: other.filter((r) => r.invoices > 0) });
     } catch (error) {
         console.error(error);
         return serverError(res, error, "Failed to load analytics");

@@ -32,6 +32,10 @@ export type OrganizationsMinAggregateOutputType = {
   updated_at: Date | null
   upi_id: string | null
   payee_name: string | null
+  swift_code: string | null
+  payment_link: string | null
+  lut_number: string | null
+  export_declaration: string | null
   bank_account_name: string | null
   bank_account_number: string | null
   bank_ifsc: string | null
@@ -51,6 +55,10 @@ export type OrganizationsMaxAggregateOutputType = {
   updated_at: Date | null
   upi_id: string | null
   payee_name: string | null
+  swift_code: string | null
+  payment_link: string | null
+  lut_number: string | null
+  export_declaration: string | null
   bank_account_name: string | null
   bank_account_number: string | null
   bank_ifsc: string | null
@@ -70,6 +78,10 @@ export type OrganizationsCountAggregateOutputType = {
   updated_at: number
   upi_id: number
   payee_name: number
+  swift_code: number
+  payment_link: number
+  lut_number: number
+  export_declaration: number
   bank_account_name: number
   bank_account_number: number
   bank_ifsc: number
@@ -91,6 +103,10 @@ export type OrganizationsMinAggregateInputType = {
   updated_at?: true
   upi_id?: true
   payee_name?: true
+  swift_code?: true
+  payment_link?: true
+  lut_number?: true
+  export_declaration?: true
   bank_account_name?: true
   bank_account_number?: true
   bank_ifsc?: true
@@ -110,6 +126,10 @@ export type OrganizationsMaxAggregateInputType = {
   updated_at?: true
   upi_id?: true
   payee_name?: true
+  swift_code?: true
+  payment_link?: true
+  lut_number?: true
+  export_declaration?: true
   bank_account_name?: true
   bank_account_number?: true
   bank_ifsc?: true
@@ -129,6 +149,10 @@ export type OrganizationsCountAggregateInputType = {
   updated_at?: true
   upi_id?: true
   payee_name?: true
+  swift_code?: true
+  payment_link?: true
+  lut_number?: true
+  export_declaration?: true
   bank_account_name?: true
   bank_account_number?: true
   bank_ifsc?: true
@@ -221,6 +245,10 @@ export type OrganizationsGroupByOutputType = {
   updated_at: Date
   upi_id: string | null
   payee_name: string | null
+  swift_code: string | null
+  payment_link: string | null
+  lut_number: string | null
+  export_declaration: string | null
   bank_account_name: string | null
   bank_account_number: string | null
   bank_ifsc: string | null
@@ -261,6 +289,10 @@ export type organizationsWhereInput = {
   updated_at?: Prisma.DateTimeFilter<"organizations"> | Date | string
   upi_id?: Prisma.StringNullableFilter<"organizations"> | string | null
   payee_name?: Prisma.StringNullableFilter<"organizations"> | string | null
+  swift_code?: Prisma.StringNullableFilter<"organizations"> | string | null
+  payment_link?: Prisma.StringNullableFilter<"organizations"> | string | null
+  lut_number?: Prisma.StringNullableFilter<"organizations"> | string | null
+  export_declaration?: Prisma.StringNullableFilter<"organizations"> | string | null
   bank_account_name?: Prisma.StringNullableFilter<"organizations"> | string | null
   bank_account_number?: Prisma.StringNullableFilter<"organizations"> | string | null
   bank_ifsc?: Prisma.StringNullableFilter<"organizations"> | string | null
@@ -289,6 +321,10 @@ export type organizationsOrderByWithRelationInput = {
   updated_at?: Prisma.SortOrder
   upi_id?: Prisma.SortOrderInput | Prisma.SortOrder
   payee_name?: Prisma.SortOrderInput | Prisma.SortOrder
+  swift_code?: Prisma.SortOrderInput | Prisma.SortOrder
+  payment_link?: Prisma.SortOrderInput | Prisma.SortOrder
+  lut_number?: Prisma.SortOrderInput | Prisma.SortOrder
+  export_declaration?: Prisma.SortOrderInput | Prisma.SortOrder
   bank_account_name?: Prisma.SortOrderInput | Prisma.SortOrder
   bank_account_number?: Prisma.SortOrderInput | Prisma.SortOrder
   bank_ifsc?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -320,6 +356,10 @@ export type organizationsWhereUniqueInput = Prisma.AtLeast<{
   updated_at?: Prisma.DateTimeFilter<"organizations"> | Date | string
   upi_id?: Prisma.StringNullableFilter<"organizations"> | string | null
   payee_name?: Prisma.StringNullableFilter<"organizations"> | string | null
+  swift_code?: Prisma.StringNullableFilter<"organizations"> | string | null
+  payment_link?: Prisma.StringNullableFilter<"organizations"> | string | null
+  lut_number?: Prisma.StringNullableFilter<"organizations"> | string | null
+  export_declaration?: Prisma.StringNullableFilter<"organizations"> | string | null
   bank_account_name?: Prisma.StringNullableFilter<"organizations"> | string | null
   bank_account_number?: Prisma.StringNullableFilter<"organizations"> | string | null
   bank_ifsc?: Prisma.StringNullableFilter<"organizations"> | string | null
@@ -348,6 +388,10 @@ export type organizationsOrderByWithAggregationInput = {
   updated_at?: Prisma.SortOrder
   upi_id?: Prisma.SortOrderInput | Prisma.SortOrder
   payee_name?: Prisma.SortOrderInput | Prisma.SortOrder
+  swift_code?: Prisma.SortOrderInput | Prisma.SortOrder
+  payment_link?: Prisma.SortOrderInput | Prisma.SortOrder
+  lut_number?: Prisma.SortOrderInput | Prisma.SortOrder
+  export_declaration?: Prisma.SortOrderInput | Prisma.SortOrder
   bank_account_name?: Prisma.SortOrderInput | Prisma.SortOrder
   bank_account_number?: Prisma.SortOrderInput | Prisma.SortOrder
   bank_ifsc?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -373,6 +417,10 @@ export type organizationsScalarWhereWithAggregatesInput = {
   updated_at?: Prisma.DateTimeWithAggregatesFilter<"organizations"> | Date | string
   upi_id?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
   payee_name?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
+  swift_code?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
+  payment_link?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
+  lut_number?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
+  export_declaration?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
   bank_account_name?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
   bank_account_number?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
   bank_ifsc?: Prisma.StringNullableWithAggregatesFilter<"organizations"> | string | null
@@ -392,6 +440,10 @@ export type organizationsCreateInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -420,6 +472,10 @@ export type organizationsUncheckedCreateInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -448,6 +504,10 @@ export type organizationsUpdateInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -476,6 +536,10 @@ export type organizationsUncheckedUpdateInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -504,6 +568,10 @@ export type organizationsCreateManyInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -523,6 +591,10 @@ export type organizationsUpdateManyMutationInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -542,6 +614,10 @@ export type organizationsUncheckedUpdateManyInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -566,6 +642,10 @@ export type organizationsCountOrderByAggregateInput = {
   updated_at?: Prisma.SortOrder
   upi_id?: Prisma.SortOrder
   payee_name?: Prisma.SortOrder
+  swift_code?: Prisma.SortOrder
+  payment_link?: Prisma.SortOrder
+  lut_number?: Prisma.SortOrder
+  export_declaration?: Prisma.SortOrder
   bank_account_name?: Prisma.SortOrder
   bank_account_number?: Prisma.SortOrder
   bank_ifsc?: Prisma.SortOrder
@@ -585,6 +665,10 @@ export type organizationsMaxOrderByAggregateInput = {
   updated_at?: Prisma.SortOrder
   upi_id?: Prisma.SortOrder
   payee_name?: Prisma.SortOrder
+  swift_code?: Prisma.SortOrder
+  payment_link?: Prisma.SortOrder
+  lut_number?: Prisma.SortOrder
+  export_declaration?: Prisma.SortOrder
   bank_account_name?: Prisma.SortOrder
   bank_account_number?: Prisma.SortOrder
   bank_ifsc?: Prisma.SortOrder
@@ -604,6 +688,10 @@ export type organizationsMinOrderByAggregateInput = {
   updated_at?: Prisma.SortOrder
   upi_id?: Prisma.SortOrder
   payee_name?: Prisma.SortOrder
+  swift_code?: Prisma.SortOrder
+  payment_link?: Prisma.SortOrder
+  lut_number?: Prisma.SortOrder
+  export_declaration?: Prisma.SortOrder
   bank_account_name?: Prisma.SortOrder
   bank_account_number?: Prisma.SortOrder
   bank_ifsc?: Prisma.SortOrder
@@ -749,6 +837,10 @@ export type organizationsCreateWithoutCollection_actionsInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -776,6 +868,10 @@ export type organizationsUncheckedCreateWithoutCollection_actionsInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -819,6 +915,10 @@ export type organizationsUpdateWithoutCollection_actionsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -846,6 +946,10 @@ export type organizationsUncheckedUpdateWithoutCollection_actionsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -873,6 +977,10 @@ export type organizationsCreateWithoutConversationsInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -900,6 +1008,10 @@ export type organizationsUncheckedCreateWithoutConversationsInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -943,6 +1055,10 @@ export type organizationsUpdateWithoutConversationsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -970,6 +1086,10 @@ export type organizationsUncheckedUpdateWithoutConversationsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -997,6 +1117,10 @@ export type organizationsCreateWithoutCustomersInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -1024,6 +1148,10 @@ export type organizationsUncheckedCreateWithoutCustomersInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -1067,6 +1195,10 @@ export type organizationsUpdateWithoutCustomersInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1094,6 +1226,10 @@ export type organizationsUncheckedUpdateWithoutCustomersInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1121,6 +1257,10 @@ export type organizationsCreateWithoutInvoicesInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -1148,6 +1288,10 @@ export type organizationsUncheckedCreateWithoutInvoicesInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -1191,6 +1335,10 @@ export type organizationsUpdateWithoutInvoicesInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1218,6 +1366,10 @@ export type organizationsUncheckedUpdateWithoutInvoicesInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1245,6 +1397,10 @@ export type organizationsCreateWithoutMessagesInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -1272,6 +1428,10 @@ export type organizationsUncheckedCreateWithoutMessagesInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -1315,6 +1475,10 @@ export type organizationsUpdateWithoutMessagesInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1342,6 +1506,10 @@ export type organizationsUncheckedUpdateWithoutMessagesInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1369,6 +1537,10 @@ export type organizationsCreateWithoutPaymentsInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -1396,6 +1568,10 @@ export type organizationsUncheckedCreateWithoutPaymentsInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -1439,6 +1615,10 @@ export type organizationsUpdateWithoutPaymentsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1466,6 +1646,10 @@ export type organizationsUncheckedUpdateWithoutPaymentsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1493,6 +1677,10 @@ export type organizationsCreateWithoutUsersInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -1520,6 +1708,10 @@ export type organizationsUncheckedCreateWithoutUsersInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -1563,6 +1755,10 @@ export type organizationsUpdateWithoutUsersInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1590,6 +1786,10 @@ export type organizationsUncheckedUpdateWithoutUsersInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1617,6 +1817,10 @@ export type organizationsCreateWithoutSuppressionsInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -1644,6 +1848,10 @@ export type organizationsUncheckedCreateWithoutSuppressionsInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -1687,6 +1895,10 @@ export type organizationsUpdateWithoutSuppressionsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1714,6 +1926,10 @@ export type organizationsUncheckedUpdateWithoutSuppressionsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1741,6 +1957,10 @@ export type organizationsCreateWithoutCredit_notesInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -1768,6 +1988,10 @@ export type organizationsUncheckedCreateWithoutCredit_notesInput = {
   updated_at?: Date | string
   upi_id?: string | null
   payee_name?: string | null
+  swift_code?: string | null
+  payment_link?: string | null
+  lut_number?: string | null
+  export_declaration?: string | null
   bank_account_name?: string | null
   bank_account_number?: string | null
   bank_ifsc?: string | null
@@ -1811,6 +2035,10 @@ export type organizationsUpdateWithoutCredit_notesInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1838,6 +2066,10 @@ export type organizationsUncheckedUpdateWithoutCredit_notesInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   upi_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   payee_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  swift_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  payment_link?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lut_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  export_declaration?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_account_number?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   bank_ifsc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1968,6 +2200,10 @@ export type organizationsSelect<ExtArgs extends runtime.Types.Extensions.Interna
   updated_at?: boolean
   upi_id?: boolean
   payee_name?: boolean
+  swift_code?: boolean
+  payment_link?: boolean
+  lut_number?: boolean
+  export_declaration?: boolean
   bank_account_name?: boolean
   bank_account_number?: boolean
   bank_ifsc?: boolean
@@ -1997,6 +2233,10 @@ export type organizationsSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   updated_at?: boolean
   upi_id?: boolean
   payee_name?: boolean
+  swift_code?: boolean
+  payment_link?: boolean
+  lut_number?: boolean
+  export_declaration?: boolean
   bank_account_name?: boolean
   bank_account_number?: boolean
   bank_ifsc?: boolean
@@ -2016,6 +2256,10 @@ export type organizationsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   updated_at?: boolean
   upi_id?: boolean
   payee_name?: boolean
+  swift_code?: boolean
+  payment_link?: boolean
+  lut_number?: boolean
+  export_declaration?: boolean
   bank_account_name?: boolean
   bank_account_number?: boolean
   bank_ifsc?: boolean
@@ -2035,6 +2279,10 @@ export type organizationsSelectScalar = {
   updated_at?: boolean
   upi_id?: boolean
   payee_name?: boolean
+  swift_code?: boolean
+  payment_link?: boolean
+  lut_number?: boolean
+  export_declaration?: boolean
   bank_account_name?: boolean
   bank_account_number?: boolean
   bank_ifsc?: boolean
@@ -2046,7 +2294,7 @@ export type organizationsSelectScalar = {
   auto_reminders?: boolean
 }
 
-export type organizationsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "created_at" | "updated_at" | "upi_id" | "payee_name" | "bank_account_name" | "bank_account_number" | "bank_ifsc" | "bank_name" | "gstin" | "plan" | "brand_color" | "logo_data" | "auto_reminders", ExtArgs["result"]["organizations"]>
+export type organizationsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "created_at" | "updated_at" | "upi_id" | "payee_name" | "swift_code" | "payment_link" | "lut_number" | "export_declaration" | "bank_account_name" | "bank_account_number" | "bank_ifsc" | "bank_name" | "gstin" | "plan" | "brand_color" | "logo_data" | "auto_reminders", ExtArgs["result"]["organizations"]>
 export type organizationsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   collection_actions?: boolean | Prisma.organizations$collection_actionsArgs<ExtArgs>
   conversations?: boolean | Prisma.organizations$conversationsArgs<ExtArgs>
@@ -2083,6 +2331,10 @@ export type $organizationsPayload<ExtArgs extends runtime.Types.Extensions.Inter
     updated_at: Date
     upi_id: string | null
     payee_name: string | null
+    swift_code: string | null
+    payment_link: string | null
+    lut_number: string | null
+    export_declaration: string | null
     bank_account_name: string | null
     bank_account_number: string | null
     bank_ifsc: string | null
@@ -2531,6 +2783,10 @@ export interface organizationsFieldRefs {
   readonly updated_at: Prisma.FieldRef<"organizations", 'DateTime'>
   readonly upi_id: Prisma.FieldRef<"organizations", 'String'>
   readonly payee_name: Prisma.FieldRef<"organizations", 'String'>
+  readonly swift_code: Prisma.FieldRef<"organizations", 'String'>
+  readonly payment_link: Prisma.FieldRef<"organizations", 'String'>
+  readonly lut_number: Prisma.FieldRef<"organizations", 'String'>
+  readonly export_declaration: Prisma.FieldRef<"organizations", 'String'>
   readonly bank_account_name: Prisma.FieldRef<"organizations", 'String'>
   readonly bank_account_number: Prisma.FieldRef<"organizations", 'String'>
   readonly bank_ifsc: Prisma.FieldRef<"organizations", 'String'>

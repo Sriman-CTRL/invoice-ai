@@ -43,6 +43,10 @@ const TENANT_TABLES = ["invoice_details", "invoice_views", "recurring_invoices",
   // Branding on the organisation (logo is a small compressed data URL, validated by the API).
   await run(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS brand_color VARCHAR(9)`);
   await run(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS logo_data TEXT`);
+  // Export invoices (clients outside India): SWIFT code, an optional other payment link, LUT number and the seller's own export declaration text.
+  for (const [col, type] of [["swift_code", "VARCHAR(11)"], ["payment_link", "VARCHAR(500)"], ["lut_number", "VARCHAR(50)"], ["export_declaration", "VARCHAR(600)"]]) {
+    await run(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS ${col} ${type}`);
+  }
   // Automatic overdue reminders are off until the seller switches them on in Settings.
   await run(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS auto_reminders BOOLEAN NOT NULL DEFAULT false`);
   // Line items, discount, GST and notes live beside the invoice so the core table is untouched.

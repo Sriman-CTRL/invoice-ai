@@ -33,8 +33,11 @@ export type PublicInvoiceDetail = {
   payment: {
     upi_id: string | null;
     payee_name: string;
-    bank: { account_name: string; account_number: string; ifsc: string; bank_name: string | null } | null;
+    bank: { account_name: string; account_number: string; ifsc: string; bank_name: string | null; swift_code?: string | null } | null;
+    payment_link?: string | null;
   };
+  /** Only on non-INR invoices, and only when the seller entered them. */
+  export?: { lut_number: string | null; declaration: string | null } | null;
   has_deliverable: boolean;
   deliverable_url: string | null;
   deliverable_locked: boolean;
@@ -49,6 +52,10 @@ export type OrgSettings = {
   bank_account_number: string | null;
   bank_ifsc: string | null;
   bank_name: string | null;
+  swift_code?: string | null;
+  payment_link?: string | null;
+  lut_number?: string | null;
+  export_declaration?: string | null;
   gstin: string | null;
   brand_color?: string | null;
   logo_data?: string | null;
