@@ -58,6 +58,7 @@ Last updated: 24 Nov 2026.
 | 24 Nov (night build) | R3: proposals doc; Hinglish pay-page explainer built behind `VITE_FEATURE_HINGLISH_PAY` (off by default). |
 | 24 Nov (night build) | T10: night report in `docs/NIGHT-REPORT.md`. |
 | 24 Nov (night build, phase 2) | P0: review fixes: Google sign-in links on Google's account id (`users.google_sub`), automatic reminders claim each step before sending (`auto_reminder_claims`), bank-alert suggestions need a DMARC-passing sender, pay page and PDF use the balance after credit notes, honest pay-page and legal wording. |
+| 24 Nov (night build, phase 2) | P1: market research verified against vendors' own pages; pay-to-unlock and late-payment evidence updated in `docs/research/MARKET-2026-11.md`. |
 
 ## 3. Key decisions (and why)
 
