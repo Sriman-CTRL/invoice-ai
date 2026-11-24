@@ -1,6 +1,7 @@
 import { creditedTotal, outstandingOf } from "../lib/invoiceBalance";
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
+import { serverError } from "../lib/monitoring";
 
 const router = Router();
 
@@ -136,7 +137,7 @@ router.post(["/claim", "/claim-due"], async (req: Request, res: Response): Promi
     res.json({ claimed: value, count: value.length, Count: value.length });
   } catch (error) {
     console.error("Error claiming collection actions:", error);
-    res.status(500).json({ error: "Failed to claim collection actions" });
+    return serverError(res, error, "Failed to claim collection actions");
   }
 });
 
@@ -186,7 +187,7 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     console.error("Error fetching collection actions:", error);
-    res.status(500).json({ error: "Internal server error" });
+    return serverError(res, error, "Internal server error");
   }
 });
 
@@ -224,7 +225,7 @@ router.get("/:id", async (req: Request, res: Response): Promise<void> => {
     res.json(action);
   } catch (error) {
     console.error("Error fetching collection action:", error);
-    res.status(500).json({ error: "Internal server error" });
+    return serverError(res, error, "Internal server error");
   }
 });
 
@@ -302,7 +303,7 @@ router.patch("/:id/status", async (req: Request, res: Response): Promise<void> =
     res.json(updatedAction);
   } catch (error) {
     console.error("Error updating collection action status:", error);
-    res.status(500).json({ error: "Internal server error" });
+    return serverError(res, error, "Internal server error");
   }
 });
 
@@ -346,7 +347,7 @@ router.get("/:id/proof-image", async (req: Request, res: Response): Promise<void
     res.send(Buffer.from(rows[0].data, "base64"));
   } catch (error) {
     console.error("proof-image error:", error);
-    res.status(500).json({ error: "Failed to load screenshot" });
+    return serverError(res, error, "Failed to load screenshot");
   }
 });
 
@@ -500,8 +501,13 @@ router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<vo
       ...result,
     });
   } catch (error) {
+    // The action points at an invoice this business cannot see or that is gone: an expected not-found, not a server fault.
+    if (error instanceof Error && error.message === "INVOICE_NOT_FOUND") {
+      res.status(404).json({ error: "Invoice not found" });
+      return;
+    }
     console.error("Error verifying payment proof:", error);
-    res.status(500).json({ error: error instanceof Error ? error.message : "Failed to verify payment proof" });
+    return serverError(res, error, "Failed to verify payment proof");
   }
 });
 

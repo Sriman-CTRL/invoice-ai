@@ -1,3 +1,4 @@
+import { captureJobFailure, serverError } from "../lib/monitoring";
 import { Router } from "express";
 import crypto from "crypto";
 import prisma from "../lib/prisma";
@@ -56,7 +57,7 @@ recurringRouter.post("/", async (req, res) => {
     res.status(201).json({ id: rows[0].id });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: "Could not save the repeating invoice." });
+    return serverError(res, e, "Could not save the repeating invoice.");
   }
 });
 
@@ -90,6 +91,7 @@ cronRouter.get("/recurring", async (req, res) => {
     recurring = await runDueRecurring(PUBLIC_APP_URL);
   } catch (e) {
     console.error("cron: recurring invoices failed", e);
+    await captureJobFailure("recurring-invoices", e);
     recurring = { error: "Run failed" };
   }
   let autoReminders: AutoReminderResult | { error: string };
@@ -97,6 +99,7 @@ cronRouter.get("/recurring", async (req, res) => {
     autoReminders = await runAutoReminders();
   } catch (e) {
     console.error("cron: automatic reminders failed", e);
+    await captureJobFailure("auto-reminders", e);
     autoReminders = { error: "Run failed" };
   }
   const failed = "error" in recurring && "error" in autoReminders;

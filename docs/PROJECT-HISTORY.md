@@ -64,6 +64,7 @@ Last updated: 24 Nov 2026.
 | 24 Nov (night build, phase 2) | P4: end-to-end test of the core money flow (`npm run e2e`, local only, not in CI). |
 | 24 Nov (night build, phase 2) | P5: Hindi (हिन्दी) switch on the client pay page; labels only, needs native review. |
 | 24 Nov (night build, phase 2) | P6: whole-night review; fixed unsourced claims and UPI-for-non-INR bug. P7: night report updated with phase 2 and review. |
+| 24 Nov | `feat/sentry` (PR open, not deployed): privacy-first error reporting (Sentry, errors only) for the web app and the API, with scrubbers, admin test buttons and a privacy-page section. Inert until `SENTRY_DSN` / `VITE_SENTRY_DSN` are set; needs the real ingest host in `vercel.json` first. |
 
 ## 3. Key decisions (and why)
 
@@ -89,6 +90,8 @@ approval), client portal, CSV import, cash-flow forecast, analytics, GST report,
 export/erasure, account deletion, admin plan approvals, analytics/growth page.
 
 **Added in the night builds (on branch `night-build`, merge pending):** free tools at `/tools/*`, five guides at `/guides/`, Hindi switch on the pay page, Google sign-in (inert until keys), What's new page, credit-note-aware balances.
+
+**Error reporting (Sentry), code complete on `feat/sentry`, off until DSNs are set:** errors only, scrubbed of emails, UPI IDs, UTRs, IFSC, account numbers, GSTINs, tokens and URL ids before sending. Owner must create the Sentry projects, put the ingest origin in `vercel.json` `connect-src`, fill the data region on the privacy page, and add the env vars in Vercel (see the PR).
 
 **Built but not offered to users yet ("soon"):** reading client replies with AI (inbound email → classify → action
 queue), automatic scheduled reminders, per-seller billing email address.

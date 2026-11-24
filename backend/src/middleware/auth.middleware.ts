@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../lib/config";
 import { auditLogger } from "../lib/auditLogger";
 import { enterTenant } from "../lib/prisma";
+import { Sentry } from "../lib/monitoring";
 
 export interface AuthUser {
   id: string;
@@ -35,6 +36,8 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
     }
     req.user = decoded;
     enterTenant(decoded.organization_id);
+    // Error reports carry only the internal user id (no email or name).
+    Sentry.setUser({ id: decoded.id });
 
     // If a tenant id is supplied by the client, it must match the token's.
     const reqOrgId = req.query.organization_id || req.body?.organization_id;

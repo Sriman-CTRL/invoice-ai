@@ -9,6 +9,7 @@ import { authMiddleware } from "../middleware/auth.middleware";
 import { passwordProblem } from "../lib/passwordPolicy";
 import { clearLoginFailures, loginLockoutSeconds, recordLoginFailure } from "../lib/loginThrottle";
 import { googleClientId, verifyGoogleToken } from "../lib/googleAuth";
+import { serverError } from "../lib/monitoring";
 
 const router = Router();
 
@@ -111,7 +112,7 @@ router.post("/register", turnstileGuard, async (req: Request, res: Response): Pr
       return;
     }
     console.error("Register error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    return serverError(res, error, "Internal server error");
   }
 });
 
@@ -154,7 +155,7 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
     res.json(sessionFor(user));
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    return serverError(res, error, "Internal server error");
   }
 });
 
@@ -232,7 +233,7 @@ router.post("/google", async (req: Request, res: Response): Promise<void> => {
     res.status(201).json(sessionFor(user));
   } catch (error) {
     console.error("Google sign-in error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    return serverError(res, error, "Internal server error");
   }
 });
 
@@ -297,7 +298,7 @@ router.post("/google/link", authMiddleware, async (req: Request, res: Response):
     res.json({ success: true, google_linked: true });
   } catch (error) {
     console.error("Google link error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    return serverError(res, error, "Internal server error");
   }
 });
 
@@ -372,7 +373,7 @@ router.put("/password", authMiddleware, async (req: Request, res: Response): Pro
     res.json({ success: true, message: "Password updated. Use your new password the next time you sign in." });
   } catch (error) {
     console.error("Change password error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    return serverError(res, error, "Internal server error");
   }
 });
 
@@ -434,7 +435,7 @@ router.delete("/account", authMiddleware, async (req: Request, res: Response): P
     res.json({ success: true });
   } catch (error) {
     console.error("Delete account error:", error);
-    res.status(500).json({ error: "Could not delete the account. Please contact support." });
+    return serverError(res, error, "Could not delete the account. Please contact support.");
   }
 });
 

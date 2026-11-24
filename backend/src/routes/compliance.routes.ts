@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { authorizeOutboundSend, addSuppression } from "../services/complianceService";
 import prisma from "../lib/prisma";
+import { serverError } from "../lib/monitoring";
 
 const router = Router();
 
@@ -29,7 +30,7 @@ router.post("/authorize-send", async (req: Request, res: Response) => {
     res.json(decision);
   } catch (error) {
     console.error("Compliance authorization error:", error);
-    res.status(500).json({ error: "Failed to evaluate compliance authorization" });
+    return serverError(res, error, "Failed to evaluate compliance authorization");
   }
 });
 
@@ -52,7 +53,7 @@ router.get("/suppressions", async (req: Request, res: Response) => {
     res.json(suppressions);
   } catch (error) {
     console.error("Fetch suppressions error:", error);
-    res.status(500).json({ error: "Failed to fetch suppressions" });
+    return serverError(res, error, "Failed to fetch suppressions");
   }
 });
 
@@ -81,7 +82,7 @@ router.post("/suppressions", async (req: Request, res: Response) => {
     res.status(201).json(suppression);
   } catch (error) {
     console.error("Add suppression error:", error);
-    res.status(500).json({ error: "Failed to add suppression" });
+    return serverError(res, error, "Failed to add suppression");
   }
 });
 

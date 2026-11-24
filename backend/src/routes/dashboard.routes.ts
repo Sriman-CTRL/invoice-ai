@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { getDashboardData } from "../services/dashboardService";
 import prisma from "../lib/prisma";
+import { serverError } from "../lib/monitoring";
 
 const router = Router();
 
@@ -29,7 +30,7 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
         res.json(data);
     } catch (error) {
         console.error("Error fetching dashboard data:", error);
-        res.status(500).json({ error: "Internal server error" });
+        return serverError(res, error, "Internal server error");
     }
 });
 
@@ -77,7 +78,7 @@ router.get("/analytics", async (req: Request, res: Response): Promise<void> => {
         res.json({ months, top_clients: top, kpi: kpi[0] });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: "Failed to load analytics" });
+        return serverError(res, error, "Failed to load analytics");
     }
 });
 
@@ -119,7 +120,7 @@ router.get("/gst-report", async (req: Request, res: Response): Promise<void> => 
         res.json({ from, to, rows: out });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: "Failed to build the GST report" });
+        return serverError(res, error, "Failed to build the GST report");
     }
 });
 

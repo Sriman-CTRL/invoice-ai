@@ -2,6 +2,7 @@ import { creditedTotal } from "../lib/invoiceBalance";
 import { Router } from "express";
 import prisma from "../lib/prisma";
 import { auditLogger } from "../lib/auditLogger";
+import { serverError } from "../lib/monitoring";
 
 const router = Router();
 
@@ -147,7 +148,7 @@ router.post("/", async (req, res) => {
       if (entry) return res.status(entry[0]).json({ error: entry[1] });
     }
 
-    res.status(500).json({ error: "Failed to create payment" });
+    return serverError(res, error, "Failed to create payment");
   }
 });
 
@@ -177,7 +178,7 @@ router.get("/", async (req, res) => {
     res.json(payments);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to fetch payments" });
+    return serverError(res, error, "Failed to fetch payments");
   }
 });
 

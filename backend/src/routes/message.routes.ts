@@ -2,6 +2,7 @@ import { Router } from "express";
 import prisma from "../lib/prisma";
 import { processInboundEmail } from "../services/inboundService";
 import { classifyInboundMessage, ClassifyError } from "../services/classifyService";
+import { serverError } from "../lib/monitoring";
 
 const router = Router();
 
@@ -51,7 +52,7 @@ router.post("/", async (req, res) => {
         return res.status(201).json(message);
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ error: "Failed to create message" });
+        return serverError(res, error, "Failed to create message");
     }
 });
 
@@ -149,7 +150,7 @@ router.post(["/reprocess", "/reprocess-unclassified"], async (req, res) => {
         });
     } catch (error) {
         console.error("Reprocess error:", error);
-        return res.status(500).json({ error: "Failed to reprocess unclassified messages" });
+        return serverError(res, error, "Failed to reprocess unclassified messages");
     }
 });
 
@@ -179,7 +180,7 @@ router.get("/conversation/:conversation_id", async (req, res) => {
         return res.json(messages);
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ error: "Failed to fetch messages" });
+        return serverError(res, error, "Failed to fetch messages");
     }
 });
 
@@ -223,7 +224,7 @@ router.post("/:message_id/classify", async (req, res) => {
             });
         }
         console.error("Classify endpoint error:", error);
-        return res.status(500).json({ error: "Failed to classify message" });
+        return serverError(res, error, "Failed to classify message");
     }
 });
 

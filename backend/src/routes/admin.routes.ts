@@ -2,6 +2,7 @@ import { NextFunction, Request, Response, Router } from "express";
 import prisma from "../lib/prisma";
 import { ensureOrgSettingsSchema } from "../lib/orgSettings";
 import { ensureExtraSchema } from "../lib/extraSchema";
+import { serverError } from "../lib/monitoring";
 
 const router = Router();
 
@@ -25,7 +26,7 @@ async function requireAdmin(req: Request, res: Response, next: NextFunction) {
     next();
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to verify admin access" });
+    return serverError(res, error, "Failed to verify admin access");
   }
 }
 
@@ -36,6 +37,11 @@ router.get("/me", async (req, res) => {
   } catch {
     res.json({ is_admin: false });
   }
+});
+
+// Lets an admin check that error reporting works end to end. Answers 500 on purpose; the error shows up in Sentry.
+router.get("/sentry-test", requireAdmin, () => {
+  throw new Error("Sentry test from Paivo API");
 });
 
 router.get("/plan-requests", requireAdmin, async (_req, res) => {
@@ -50,7 +56,7 @@ router.get("/plan-requests", requireAdmin, async (_req, res) => {
     res.json(rows);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to load plan requests" });
+    return serverError(res, error, "Failed to load plan requests");
   }
 });
 
@@ -82,7 +88,7 @@ router.get("/analytics", requireAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to load analytics" });
+    return serverError(res, error, "Failed to load analytics");
   }
 });
 
@@ -97,7 +103,7 @@ router.get("/leads", requireAdmin, async (_req, res) => {
     res.json({ leads: rows, counts: Object.fromEntries(counts.map((c) => [c.kind, c.n])) });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to load leads" });
+    return serverError(res, error, "Failed to load leads");
   }
 });
 
@@ -128,7 +134,7 @@ router.post("/plan-requests/:id/:decision", requireAdmin, async (req, res) => {
     res.json({ success: true, status });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to process request" });
+    return serverError(res, error, "Failed to process request");
   }
 });
 

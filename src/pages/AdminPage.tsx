@@ -6,6 +6,26 @@ import { dateTime } from "../lib";
 import { useToast } from "../toast";
 import { useResource } from "./shared";
 
+/** Lets a platform admin check that error reports arrive in Sentry (they only do if the DSN env vars are set). */
+function ErrorReportingTest() {
+  const toast = useToast();
+  const sendApiTest = async () => {
+    try {
+      await adminApi.sentryTest();
+    } catch {
+      // The API answers 500 on purpose; that is the test error.
+    }
+    toast.success("API test error sent", "If SENTRY_DSN is set, it appears in Sentry within a minute.");
+  };
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+      <span className="font-semibold">Error reporting check:</span>
+      <button type="button" className="btn-secondary" onClick={() => { throw new Error("Sentry test from Paivo web"); }}>Send test error</button>
+      <button type="button" className="btn-secondary" onClick={sendApiTest}>Send test error from API</button>
+    </div>
+  );
+}
+
 export function AdminPage() {
   const r = useResource(() => adminApi.planRequests(), []);
   const toast = useToast();
@@ -24,7 +44,7 @@ export function AdminPage() {
     }
   };
 
-  const header = <PageHeader title="Plan payments" detail="Verify the UTR in your bank app, then activate the plan." />;
+  const header = <><PageHeader title="Plan payments" detail="Verify the UTR in your bank app, then activate the plan." /><ErrorReportingTest /></>;
   if (r.loading) return <>{header}<TableSkeleton rows={4} /></>;
   if (r.error || !r.data) {
     return (
