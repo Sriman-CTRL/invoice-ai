@@ -8,6 +8,9 @@ const named = <T extends Record<string, React.ComponentType<any>>>(load: () => P
   lazy(async () => ({ default: (await load())[key] }));
 
 const WhatsNewPage = named(() => import("./WhatsNewPage"), "WhatsNewPage");
+const GstCalculatorPage = named(() => import("./ToolPages"), "GstCalculatorPage");
+const TdsCalculatorPage = named(() => import("./ToolPages"), "TdsCalculatorPage");
+const ReminderWriterPage = named(() => import("./ToolPages"), "ReminderWriterPage");
 const PricingPage = named(() => import("./PricingPage"), "PricingPage");
 const AuthPage = named(() => import("./pages/AuthPage"), "AuthPage");
 const PublicPayPage = named(() => import("./PublicPayPage"), "PublicPayPage");
@@ -50,6 +53,9 @@ export function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/whats-new" element={<WhatsNewPage />} />
+      <Route path="/tools/gst-invoice-calculator" element={<GstCalculatorPage />} />
+      <Route path="/tools/tds-calculator" element={<TdsCalculatorPage />} />
+      <Route path="/tools/payment-reminder-writer" element={<ReminderWriterPage />} />
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/register" element={<AuthPage mode="register" />} />
       <Route path="/pay/:invoiceNumber" element={<PublicPayPage />} />

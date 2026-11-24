@@ -73,7 +73,7 @@ A reviewer checked every `[night]` commit. Fix these six, each as its own commit
 
 **Notes (P1):** Vendor pages read 24 Nov 2026 (through web-fetch helpers; a few were read only via a model summary and are marked in the doc): every "(?)" and "Not found" in section 1 is now a vendor statement or "not stated by vendor". Gaps: Kwill has no findable vendor page; Cashfree pricing returned 403; Vyapar pricing page loaded empty; Instamojo and myBillBook pages contradict themselves (written as found). Section 2 updated (WeTransfer and Aryeo gate downloads; Pixieset not confirmed; HoneyBook/Dubsado/Bonsai unconfirmed; India escrow services not researched). New section 2b: no India-freelancer-specific late-payment survey found, so only labelled global/MSME figures. Doc-only, tests unchanged (121/121).
 
-## [ ] P2. Free public tools (top-of-funnel, no login)
+## [x] P2. Free public tools (top-of-funnel, no login)
 
 Build three free tools as public routes inside the marketing shell, lazy-loaded, linked from the footer and added to
 `public/sitemap.xml`. Each ends with an honest call to action to try Paivo. No AI, no network calls, everything runs
@@ -91,6 +91,8 @@ in the browser.
    copy button, WhatsApp share link. Never threatening; no legal threats.
 4. Meta title/description per tool (set `document.title`; plus a static crawlable fallback if T1 set one up). Unit
    tests for the calculation helpers.
+
+**Notes (P2):** Three public tools in the marketing shell, lazy-loaded, linked from the footer, in sitemap.xml: /tools/gst-invoice-calculator, /tools/tds-calculator, /tools/payment-reminder-writer (src/ToolPages.tsx; each sets its own tab title and meta description). GST: reuses the existing src/invoiceMath.ts `totalsFor` (already a mirror of the server); tests/tools.test.ts checks it gives identical results to backend `computeTotals` on six cases. Slabs offered: 0, 5, 18, 40 plus "Other rate", read from the GST Council's own 56th-meeting press release (18% standard, 5% merit, 40% special, effective 22 Sep 2025; the 57th meeting release of Oct 2026 lists no new slab), cited on the page with the check date. NOT verified and therefore NOT shown: GST registration threshold, and ANY TDS rate or threshold: incometax.gov.in did not resolve and incometaxindia.gov.in and pib.gov.in returned 403 to the fetch tool on 24 Nov 2026, so the TDS tool makes the person type the rate, says why, links the official site, and has a test that no 194C/194J rate is hard-coded; once you can open the official TDS chart in a browser, add the rates with a "last checked" date. Reminder writer: three polite templates (friendly / firm / last reminder), editable, copy button, WhatsApp share link, test that none contains threat words. Real-browser check (scripts/check-tools.mjs against vite preview): all three work, no console errors. No static crawlable fallback was added (T1's fallback exists only in index.html for the landing page; the guides in P3 are the crawlable content). NOTE: the old GST_RATES list (5, 12, 18, 28) in src/invoiceMath.ts still feeds the invoice form; 12% and 28% are no longer slabs after 22 Sep 2025, not changed (it affects what users can put on invoices; for you to decide). Also noticed docs/gtm/MESSAGES.md says "Most late payments are forgetfulness", which has no source (P6 to review). 121 backend/121 pass/0 skip, build pass, test:web 23.
 
 ## [ ] P3. Guides that Google can read (static HTML)
 
