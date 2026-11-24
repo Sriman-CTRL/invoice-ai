@@ -77,6 +77,7 @@ for (const [size, viewport] of Object.entries(sizes)) {
     if (name === "pay-unlocked" && !confirmed) continue;
     await pub.goto(WEB + path, { waitUntil: "networkidle" });
     await shot(pub, name, size);
+    if (name === "pay-unlocked") { await pub.evaluate(() => window.scrollTo(0, document.body.scrollHeight)); await shot(pub, "pay-unlocked-footer", size); }
   }
   const page = await ctx.newPage();
   for (const [name, path] of [["dashboard", "/dashboard"], ["invoices", "/invoices"], ["invoice-detail", `/invoices/${locked.id}`]]) {

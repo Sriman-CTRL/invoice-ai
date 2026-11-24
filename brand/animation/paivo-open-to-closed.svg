@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="t"><title id="t">Paivo: unpaid becomes paid</title>
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366F1"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient></defs>
+<!-- Centre line of the P (stroke 38). pathLength=1000: open state draws 822, closed state draws 1000. -->
+<path d="M69 212V44H133A54 54 0 0 1 133 152H69" pathLength="1000" fill="none" stroke="url(#g)" stroke-width="38" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="822 1000">
+<animate attributeName="stroke-dasharray" values="822 1000;822 1000;1000 1000;1000 1000;822 1000" keyTimes="0;0.25;0.45;0.8;1" dur="4s" repeatCount="indefinite" calcMode="linear"/>
+</path></svg>

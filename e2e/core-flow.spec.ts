@@ -65,6 +65,8 @@ test("core flow: pay, submit UTR, seller confirms, files unlock", async ({ page,
   await expect(client.getByText("Locked until paid")).toBeVisible();
   await expect(client.locator(`a[href="${filesUrl}"]`)).toHaveCount(0);
   expect(await client.content()).not.toContain(filesUrl);
+  await expect(client.locator(".paivo-closing")).toHaveCount(0); // the closing mark only exists once paid
+  await expect(client.locator("footer").getByText("Powered by")).toBeVisible(); // small Paivo credit; the seller stays the main brand
 
   // 5. The client submits a UTR.
   await client.getByRole("button", { name: /Submit UTR/ }).first().click();
@@ -83,5 +85,10 @@ test("core flow: pay, submit UTR, seller confirms, files unlock", async ({ page,
   // 7. The pay page now shows the files link.
   await client.reload();
   await expect(client.locator(`a[href="${filesUrl}"]`)).toBeVisible();
+  await expect(client.locator(".paivo-closing")).toHaveCount(1); // mark shown next to the paid state
+  await expect(client.getByText("Your final files are unlocked.")).toBeVisible(); // wording must hold on every screen size
+  await expect(client.locator("footer")).not.toContainText("•"); // no standalone separators to wrap onto their own lines
+  await client.emulateMedia({ reducedMotion: "reduce" });
+  expect(await client.locator(".paivo-closing").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
   await clientCtx.close();
 });

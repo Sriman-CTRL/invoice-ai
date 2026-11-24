@@ -2,6 +2,7 @@ import { TURNSTILE_SITE_KEY, TurnstileWidget } from "../TurnstileWidget";
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Check, CheckCircle2, RefreshCw, Sparkles, X, Zap } from "lucide-react";
+import { PaivoWordmark } from "../Brand";
 import { Badge } from "../components";
 import { useAuth } from "../auth";
 import { loadAttribution } from "../attribution";
@@ -99,11 +100,8 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
         {/* Brand Header */}
         <div className="flex items-center justify-between z-10">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-500 via-indigo-600 to-violet-500 shadow-glow ring-1 ring-white/20">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
             <div>
-              <span className="text-xl font-black tracking-tight text-white block">Paivo</span>
+              <span className="block text-white"><PaivoWordmark height={40} /></span>
               <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
                 Invoices & payments
               </span>
@@ -214,10 +212,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
           {/* Mobile Brand Header */}
           <div className="mb-6 flex items-center justify-between lg:hidden">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white shadow-glow">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <span className="text-lg font-bold text-white">Paivo</span>
+              <span className="text-white"><PaivoWordmark height={32} /></span>
             </div>
             <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
               Beta

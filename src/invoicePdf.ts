@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
 import type { InvoiceDetail, OrgSettings } from "./types";
 import { amountInWords } from "./amountInWords";
+import { PAIVO_BADGE_PNG, PAIVO_BADGE_RATIO } from "./lib/paivoBadgePng";
 
 export const PUBLIC_BASE_URL = "https://paivo.in";
 
@@ -266,10 +267,15 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   doc.setDrawColor(...LINE);
   doc.line(M, H - 20, W - M, H - 20);
   doc.setFont("helvetica", "normal"); doc.setFontSize(8); set(MUTED);
-  doc.text(`${org} - Generated with Paivo. Deliverables unlock once payment is confirmed.`, M, H - 14);
+  doc.text(`${org} - Deliverables unlock once payment is confirmed.`, M, H - 14);
   doc.text("Computer-generated invoice; no signature required.", M, H - 9.5);
+  // Small "Powered by Paivo" badge, bottom right. The seller's details stay primary.
+  const badgeH = 5.2, badgeW = badgeH * PAIVO_BADGE_RATIO;
+  doc.setFontSize(7);
+  doc.text("Powered by", W - M - badgeW - 1.5, H - 9.5, { align: "right" });
+  doc.addImage(PAIVO_BADGE_PNG, "PNG", W - M - badgeW, H - 9.5 - badgeH + 1.2, badgeW, badgeH);
 
-  doc.setProperties({ title: `Invoice ${inv.invoice_number}`, subject: `Invoice for ${customer.name}`, creator: "LedgerLane" });
+  doc.setProperties({ title: `Invoice ${inv.invoice_number}`, subject: `Invoice for ${customer.name}`, creator: "Paivo" });
   return doc;
 }
 

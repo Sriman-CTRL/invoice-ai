@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { CheckCircle2, ChevronRight, RefreshCw } from "lucide-react";
 import { publicApi } from "./api";
 import { date, money } from "./lib";
+import { PaivoWordmark } from "./Brand";
 
 type Data = Awaited<ReturnType<typeof publicApi.clientPortal>>;
 
@@ -97,7 +98,11 @@ export function ClientPortalPage() {
             <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">{paid.map((i) => <Row key={i.id} inv={i} />)}</div>
           </section>
         )}
-        <p className="mt-10 text-center text-[11px] text-slate-600">Powered by Paivo. Payments go straight to {data.organization.name}.</p>
+        <p className="mt-10 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-[11px] text-slate-600">
+          <span>Powered by</span>
+          <Link to="/" aria-label="Paivo" className="inline-flex text-slate-400 hover:text-slate-200"><PaivoWordmark height={22} /></Link>
+          <span>· Payments go straight to {data.organization.name}.</span>
+        </p>
       </main>
     </div>
   );

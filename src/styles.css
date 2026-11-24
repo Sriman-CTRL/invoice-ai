@@ -148,3 +148,8 @@
 .text-white h1, .text-white h2, .text-white h3, .text-white h4 { color: inherit; }
 /* Money & metrics: proportional-width sans with tabular figures instead of code font */
 .font-mono.tabular-nums { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-feature-settings: "tnum" 1; letter-spacing: -0.01em; }
+
+/* Paivo mark: the open bowl closes once (paid state). Final state = closed, so reduced motion just shows it. */
+@keyframes paivo-close { from { stroke-dasharray: 822 1000; } to { stroke-dasharray: 1000 1000; } }
+.paivo-closing { animation: paivo-close 700ms cubic-bezier(0.22, 1, 0.36, 1) 300ms backwards; }
+@media (prefers-reduced-motion: reduce) { .paivo-closing { animation: none; } }

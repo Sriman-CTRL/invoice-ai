@@ -45,7 +45,7 @@ const en = {
   openFiles: "Download Final Deliverables",
   paymentReceived: "Payment received",
   thankYou: (seller: string) => `Thank you. ${seller} has confirmed this invoice is paid in full.`,
-  filesUnlockedNote: "Your files are unlocked on the left.",
+  filesUnlockedNote: "Your final files are unlocked.",
   explainTitle: (seller: string) => `You're paying ${seller}`,
   explainDirect: "Your payment goes straight to their UPI ID or bank account. Paivo never holds the money.",
   explainNext: (seller: string, hasFiles: boolean) =>
@@ -138,7 +138,7 @@ const hi: PayText = {
   openFiles: "फ़ाइनल फ़ाइलें खोलें",
   paymentReceived: "भुगतान मिल गया",
   thankYou: (seller) => `धन्यवाद। ${seller} ने पुष्टि की है कि यह इनवॉइस पूरा चुका दिया गया है।`,
-  filesUnlockedNote: "आपकी फ़ाइलें इसी पेज पर खुल गई हैं।",
+  filesUnlockedNote: "आपकी फ़ाइनल फ़ाइलें खुल गई हैं।",
   explainTitle: (seller) => `आप ${seller} को भुगतान कर रहे हैं`,
   explainDirect: "आपका पैसा सीधे उनकी UPI ID या बैंक खाते में जाता है। Paivo पैसा अपने पास नहीं रखता।",
   explainNext: (seller, hasFiles) =>
