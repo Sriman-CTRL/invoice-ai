@@ -40,7 +40,7 @@ export async function suggestForAlert(organizationId: string, alert: BankAlert, 
     invoiceId = proof.invoices.id;
     customerId = proof.invoices.customer_id;
     paymentId = proof.id;
-    evidence = `The bank alert's reference ${alert.reference} is the same UTR the client submitted for invoice ${proof.invoices.invoice_number}.`;
+    evidence = `The bank alert's reference ${alert.reference} is the same UTR the client submitted for invoice ${proof.invoices.invoice_number}. ${CHECK_BANK_WARNING}`;
   } else {
     const open = await prisma.invoices.findMany({
       where: { organization_id: organizationId, status: { in: OPEN_STATUSES } },
@@ -52,7 +52,7 @@ export async function suggestForAlert(organizationId: string, alert: BankAlert, 
       match = "WEAK";
       invoiceId = equal[0].id;
       customerId = equal[0].customer_id;
-      evidence = `Invoice ${equal[0].invoice_number} is the only open invoice with exactly this balance (INR ${alert.amount.toFixed(2)}). The client has not submitted this reference, so check it is really theirs.`;
+      evidence = `Invoice ${equal[0].invoice_number} is the only open invoice with exactly this balance (INR ${alert.amount.toFixed(2)}). The client has not submitted this reference, so check it is really theirs. ${CHECK_BANK_WARNING}`;
     }
   }
   if (!match || !invoiceId) return { kind: "NO_MATCH", alert };
@@ -80,10 +80,13 @@ export async function suggestForAlert(organizationId: string, alert: BankAlert, 
   return { kind: "SUGGESTED", match, invoice_id: invoiceId, action_id: action.id, alert };
 }
 
+export const CHECK_BANK_WARNING = "Check your bank app or statement before confirming. Emails can be faked.";
+
 export interface BankAlertEmail {
   organization_id?: string;
   to?: string;
-  from?: string;
+  /** The From address, but only when its domain passed email authentication (see lib/emailAuth.ts). */
+  authenticated_sender?: string;
   subject?: string;
   text: string;
 }
@@ -95,7 +98,8 @@ export interface BankAlertEmail {
 export async function tryBankAlert(input: BankAlertEmail): Promise<(BankAlertOutcome & { organization_id: string }) | null> {
   const alert = parseBankAlert(input.text, input.subject);
   if (!alert) return null;
-  const fromEmail = /<?([^\s<>@]+@[^\s<>@]+\.[^\s<>@]+)>?\s*$/.exec((input.from || "").trim())?.[1]?.toLowerCase();
+  // A forgeable From header proves nothing, so an unauthenticated sender never reaches the alert path.
+  const fromEmail = input.authenticated_sender?.trim().toLowerCase();
   if (!fromEmail) return null;
 
   let organizationId: string | null = input.organization_id || null;

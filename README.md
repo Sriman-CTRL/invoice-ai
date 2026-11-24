@@ -74,6 +74,7 @@ Client replies reach `POST /api/inbound/email` (for example from the Cloudflare 
 
 - `x-inbound-key`: the shared secret (`INBOUND_WEBHOOK_SECRET`); the endpoint returns 503 if it is not configured
 - `x-inbound-timestamp`: unix seconds, accepted within 5 minutes of the server clock
+- `x-inbound-auth` (optional) with the JSON field `header_from`: the receiving server's `Authentication-Results` and the visible From address. Bank-alert suggestions are created only when this shows `dmarc=pass` (or `spf=pass` and `dkim=pass`) for the From domain; otherwise the email is handled as a normal message
 
 The JSON body takes `to` (or `recipient`), `from` (or `sender`), `subject`, `text` (or `textBody`/`body`), optional `html`,
 `organization_id`, `invoice_number` and `channel`. A bank "amount credited" alert forwarded by the seller's own login email

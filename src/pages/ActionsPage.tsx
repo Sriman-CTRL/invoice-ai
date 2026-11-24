@@ -224,7 +224,7 @@ export function ActionsPage() {
                             ) : null}
                             {isSuggestion && (
                               <p className="mt-0.5 max-w-md text-[11px] leading-snug text-slate-500">
-                                <b>{meta.match === "STRONG" ? "Strong match" : "Possible match"}</b> from a bank alert you forwarded. {String(meta.evidence || "")} Check your bank before confirming.
+                                <b>{meta.match === "STRONG" ? "Strong match" : "Possible match"}</b> from a bank alert you forwarded. {String(meta.evidence || "")}{String(meta.evidence || "").includes("Emails can be faked") ? "" : " Check your bank app or statement before confirming. Emails can be faked."}
                               </p>
                             )}
                             {!(isProof && meta.utr) && !isSuggestion && (

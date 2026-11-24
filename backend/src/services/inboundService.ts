@@ -15,6 +15,11 @@ export interface InboundEmail {
   organization_id?: string;
   invoice_number?: string;
   channel?: string;
+  /**
+   * Set ONLY by the inbound webhook, when the email's From domain passed DMARC (or SPF + DKIM). Bank-alert suggestions
+   * need it; without it the email takes the normal pipeline.
+   */
+  authenticated_sender?: string;
 }
 
 export interface InboundResult {
@@ -203,7 +208,7 @@ export async function processInboundEmail(input: InboundEmail): Promise<InboundR
   const text = redactPaymentCardData(rawText);
 
   // A bank "amount credited" alert forwarded by the seller becomes a payment SUGGESTION in the Action Queue (never a payment).
-  const alert = await tryBankAlert({ organization_id: input.organization_id, to, from: input.from, subject: input.subject, text });
+  const alert = await tryBankAlert({ organization_id: input.organization_id, to, authenticated_sender: input.authenticated_sender, subject: input.subject, text });
   if (alert) {
     return {
       matched: true,

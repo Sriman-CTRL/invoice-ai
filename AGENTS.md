@@ -89,7 +89,7 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
   is switched on). Each job's failure must not stop the other. Reminder guards are shared with the manual send button.
 - **Bank alerts only suggest**: a credit-alert email forwarded by one of the business's own users (inbound pipeline,
   `lib/bankAlert.ts`, `services/bankAlertService.ts`) can only create a `PAYMENT_MATCH_SUGGESTED` action; the seller settles it
-  with the normal one-click confirmation. Never create a payment or change invoice status from an alert. Not advertised to users.
+  with the normal one-click confirmation. Never create a payment or change invoice status from an alert. Not advertised to users. The sender must also pass DMARC (or SPF+DKIM), read from `x-inbound-auth`/`header_from` that the worker forwards (no header = no suggestion), and every suggestion says "Emails can be faked".
 - **Shared rate limits** (`shared: true` in middleware/rateLimit.ts) use the `rate_limits` table, created by enable-rls.cjs.
 
 ## Environment variables

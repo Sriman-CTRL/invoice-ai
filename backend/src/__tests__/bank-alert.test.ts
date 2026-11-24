@@ -78,8 +78,14 @@ const status = async (t: Tenant, id: string) => (await call("GET", `/api/invoice
 const suggestions = (orgId: string, invoiceId: string) =>
   sys(() => prisma.collection_actions.findMany({ where: { organization_id: orgId, invoice_id: invoiceId, action_type: "PAYMENT_MATCH_SUGGESTED" } }));
 const payments = (orgId: string, invoiceId: string) => sys(() => prisma.payments.findMany({ where: { organization_id: orgId, invoice_id: invoiceId } }));
-const forward = (t: Tenant, text: string, over: Record<string, unknown> = {}) =>
-  inbound({ organization_id: t.orgId, from: t.email, to: "alerts@example.test", subject: "Fwd: credit alert", text, ...over });
+const domainOf = (addr: string) => addr.split("@")[1];
+/** A forward that passed email authentication, as the Cloudflare worker would report it. Pass authResults to change that. */
+const forward = (t: Tenant, text: string, over: Record<string, unknown> = {}, authResults: string | null = `mx.cloudflare.net; dkim=pass header.d=${domainOf(t.email)}; spf=pass smtp.mailfrom=${t.email}; dmarc=pass header.from=${domainOf(t.email)}`) =>
+  call("POST", "/api/inbound/email", { organization_id: t.orgId, from: t.email, header_from: t.email, to: "alerts@example.test", subject: "Fwd: credit alert", text, ...over }, undefined, {
+    "x-inbound-key": SECRET,
+    "x-inbound-timestamp": String(Math.floor(Date.now() / 1000)),
+    ...(authResults === null ? {} : { "x-inbound-auth": authResults }),
+  });
 
 before(async () => {
   process.env.INBOUND_WEBHOOK_SECRET = SECRET;
@@ -177,7 +183,7 @@ test("ALERT: another business's invoices are never matched", opts, async () => {
 test("ALERT: emails from strangers and debit alerts go through the normal pipeline, not the alert path", opts, async () => {
   const t = await makeTenant("stranger");
   const id = await invoice(t, 6100);
-  const stranger = await forward(t, alertText("6,100.00", "135792468013"), { from: "someone-else@example.org" });
+  const stranger = await forward(t, alertText("6,100.00", "135792468013"), { from: "someone-else@example.org", header_from: "someone-else@example.org" }, "mx.cloudflare.net; dmarc=pass header.from=example.org");
   assert.equal(stranger.status, 200);
   assert.equal(stranger.json.bank_alert, undefined, "not treated as a bank alert");
   const debit = await forward(t, alertText("6,100.00", "135792468014").replace("credited", "debited"));
@@ -189,4 +195,41 @@ test("ALERT: emails from strangers and debit alerts go through the normal pipeli
 test("ALERT: the inbound key and timestamp are still required", opts, async () => {
   const noKey = await call("POST", "/api/inbound/email", { from: "x@example.com", text: alertText("1.00", "135792468013") });
   assert.equal(noKey.status, 401);
+});
+
+test("ALERT: a forged From (no or failed authentication) is handled as a normal email and creates no suggestion", opts, async () => {
+  const t = await makeTenant("forged");
+  const id = await invoice(t, 7300);
+  const text = alertText("7,300.00", "112233445566");
+  const dom = domainOf(t.email);
+  const attempts: Array<[string, string | null]> = [
+    ["no header at all", null],
+    ["empty header", ""],
+    ["dmarc fail", `mx.cloudflare.net; dmarc=fail header.from=${dom}`],
+    ["dmarc pass for someone else's domain", "mx.cloudflare.net; dmarc=pass header.from=attacker.example"],
+    ["spf pass only", `mx.cloudflare.net; spf=pass smtp.mailfrom=${t.email}`],
+    ["spf+dkim pass for another domain", "mx.cloudflare.net; spf=pass smtp.mailfrom=a@other.example; dkim=pass header.d=other.example"],
+  ];
+  for (const [label, auth] of attempts) {
+    const res = await forward(t, text, {}, auth);
+    assert.equal(res.status, 200, label);
+    assert.equal(res.json.bank_alert, undefined, label + ": not treated as a bank alert");
+  }
+  // Without the header_from field the sender is unknown, whatever the auth header says.
+  const noFrom = await forward(t, text, { header_from: undefined });
+  assert.equal(noFrom.json.bank_alert, undefined);
+  assert.equal((await suggestions(t.orgId, id)).length, 0);
+  assert.equal(await status(t, id), "OPEN");
+  assert.equal((await payments(t.orgId, id)).filter((p: any) => p.status === "SUCCEEDED").length, 0);
+});
+
+test("ALERT: spf+dkim pass for the same domain is accepted, and the suggestion carries the 'emails can be faked' warning", opts, async () => {
+  const t = await makeTenant("spfdkim");
+  const id = await invoice(t, 8100);
+  const dom = domainOf(t.email);
+  const res = await forward(t, alertText("8,100.00", "998877665544"), {}, `mx.cloudflare.net; spf=pass smtp.mailfrom=${t.email}; dkim=pass header.d=${dom}`);
+  assert.equal(res.json.bank_alert.kind, "SUGGESTED");
+  const [action] = await suggestions(t.orgId, id);
+  assert.match(action.metadata.evidence, /Check your bank app or statement before confirming. Emails can be faked./);
+  assert.equal(await status(t, id), "OPEN", "still not paid");
 });

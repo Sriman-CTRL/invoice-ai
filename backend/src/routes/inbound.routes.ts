@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { INBOUND_WEBHOOK_SECRET } from "../lib/config";
 import { processInboundEmail } from "../services/inboundService";
 import { rateLimit } from "../middleware/rateLimit";
+import { bareAddress, senderDomainAuthenticated } from "../lib/emailAuth";
 
 const router = Router();
 
@@ -45,6 +46,11 @@ router.post(
 
     try {
       const payload = req.body ?? {};
+      // Only a From address whose own domain passed DMARC (or SPF + DKIM) can be trusted as "the seller" for bank alerts.
+      // The worker forwards the receiving server's Authentication-Results as x-inbound-auth; missing or odd = not trusted.
+      const headerFrom = bareAddress(payload.header_from);
+      const authHeader = typeof req.headers["x-inbound-auth"] === "string" ? (req.headers["x-inbound-auth"] as string) : undefined;
+      const authenticatedSender = headerFrom && senderDomainAuthenticated(authHeader, headerFrom) ? headerFrom : undefined;
       const result = await processInboundEmail({
         to: payload.to || payload.recipient,
         from: payload.from || payload.sender,
@@ -54,6 +60,7 @@ router.post(
         organization_id: payload.organization_id,
         invoice_number: payload.invoice_number,
         channel: payload.channel || "EMAIL",
+        authenticated_sender: authenticatedSender,
       });
 
       res.status(200).json(result);
