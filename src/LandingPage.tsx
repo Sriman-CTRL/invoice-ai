@@ -30,12 +30,12 @@ const FAQ = [
   { q: "Do you hold my money?", a: "No. Your clients pay directly into your own UPI ID or bank account. Paivo only keeps track of who has paid and decides when your files are shown." },
   { q: "How does the \"files unlock after payment\" part work?", a: "When you create an invoice you can paste a link to your finished work. On the client's payment page that link stays hidden. The moment you confirm the full payment, it appears for them. We don't store your files; we just control when the link is shown." },
   { q: "What is a UTR number?", a: "It's the transaction reference your client's UPI or banking app shows after paying (usually 12 digits). They type it in, and you match it against your bank statement before confirming." },
-  { q: "Is there a limit on UPI payments?", a: "Most UPI apps allow up to about ₹1 lakh per payment to a personal UPI ID. For bigger invoices, add your bank details so clients can pay by NEFT/RTGS, or ask them to pay in parts." },
+  { q: "Is there a limit on UPI payments?", a: "UPI apps and banks set a limit on each payment, and the limits differ by bank and by the kind of account, so a large payment can fail. For bigger invoices, add your bank details so clients can pay by NEFT/RTGS, or ask them to pay in parts." },
   { q: "Does it handle TDS and GST?", a: "Yes. You can record TDS deducted under Section 194C or 194J, and your GSTIN is printed on PDF invoices." },
   { q: "Why not just use a payment link from a payment gateway?", a: "Gateways are a good choice if you want payments confirmed automatically; they usually take a percentage of each payment (often around 2% plus GST on that fee, check their current pricing). With Paivo the client pays you directly, so there is no per-payment cut and no gateway account to set up. The trade-off: you confirm each payment yourself after checking your bank." },
   { q: "What if a client says they've paid but the money isn't there?", a: "Nothing unlocks on their word alone. The client submits the UTR (and an optional screenshot), you match it against your bank statement, and only when you click Confirm does the invoice become paid and the files appear." },
   { q: "Is it safe to share my UPI ID?", a: "Your UPI ID only lets people send you money; it can't be used to take money out. It appears on your invoice's payment page (which has a long random link) and on your PDF invoices." },
-  { q: "Is my data safe?", a: "Every request is checked against your account so one business can never see another's records, payment links use long random IDs that can't be guessed, and you can export or erase customer data at any time." },
+  { q: "Is my data safe?", a: "Every request is checked against your account, and the database itself keeps one business's records away from another's, payment links use long random IDs that can't be guessed, and you can export or erase customer data at any time." },
 ];
 
 export function LandingPage() {

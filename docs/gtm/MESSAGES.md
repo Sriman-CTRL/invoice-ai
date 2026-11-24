@@ -46,7 +46,7 @@ Use a different tag per channel; Paivo records `utm_source`, `utm_medium`, `utm_
 
 ## 7. Three helpful reply templates (in the comments of others' questions)
 **When:** someone asks about invoicing or late payment. **Don't:** mention Paivo unless asked.
-1. `Send the invoice with a due date and a UPI QR on the same page, and send a polite reminder 1 day after the due date. Most late payments are forgetfulness.`
+1. `Send the invoice with a due date and a UPI QR on the same page, and send a polite reminder 1 day after the due date. Sometimes a late payment is just forgetfulness, so a friendly nudge is a fair first step.`
 2. `For large or first-time clients, take 30-50% advance and deliver the final files after the balance arrives.`
 3. `Always match the UTR/reference in your bank statement; don't trust a screenshot alone.`
 **Moving to DM politely:** `Thanks for sharing that. I'm collecting stories like yours for a small project. Could I DM you 3 questions? No pressure.`
