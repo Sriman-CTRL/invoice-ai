@@ -3,7 +3,10 @@
  * The visitor id is random, lives only in this tab's sessionStorage, and is never linked to an account.
  * Respects Do Not Track / Global Privacy Control.
  */
+import { captureAttribution } from "./attribution";
+
 const KEY = "ll_session";
+const SENT_KEY = "ll_attr_sent";
 
 function sessionId(): string | null {
   try {
@@ -31,7 +34,18 @@ export function trackPageView(path: string): void {
   lastPath = path;
   const visitor = sessionId();
   if (!visitor) return;
+  // Campaign tags (utm_*, ref) from the first landing URL: stored once, reported once per tab session.
+  const attribution = captureAttribution(window.location.search);
   try {
+    if (attribution && sessionStorage.getItem(SENT_KEY) !== "1") {
+      sessionStorage.setItem(SENT_KEY, "1");
+      void fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: "attribution", path: "/", attribution, visitor }),
+        keepalive: true,
+      }).catch(() => undefined);
+    }
     void fetch("/api/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

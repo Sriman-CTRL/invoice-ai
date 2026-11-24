@@ -31,7 +31,13 @@ router.post("/", async (req: Request, res: Response) => {
     }
 
     const result = await prisma.$tenantTransaction(async (tx) => {
-      // 1. Lock invoice row
+      // 1. Lock the invoice row so two concurrent credit notes cannot both pass the balance check
+      const locked = await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT id FROM invoices WHERE id = ${invoice_id}::uuid AND organization_id = ${organization_id}::uuid FOR UPDATE
+      `;
+      if (locked.length === 0) {
+        throw new Error("INVOICE_NOT_FOUND");
+      }
       const invoice = await tx.invoices.findFirst({
         where: { id: invoice_id, organization_id },
       });

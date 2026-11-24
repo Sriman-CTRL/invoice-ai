@@ -1,6 +1,9 @@
+import { gstinProblem, ifscProblem } from "../gstin";
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { BrandingCard } from "./BrandingCard";
+import { AutoRemindersCard } from "./AutoRemindersCard";
+import { GOOGLE_CLIENT_ID, GoogleButton } from "../GoogleButton";
 import { Banknote, Check, CreditCard, Crown, Landmark, ShieldCheck } from "lucide-react";
 import { accountApi, settingsApi } from "../api";
 import { PageHeader, TableSkeleton, ErrorState } from "../components";
@@ -19,12 +22,12 @@ const toForm = (s: OrgSettings): Form => ({
   bank_account_number: s.bank_account_number ?? "", bank_ifsc: s.bank_ifsc ?? "", bank_name: s.bank_name ?? "", gstin: s.gstin ?? "",
 });
 
-function Field({ label, hint, value, onChange, placeholder, mono }: { label: string; hint?: string; value: string; onChange: (v: string) => void; placeholder?: string; mono?: boolean }) {
+function Field({ label, hint, value, onChange, placeholder, mono, problem }: { label: string; hint?: string; value: string; onChange: (v: string) => void; placeholder?: string; mono?: boolean; problem?: string | null }) {
   return (
     <label className="block">
       <span className="label">{label}</span>
-      <input className={`input ${mono ? "font-mono" : ""}`} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
-      {hint && <span className="mt-1 block text-[11px] text-slate-400">{hint}</span>}
+      <input className={`input ${mono ? "font-mono" : ""}`} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} aria-invalid={problem ? true : undefined} />
+      {problem ? <span className="mt-1 block text-[11px] font-semibold text-rose-600" role="alert">{problem}</span> : hint && <span className="mt-1 block text-[11px] text-slate-400">{hint}</span>}
     </label>
   );
 }
@@ -84,7 +87,7 @@ function UpgradePanel({ plan, onClose, current }: { plan: Plan; onClose: () => v
   );
 }
 
-function DeleteAccountCard() {
+function DeleteAccountCard({ googleOnly = false, googleToken = null }: { googleOnly?: boolean; googleToken?: string | null }) {
   const { logout } = useAuth();
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
@@ -97,7 +100,7 @@ function DeleteAccountCard() {
     setError(null);
     setBusy(true);
     try {
-      await accountApi.deleteAccount({ password, confirm });
+      await accountApi.deleteAccount(googleToken ? { id_token: googleToken, confirm } : { password, confirm });
       logout();
       window.location.assign("/");
     } catch (err: any) {
@@ -115,16 +118,20 @@ function DeleteAccountCard() {
       ) : (
         <>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <label className="block"><span className="label">Password</span>
-              <input className="input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </label>
+            {googleOnly ? (
+              <p className="self-end text-xs text-slate-600">{googleToken ? "Confirmed with Google. Now type DELETE." : "Confirm with Google in the box above first."}</p>
+            ) : (
+              <label className="block"><span className="label">Password</span>
+                <input className="input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              </label>
+            )}
             <label className="block"><span className="label">Type DELETE to confirm</span>
               <input className="input" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
             </label>
           </div>
           {error && <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700" role="alert">{error}</p>}
           <div className="mt-4 flex justify-end">
-            <button className="btn-primary" disabled={busy || !password || confirm !== "DELETE"}>{busy ? "Deleting…" : "Permanently delete"}</button>
+            <button className="btn-primary" disabled={busy || (googleOnly ? !googleToken : !password) || confirm !== "DELETE"}>{busy ? "Deleting…" : "Permanently delete"}</button>
           </div>
         </>
       )}
@@ -132,7 +139,47 @@ function DeleteAccountCard() {
   );
 }
 
-function ChangePasswordCard() {
+/** Accounts created with Google have no password, so sensitive actions ask for a fresh Google confirmation instead. */
+function GoogleConfirmCard({ confirmed, onToken }: { confirmed: boolean; onToken: (t: string) => void }) {
+  return (
+    <section className="panel mt-6 p-6">
+      <h2 className="text-base font-bold text-slate-900">Confirm it's you</h2>
+      <p className="mt-1 text-xs text-slate-500">You signed up with Google, so you have no password yet. To set one, or to delete your account, confirm with Google first.</p>
+      <div className="mt-4">
+        {confirmed ? <p className="text-sm font-semibold text-emerald-600">Confirmed with Google.</p> : <GoogleButton text="continue_with" onCredential={onToken} />}
+      </div>
+    </section>
+  );
+}
+
+/** Password accounts can connect Google so "Sign in with Google" reaches the same account (never matched on email alone). */
+function ConnectGoogleCard({ linked, onLinked }: { linked: boolean; onLinked: () => void }) {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const link = async (idToken: string) => {
+    setBusy(true);
+    try {
+      await accountApi.linkGoogle(idToken);
+      toast.success("Google connected", "You can now sign in with Google too.");
+      onLinked();
+    } catch (err: any) {
+      toast.error("Could not connect Google", err?.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <section className="panel mt-6 p-6">
+      <h2 className="text-base font-bold text-slate-900">Sign in with Google</h2>
+      <p className="mt-1 text-xs text-slate-500">
+        {linked ? "Google is connected to this account." : "Connect the Google account that uses the same email as this account, so you can sign in with one click. Your password keeps working."}
+      </p>
+      {!linked && <div className={"mt-4" + (busy ? " opacity-60" : "")}><GoogleButton text="continue_with" onCredential={link} /></div>}
+    </section>
+  );
+}
+
+function ChangePasswordCard({ googleOnly = false, googleToken = null, onPasswordSet = () => {} }: { googleOnly?: boolean; googleToken?: string | null; onPasswordSet?: () => void }) {
   const toast = useToast();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -155,9 +202,10 @@ function ChangePasswordCard() {
     }
     setBusy(true);
     try {
-      await accountApi.changePassword({ current_password: current, new_password: next });
-      toast.success("Password updated", "Use your new password next time you sign in.");
+      await accountApi.changePassword(googleOnly ? { id_token: googleToken ?? undefined, new_password: next } : { current_password: current, new_password: next });
+      toast.success(googleOnly ? "Password set" : "Password updated", googleOnly ? "You can now sign in with your email and password too." : "Use your new password next time you sign in.");
       setCurrent(""); setNext(""); setConfirm("");
+      if (googleOnly) onPasswordSet();
     } catch (err: any) {
       setError(err?.message || "Could not change password.");
     } finally {
@@ -175,9 +223,13 @@ function ChangePasswordCard() {
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
-        <label className="block"><span className="label">Current password</span>
-          <input className="input" type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} />
-        </label>
+        {googleOnly ? (
+          <p className="self-end text-xs text-slate-600">{googleToken ? "Confirmed with Google." : "Confirm with Google in the box above first."}</p>
+        ) : (
+          <label className="block"><span className="label">Current password</span>
+            <input className="input" type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} />
+          </label>
+        )}
         <label className="block"><span className="label">New password</span>
           <input className="input" type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} />
         </label>
@@ -194,7 +246,7 @@ function ChangePasswordCard() {
       </ul>
       {error && <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700" role="alert">{error}</p>}
       <div className="mt-4 flex justify-end">
-        <button className="btn-primary" disabled={busy || !current || !next}>{busy ? "Updating…" : "Update password"}</button>
+        <button className="btn-primary" disabled={busy || (googleOnly ? !googleToken : !current) || !next}>{busy ? "Updating…" : googleOnly ? "Set password" : "Update password"}</button>
       </div>
     </form>
   );
@@ -203,7 +255,9 @@ function ChangePasswordCard() {
 export function SettingsPage() {
   const r = useResource(() => settingsApi.get(), []);
   const toast = useToast();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
+  const googleOnly = user?.has_password === false && Boolean(GOOGLE_CLIENT_ID);
+  const [googleToken, setGoogleToken] = useState<string | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [upgrade, setUpgrade] = useState<Plan | null>(null);
@@ -263,7 +317,7 @@ export function SettingsPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Account holder" value={form.bank_account_name} onChange={set("bank_account_name")} placeholder="As per bank records" />
               <Field label="Account number" value={form.bank_account_number} onChange={set("bank_account_number")} mono />
-              <Field label="IFSC" value={form.bank_ifsc} onChange={set("bank_ifsc")} placeholder="HDFC0001234" mono />
+              <Field label="IFSC" value={form.bank_ifsc} onChange={set("bank_ifsc")} placeholder="HDFC0001234" mono problem={form.bank_ifsc.trim() ? ifscProblem(form.bank_ifsc.trim().toUpperCase()) : null} />
               <Field label="Bank name" value={form.bank_name} onChange={set("bank_name")} placeholder="HDFC Bank" />
             </div>
           </section>
@@ -271,7 +325,7 @@ export function SettingsPage() {
           <section>
             <h2 className="mb-4 text-base font-bold text-slate-900">Tax details</h2>
             <div className="max-w-sm">
-              <Field label="Your GSTIN" value={form.gstin} onChange={set("gstin")} placeholder="29ABCDE1234F1Z5" hint="Printed on your PDF invoices." mono />
+              <Field label="Your GSTIN" value={form.gstin} onChange={set("gstin")} placeholder="29ABCDE1234F1ZW" hint="Printed on your PDF invoices." mono problem={form.gstin.trim() ? gstinProblem(form.gstin.trim().toUpperCase()) : null} />
             </div>
           </section>
 
@@ -313,10 +367,14 @@ export function SettingsPage() {
         </aside>
       </div>
 
+      <AutoRemindersCard settings={r.data} onSaved={r.reload} />
+
       <BrandingCard key={`${r.data.brand_color || ""}-${r.data.logo_data?.length || 0}`} settings={r.data} onSaved={r.reload} />
 
-      <ChangePasswordCard />
-      <DeleteAccountCard />
+      {GOOGLE_CLIENT_ID && user?.has_password !== false && <ConnectGoogleCard linked={Boolean(user?.google_linked)} onLinked={() => updateUser({ google_linked: true })} />}
+      {googleOnly && <GoogleConfirmCard confirmed={Boolean(googleToken)} onToken={setGoogleToken} />}
+      <ChangePasswordCard googleOnly={googleOnly} googleToken={googleToken} onPasswordSet={() => { updateUser({ has_password: true }); setGoogleToken(null); }} />
+      <DeleteAccountCard googleOnly={googleOnly} googleToken={googleToken} />
 
       {upgrade && PAYMENTS_OPEN && <UpgradePanel plan={upgrade} current={plan} onClose={() => setUpgrade(null)} />}
       <LeadDialog

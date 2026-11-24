@@ -33,6 +33,11 @@ export function MarketingFooter() {
     <footer className="relative z-10 border-t border-white/10 px-5 py-8 text-center text-xs text-slate-500">
       <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
         <Link to="/pricing" className="hover:text-slate-300">Pricing</Link>
+        <Link to="/tools/gst-invoice-calculator" className="hover:text-slate-300">GST calculator</Link>
+        <Link to="/tools/tds-calculator" className="hover:text-slate-300">TDS calculator</Link>
+        <Link to="/tools/payment-reminder-writer" className="hover:text-slate-300">Reminder writer</Link>
+        <a href="/guides/" className="hover:text-slate-300">Guides</a>
+        <Link to="/whats-new" className="hover:text-slate-300">What's new</Link>
         <Link to="/privacy" className="hover:text-slate-300">Privacy Policy</Link>
         <Link to="/terms" className="hover:text-slate-300">Terms of Service</Link>
         <Link to="/login" className="hover:text-slate-300">Sign in</Link>

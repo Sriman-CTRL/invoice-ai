@@ -1,0 +1,33 @@
+:root{--bg:#070a13;--text:#cbd5e1;--muted:#94a3b8;--head:#fff;--line:rgba(255,255,255,.12);--accent:#a5b4fc;--card:rgba(255,255,255,.04)}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:17px/1.7 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+a{color:var(--accent)}
+a:focus-visible,.btn:focus-visible{outline:3px solid #c7d2fe;outline-offset:2px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:760px;margin:0 auto;padding:18px 16px}
+.top nav{display:flex;align-items:center;gap:16px;font-size:15px}
+.brand{font-weight:800;font-size:20px;color:var(--head);text-decoration:none}
+main{max-width:760px;margin:0 auto;padding:8px 16px 48px}
+h1{color:var(--head);font-size:2rem;line-height:1.2;margin:.3em 0 .4em}
+h2{color:var(--head);font-size:1.4rem;line-height:1.3;margin:2em 0 .5em}
+h3{color:var(--head);font-size:1.1rem;margin:1.4em 0 .3em}
+.lead{font-size:1.15rem;color:#e2e8f0}
+.updated{color:var(--muted);font-size:14px;margin:0}
+ul,ol{padding-left:1.3em}
+li{margin:.35em 0}
+code{background:var(--card);padding:1px 6px;border-radius:6px;font-size:.95em}
+blockquote{margin:1em 0;padding:12px 16px;border-left:4px solid var(--accent);background:var(--card);border-radius:0 8px 8px 0;color:#e2e8f0}
+table{width:100%;border-collapse:collapse;margin:1em 0;font-size:16px}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--card);color:var(--head)}
+.note{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:12px 14px;color:#e2e8f0;font-size:15px}
+.btn{display:inline-block;background:#fff;color:#0f172a;font-weight:700;text-decoration:none;padding:10px 16px;border-radius:10px}
+.cta{margin-top:3em;border:1px solid var(--line);background:var(--card);border-radius:16px;padding:8px 22px 18px}
+.sources{margin-top:2em;font-size:15px;color:var(--muted)}
+.sources h2{font-size:1.1rem}
+.cards{list-style:none;padding:0;display:grid;gap:12px}
+.cards a{display:block;border:1px solid var(--line);background:var(--card);border-radius:14px;padding:14px 16px;text-decoration:none;color:var(--text)}
+.cards strong{display:block;color:var(--head);font-size:1.05rem}
+.cards span{display:block;color:var(--muted);font-size:15px;margin-top:4px}
+.foot{border-top:1px solid var(--line);text-align:center;color:var(--muted);font-size:14px;padding:22px 16px}
+@media (max-width:480px){body{font-size:16px}h1{font-size:1.65rem}.top nav a:not(.btn){display:none}}

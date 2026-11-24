@@ -1,3 +1,4 @@
+import { creditedTotal, outstandingOf } from "../lib/invoiceBalance";
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
 
@@ -399,6 +400,13 @@ router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<vo
       });
       if (!inv) throw new Error("INVOICE_NOT_FOUND");
 
+      // Idempotency: with the invoice locked, re-read the action. A second click (or a double submit) must not
+      // record another payment.
+      const current = await tx.collection_actions.findFirst({ where: { id: action.id, organization_id } });
+      if (current?.status === "COMPLETED") {
+        return { invoice: inv, payment: null, action: current, alreadySettled: true };
+      }
+
       // Check for pending payment to promote to SUCCEEDED
       let payment = paymentId
         ? await tx.payments.findFirst({
@@ -424,14 +432,20 @@ router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<vo
           _sum: { amount: true },
         });
         const alreadyPaid = Number(settled._sum?.amount ?? 0);
-        const outstanding = Math.max(0, Number(inv.amount) - alreadyPaid);
+        const credited = await creditedTotal(tx, organization_id, invoiceId);
+        const outstanding = outstandingOf(Number(inv.amount), alreadyPaid, credited);
+        // Nothing left to pay: never invent a payment for an invoice that is already settled.
+        if (outstanding <= 0) {
+          const closed = await tx.collection_actions.update({ where: { id: action.id }, data: { status: "COMPLETED", executed_at: new Date() } });
+          return { invoice: inv, payment: null, action: closed, alreadySettled: true };
+        }
 
         payment = await tx.payments.create({
           data: {
             organization_id,
             invoice_id: invoiceId,
             external_payment_id: utr,
-            amount: outstanding > 0 ? outstanding : Number(inv.amount),
+            amount: outstanding,
             currency: inv.currency,
             status: "SUCCEEDED",
             paid_at: new Date(),
@@ -445,7 +459,8 @@ router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<vo
         _sum: { amount: true },
       });
       const totalPaid = Number(settledNow._sum?.amount ?? 0);
-      const fullyPaid = totalPaid + 0.01 >= Number(inv.amount);
+      const creditedNow = await creditedTotal(tx, organization_id, invoiceId);
+      const fullyPaid = totalPaid + creditedNow + 0.01 >= Number(inv.amount);
       const updatedInvoice = await tx.invoices.update({
         where: { id: invoiceId },
         data: { status: fullyPaid ? "PAID" : "PARTIALLY_PAID" },
@@ -467,6 +482,15 @@ router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<vo
 
       return { invoice: updatedInvoice, payment, action: updatedAction };
     });
+
+    if ("alreadySettled" in result && result.alreadySettled) {
+      res.json({
+        success: true,
+        message: `This payment was already confirmed. Invoice #${result.invoice.invoice_number} is ${result.invoice.status === "PAID" ? "fully paid" : "partly paid"}; nothing was changed.`,
+        ...result,
+      });
+      return;
+    }
 
     res.json({
       success: true,

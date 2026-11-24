@@ -2,6 +2,7 @@ import { Router } from "express";
 import crypto from "crypto";
 import prisma from "../lib/prisma";
 import { parseDetails } from "../lib/invoiceDetails";
+import { runAutoReminders, type AutoReminderResult } from "../services/reminderService";
 import { FREQUENCIES, addPeriod, runDueRecurring, type Frequency } from "../lib/recurring";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -83,12 +84,24 @@ cronRouter.get("/recurring", async (req, res) => {
   const expected = `Bearer ${secret}`;
   const ok = secret.length >= 16 && given.length === expected.length && crypto.timingSafeEqual(Buffer.from(given), Buffer.from(expected));
   if (!ok) return res.status(401).json({ error: "Unauthorized" });
+  // Two independent jobs: a failure in one must not stop the other, and the response reports both.
+  let recurring: { created: number; failed: number } | { error: string };
   try {
-    res.json(await runDueRecurring(PUBLIC_APP_URL));
+    recurring = await runDueRecurring(PUBLIC_APP_URL);
   } catch (e) {
-    console.error("cron failed", e);
-    res.status(500).json({ error: "Run failed" });
+    console.error("cron: recurring invoices failed", e);
+    recurring = { error: "Run failed" };
   }
+  let autoReminders: AutoReminderResult | { error: string };
+  try {
+    autoReminders = await runAutoReminders();
+  } catch (e) {
+    console.error("cron: automatic reminders failed", e);
+    autoReminders = { error: "Run failed" };
+  }
+  const failed = "error" in recurring && "error" in autoReminders;
+  // Top-level created/failed keep the response shape the recurring job always had.
+  res.status(failed ? 500 : 200).json({ ...("error" in recurring ? {} : recurring), recurring, auto_reminders: autoReminders });
 });
 
 export { addPeriod, type Frequency };

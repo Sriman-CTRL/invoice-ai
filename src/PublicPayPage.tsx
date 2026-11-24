@@ -23,18 +23,25 @@ import { publicApi } from "./api";
 import { compressImage } from "./imageUtil";
 import { TURNSTILE_SITE_KEY, TurnstileWidget } from "./TurnstileWidget";
 import type { PublicInvoiceDetail } from "./types";
+import { buildUpiUri } from "./upi";
+import { amountInWords } from "./amountInWords";
+import { HINGLISH_PAY_ENABLED, payExplainer, type PayLang } from "./payCopy";
+import { PAY_TEXT, loadLang, saveLang, type Lang } from "./payI18n";
 
-function buildUpiUri(d: PublicInvoiceDetail) {
-  const payee = (d.payment.payee_name || d.organization.name).replace(/[^a-zA-Z0-9 ]/g, "").slice(0, 25);
-  const inv = d.invoice_number.replace(/[^a-zA-Z0-9-]/g, "");
-  return `upi://pay?pa=${encodeURIComponent(d.payment.upi_id || "")}&pn=${encodeURIComponent(payee)}&am=${Number(d.outstanding_amount).toFixed(2)}&cu=INR&tn=${encodeURIComponent(`Invoice ${inv}`)}`;
+function upiLinkFor(d: PublicInvoiceDetail) {
+  return buildUpiUri({
+    upiId: d.payment.upi_id || "",
+    payeeName: d.payment.payee_name || d.organization.name,
+    amount: Number(d.outstanding_amount),
+    invoiceNumber: d.invoice_number,
+  });
 }
 
-function NotConfigured({ what }: { what: string }) {
+function NotConfigured({ what, hint }: { what: string; hint: string }) {
   return (
     <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-left text-xs leading-relaxed text-amber-100">
-      <p className="font-bold">{what} isn't set up for this invoice yet.</p>
-      <p className="mt-1 text-amber-200/80">Please ask the sender for their payment details, or use another method.</p>
+      <p className="font-bold">{what}</p>
+      <p className="mt-1 text-amber-200/80">{hint}</p>
     </div>
   );
 }
@@ -47,6 +54,16 @@ export function PublicPayPage() {
 
   // Payment tab: "upi" | "bank" | "proof"
   const [activeTab, setActiveTab] = useState<"upi" | "bank" | "proof">("upi");
+  const [payLang, setPayLang] = useState<PayLang>("en");
+  // English / Hindi for the labels and instructions on this page only (remembered in this browser).
+  const [lang, setLangState] = useState<Lang>(loadLang);
+  const T = PAY_TEXT[lang];
+  const setLang = (l: Lang) => { setLangState(l); saveLang(l); };
+  useEffect(() => {
+    const prev = document.documentElement.lang;
+    document.documentElement.lang = lang === "hi" ? "hi" : "en";
+    return () => { document.documentElement.lang = prev; };
+  }, [lang]);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
@@ -85,9 +102,9 @@ export function PublicPayPage() {
 
   // Generate dynamic UPI QR Code when invoice data is loaded
   useEffect(() => {
-    if (data && data.outstanding_amount > 0 && data.payment?.upi_id) {
+    if (data && data.outstanding_amount > 0 && data.payment?.upi_id && data.currency === "INR") {
       // Standard NPCI UPI URI Scheme, paying the invoice owner's own UPI ID
-      const upiUri = buildUpiUri(data);
+      const upiUri = upiLinkFor(data);
 
       QRCode.toDataURL(upiUri, {
         width: 256,
@@ -108,11 +125,11 @@ export function PublicPayPage() {
   const handleProofSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!utr.trim()) {
-      setProofError("Please enter your 12-digit UTR or Transaction Reference number.");
+      setProofError(T.enterUtr);
       return;
     }
     if (TURNSTILE_SITE_KEY && !humanToken) {
-      setProofError("Please complete the human check below.");
+      setProofError(T.humanCheck);
       return;
     }
     setSubmittingProof(true);
@@ -144,7 +161,7 @@ export function PublicPayPage() {
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3 text-slate-300">
           <RefreshCw className="h-8 w-8 animate-spin text-brand-400" />
-          <p className="text-sm font-semibold tracking-wide">Loading Secure Payment Portal...</p>
+          <p className="text-sm font-semibold tracking-wide">{T.loading}</p>
         </div>
       </div>
     );
@@ -157,15 +174,15 @@ export function PublicPayPage() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
             <AlertCircle className="h-7 w-7" />
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">Invoice Not Found</h2>
+          <h2 className="text-xl font-bold text-white mb-2">{T.notFoundTitle}</h2>
           <p className="text-xs text-slate-400 leading-relaxed mb-6">
-            {error || "The requested invoice could not be located. Please check the link or contact the billing issuer."}
+            {error || T.notFoundBody}
           </p>
           <Link
             to="/login"
             className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-brand-500 transition-colors"
           >
-            <span>Go to Paivo</span>
+            <span>{T.goToPaivo}</span>
           </Link>
         </div>
       </div>
@@ -198,22 +215,36 @@ export function PublicPayPage() {
                 {data.organization.name}
               </span>
               <span className="text-[10px] text-slate-400 font-mono">
-                Powered by Paivo Secure Pay
+                {T.poweredBy}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            <div className="flex gap-1" role="group" aria-label={T.language}>
+              {([["en", "English"], ["hi", "हिन्दी"]] as const).map(([k, label]) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setLang(k)}
+                  aria-pressed={lang === k}
+                  lang={k}
+                  className={`min-h-[32px] rounded-lg px-2.5 text-[11px] font-bold ${lang === k ? "bg-brand-500/30 text-white" : "bg-white/5 text-slate-400 hover:text-slate-200"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <button
               onClick={() => window.print()}
               className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-white/10 transition-colors"
             >
               <Printer className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Print / PDF</span>
+              <span className="hidden sm:inline">{T.print}</span>
             </button>
             <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
               <ShieldCheck className="h-3 w-3" />
-              <span>256-Bit Encrypted</span>
+              <span className="hidden sm:inline">{T.https}</span>
             </div>
           </div>
         </div>
@@ -222,14 +253,14 @@ export function PublicPayPage() {
       {/* Main Container */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-          {/* Left Column: Invoice Details & Vault */}
+          {/* Left Column: Invoice details and final files */}
           <div className="space-y-6">
             {/* Status & Identity Card */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <div>
                   <span className="text-[11px] font-bold uppercase tracking-wider text-brand-400">
-                    Official Tax Invoice
+                    {T.invoiceLabel}
                   </span>
                   <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-0.5">
                     {data.invoice_number}
@@ -239,15 +270,15 @@ export function PublicPayPage() {
                 <div>
                   {isPaid ? (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3.5 py-1 text-xs font-bold text-emerald-400">
-                      <CheckCircle2 className="h-4 w-4" /> Paid & Settled
+                      <CheckCircle2 className="h-4 w-4" /> {data.settled_by_credit ? (data.paid_amount > 0 ? T.statusSettledMixed : T.statusSettledCredit) : T.statusPaid}
                     </span>
                   ) : isPartiallyPaid ? (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 px-3.5 py-1 text-xs font-bold text-amber-400">
-                      Partially Paid
+                      {T.statusPartial}
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-500/15 border border-brand-500/30 px-3.5 py-1 text-xs font-bold text-brand-300">
-                      Payment Due
+                      {T.statusDue}
                     </span>
                   )}
                 </div>
@@ -257,7 +288,7 @@ export function PublicPayPage() {
               <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-4 text-xs">
                 <div>
                   <span className="text-slate-400 block mb-1 font-semibold uppercase tracking-wider text-[10px]">
-                    Billed To
+                    {T.billedTo}
                   </span>
                   <p className="font-bold text-white text-sm">{data.customer.name}</p>
                   {data.customer.company_name && (
@@ -267,18 +298,18 @@ export function PublicPayPage() {
                 </div>
                 <div>
                   <span className="text-slate-400 block mb-1 font-semibold uppercase tracking-wider text-[10px]">
-                    Dates & Terms
+                    {T.datesTerms}
                   </span>
                   <p className="text-slate-300">
-                    Issued:{" "}
+                    {T.issued}{" "}
                     <span className="text-white font-medium">
-                      {data.issued_at ? new Date(data.issued_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "Immediate"}
+                      {data.issued_at ? new Date(data.issued_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : T.immediate}
                     </span>
                   </p>
                   <p className="text-slate-300 mt-1">
-                    Due Date:{" "}
+                    {T.dueDate}{" "}
                     <span className="text-white font-medium">
-                      {data.due_at ? new Date(data.due_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "Upon Receipt"}
+                      {data.due_at ? new Date(data.due_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : T.uponReceipt}
                     </span>
                   </p>
                 </div>
@@ -287,7 +318,7 @@ export function PublicPayPage() {
               {data.details && data.details.items.length > 0 && (
                 <div className="mt-6 overflow-hidden rounded-xl border border-white/10">
                   <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-white/10 bg-white/5 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    <span>Description</span><span className="text-right">Qty × Rate</span><span className="w-24 text-right">Amount</span>
+                    <span>{T.colDescription}</span><span className="text-right">{T.colQtyRate}</span><span className="w-24 text-right">{T.colAmount}</span>
                   </div>
                   {data.details.items.map((li, i) => (
                     <div key={i} className="grid grid-cols-[1fr_auto_auto] items-baseline gap-x-4 border-b border-white/5 px-4 py-2.5 text-xs last:border-0">
@@ -297,8 +328,8 @@ export function PublicPayPage() {
                     </div>
                   ))}
                   <div className="space-y-1 bg-white/[0.03] px-4 py-3 text-xs text-slate-300">
-                    <div className="flex justify-between"><span>Subtotal</span><span className="font-mono">{data.details.totals.subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
-                    {data.details.totals.discount > 0 && <div className="flex justify-between text-emerald-300"><span>Discount</span><span className="font-mono">− {data.details.totals.discount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>}
+                    <div className="flex justify-between"><span>{T.subtotal}</span><span className="font-mono">{data.details.totals.subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+                    {data.details.totals.discount > 0 && <div className="flex justify-between text-emerald-300"><span>{T.discount}</span><span className="font-mono">− {data.details.totals.discount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>}
                     {data.details.tax_mode === "GST_INTRA" && (<><div className="flex justify-between"><span>CGST {data.details.tax_percent / 2}%</span><span className="font-mono">{data.details.totals.cgst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div><div className="flex justify-between"><span>SGST {data.details.tax_percent / 2}%</span><span className="font-mono">{data.details.totals.sgst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div></>)}
                     {data.details.tax_mode === "GST_INTER" && <div className="flex justify-between"><span>IGST {data.details.tax_percent}%</span><span className="font-mono">{data.details.totals.igst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>}
                   </div>
@@ -309,7 +340,7 @@ export function PublicPayPage() {
               {/* Balance Summary Box */}
               <div className="mt-6 rounded-xl bg-slate-900/80 border border-white/5 p-4">
                 <div className="flex items-center justify-between text-xs mb-1.5">
-                  <span className="text-slate-400">Settlement Progress</span>
+                  <span className="text-slate-400">{T.settlementProgress}</span>
                   <span className="font-mono font-semibold text-slate-300">{progressPct}%</span>
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
@@ -321,28 +352,36 @@ export function PublicPayPage() {
 
                 <div className="mt-4 grid grid-cols-3 divide-x divide-white/5 pt-2 text-center">
                   <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold">Total</span>
+                    <span className="text-[10px] text-slate-400 uppercase font-semibold">{T.total}</span>
                     <p className="font-mono text-sm font-bold text-white mt-0.5">
                       {data.currency} {totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold">Paid</span>
+                    <span className="text-[10px] text-slate-400 uppercase font-semibold">{T.paid}</span>
                     <p className="font-mono text-sm font-bold text-emerald-400 mt-0.5">
                       {data.currency} {paidAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold">Remaining</span>
+                    <span className="text-[10px] text-slate-400 uppercase font-semibold">{T.remaining}</span>
                     <p className="font-mono text-base font-extrabold text-brand-300 mt-0.5">
                       {data.currency} {outstanding.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                 </div>
+                {(data.credited_amount ?? 0) > 0 && (
+                  <p className="mt-3 border-t border-white/5 pt-3 text-center text-[11px] text-slate-300">
+                    {T.creditApplied(data.currency, Number(data.credited_amount).toLocaleString("en-IN", { minimumFractionDigits: 2 }))}
+                  </p>
+                )}
+                {data.currency === "INR" && amountInWords(totalAmount) && (
+                  <p className="mt-3 border-t border-white/5 pt-3 text-center text-[11px] italic text-slate-400">{amountInWords(totalAmount)}</p>
+                )}
               </div>
             </div>
 
-            {/* FREELANCER PROTECTION: The Deliverables Vault */}
+            {/* Final files: shown locked until the seller confirms full payment */}
             {data.has_deliverable && (
               <div
                 className={`rounded-2xl border p-6 backdrop-blur-md transition-all ${
@@ -364,21 +403,19 @@ export function PublicPayPage() {
 
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <span>Secure Deliverables Vault</span>
+                      <span>{T.filesTitle}</span>
                       {isPaid ? (
                         <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full">
-                          Unlocked
+                          {T.filesUnlocked}
                         </span>
                       ) : (
                         <span className="text-[10px] font-bold text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded-full">
-                          Locked Pending Settlement
+                          {T.filesLocked}
                         </span>
                       )}
                     </h3>
                     <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                      {isPaid
-                        ? "Your payment is verified. You now have full access to the project deliverables, source assets, and handoff files."
-                        : "The creator has attached final deliverables to this invoice. Complete payment or submit your UTR reference to unlock immediate access."}
+                      {isPaid ? T.filesBodyPaid : T.filesBodyLocked}
                     </p>
 
                     {isPaid && data.deliverable_url && (
@@ -390,7 +427,7 @@ export function PublicPayPage() {
                           className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-emerald-400 shadow-glow transition-all"
                         >
                           <Download className="h-4 w-4" />
-                          <span>Download Final Deliverables</span>
+                          <span>{T.openFiles}</span>
                           <ExternalLink className="h-3.5 w-3.5 opacity-70" />
                         </a>
                       </div>
@@ -406,15 +443,44 @@ export function PublicPayPage() {
             {isPaid && (
               <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-8 text-center shadow-2xl sticky top-24">
                 <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-500/20 text-emerald-300"><CheckCircle2 className="h-7 w-7" /></span>
-                <h2 className="mt-4 text-xl font-black text-white">Payment received</h2>
-                <p className="mt-1.5 text-sm text-emerald-100/80">Thank you. {data.organization.name} has confirmed this invoice is paid in full.</p>
-                {data.has_deliverable && <p className="mt-3 text-xs text-emerald-100/70">Your files are unlocked on the left.</p>}
+                <h2 className="mt-4 text-xl font-black text-white">{T.paymentReceived}</h2>
+                <p className="mt-1.5 text-sm text-emerald-100/80">{T.thankYou(data.organization.name)}</p>
+                {data.has_deliverable && <p className="mt-3 text-xs text-emerald-100/70">{T.filesUnlockedNote}</p>}
               </div>
             )}
             <div className={`rounded-2xl border border-white/10 bg-slate-900/90 p-6 backdrop-blur-md shadow-2xl sticky top-24 ${isPaid ? "hidden" : ""}`}>
+              <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-3.5 text-left text-xs leading-relaxed text-slate-300">
+                {lang === "en" && HINGLISH_PAY_ENABLED && (
+                  <div className="mb-2 flex gap-1" role="group" aria-label="Language">
+                    {([["en", "English"], ["hinglish", "Hinglish"]] as const).map(([k, label]) => (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => setPayLang(k)}
+                        aria-pressed={payLang === k}
+                        className={`min-h-[32px] rounded-lg px-2.5 text-[11px] font-bold ${payLang === k ? "bg-brand-500/30 text-white" : "bg-white/5 text-slate-400"}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {(() => {
+                  const ex = lang === "hi"
+                    ? { title: T.explainTitle(data.organization.name), direct: T.explainDirect, next: T.explainNext(data.organization.name, data.has_deliverable) }
+                    : payExplainer(payLang, data.organization.name, data.has_deliverable);
+                  return (
+                    <>
+                      <p className="font-bold text-white">{ex.title}</p>
+                      <p className="mt-1">{ex.direct}</p>
+                      <p className="mt-1">{ex.next}</p>
+                    </>
+                  );
+                })()}
+              </div>
               <div className="border-b border-white/10 pb-4 mb-5">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  Select Settlement Method
+                  {T.selectMethod}
                 </span>
                 <div className="mt-3 grid grid-cols-3 gap-2">
                   <button
@@ -427,7 +493,7 @@ export function PublicPayPage() {
                     }`}
                   >
                     <QrCode className="h-4 w-4 mx-auto mb-1 text-brand-400" />
-                    <span className="text-xs block">Instant UPI</span>
+                    <span className="text-xs block">{T.tabUpi}</span>
                   </button>
 
                   <button
@@ -440,7 +506,7 @@ export function PublicPayPage() {
                     }`}
                   >
                     <Building2 className="h-4 w-4 mx-auto mb-1 text-emerald-400" />
-                    <span className="text-xs block">Bank NEFT</span>
+                    <span className="text-xs block">{T.tabBank}</span>
                   </button>
 
                   <button
@@ -453,61 +519,75 @@ export function PublicPayPage() {
                     }`}
                   >
                     <CheckCircle2 className="h-4 w-4 mx-auto mb-1 text-teal-400" />
-                    <span className="text-xs block">Submit UTR</span>
+                    <span className="text-xs block">{T.tabProof}</span>
                   </button>
                 </div>
               </div>
 
               {/* TAB 1: UPI SCAN & PAY */}
-              {activeTab === "upi" && !data.payment?.upi_id && <NotConfigured what="UPI" />}
-              {activeTab === "upi" && data.payment?.upi_id && (
+              {activeTab === "upi" && data.currency !== "INR" && <NotConfigured what={T.upiInrOnly} hint={T.upiInrOnlyHint} />}
+              {activeTab === "upi" && data.currency === "INR" && !data.payment?.upi_id && <NotConfigured what={T.notSetUp(T.whatUpi)} hint={T.notSetUpHint} />}
+              {activeTab === "upi" && data.currency === "INR" && data.payment?.upi_id && (
                 <div className="space-y-4 text-center">
+                  {/* Mobile only: open the UPI app directly (a QR can't be scanned on the same phone) */}
+                  <a
+                    href={upiLinkFor(data)}
+                    className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-glow transition-all hover:opacity-95 sm:hidden"
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    <span>{T.payWithUpiApp}</span>
+                  </a>
                   <div className="rounded-2xl bg-white p-4 inline-block mx-auto shadow-glow">
                     {qrDataUrl ? (
                       <img
                         src={qrDataUrl}
-                        alt="UPI Payment QR Code"
+                        alt={T.qrAlt}
                         className="h-48 w-48 mx-auto"
                       />
                     ) : (
                       <div className="h-48 w-48 flex items-center justify-center text-slate-400 text-xs">
-                        Generating QR...
+                        {T.generatingQr}
                       </div>
                     )}
                   </div>
 
                   <div>
                     <p className="text-xs font-semibold text-slate-200">
-                      Scan with any UPI App (GPay, PhonePe, Paytm, CRED)
+                      {T.scanWith}
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5">
-                      Amount: {data.currency} {outstanding.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      {T.amountLabel(data.currency, outstanding.toLocaleString("en-IN", { minimumFractionDigits: 2 }))}
                     </p>
                     {outstanding > 100000 && (
                       <p className="mx-auto mt-3 max-w-xs rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-[11px] leading-relaxed text-amber-100">
-                        Most UPI apps allow up to about ₹1 lakh per payment. {data.payment?.bank ? "For this amount, bank transfer (NEFT/RTGS) is easier." : "You can pay in parts and submit each UTR."}
+                        {data.payment?.bank ? T.bigAmountBank : T.bigAmountParts}
                       </p>
                     )}
                   </div>
 
-                  {/* Direct Mobile UPI Intent Button */}
-                  <div className="pt-2">
-                    <a
-                      href={buildUpiUri(data)}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 px-4 py-3 text-xs font-bold text-white shadow-glow hover:opacity-95 transition-all"
+                  <div className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left">
+                    <div className="min-w-0">
+                      <span className="block text-[10px] font-bold uppercase text-slate-400">{T.upiIdLabel}</span>
+                      <span className="block truncate font-mono text-xs font-bold text-white">{data.payment.upi_id}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(data.payment!.upi_id!, "UPI ID")}
+                      className="grid h-11 w-11 shrink-0 place-items-center rounded-lg text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+                      title={T.copyUpi}
+                      aria-label={T.copyUpi}
                     >
-                      <CreditCard className="h-4 w-4" />
-                      <span>Tap to Open UPI App on Mobile</span>
-                    </a>
+                      {copiedField === "UPI ID" ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                    </button>
                   </div>
 
                   <div className="text-[11px] text-slate-400 border-t border-white/5 pt-3">
-                    Transferred already?{" "}
+                    {T.transferredAlready}{" "}
                     <button
                       onClick={() => setActiveTab("proof")}
                       className="text-brand-400 font-bold hover:underline"
                     >
-                      Submit your 12-digit UTR number here
+                      {T.submitHere}
                     </button>
                   </div>
                 </div>
@@ -517,16 +597,16 @@ export function PublicPayPage() {
               {activeTab === "bank" && (
                 <div className="space-y-3 text-xs">
                   <p className="text-slate-400 text-[11px] mb-2 leading-relaxed">
-                    Transfer funds via NEFT, RTGS, or IMPS using the official billing account details below:
+                    {T.bankIntro}
                   </p>
 
-                  {!data.payment?.bank && <NotConfigured what="Bank transfer" />}
+                  {!data.payment?.bank && <NotConfigured what={T.notSetUp(T.whatBank)} hint={T.notSetUpHint} />}
                   {(data.payment?.bank
                     ? [
-                        { label: "Beneficiary Name", value: data.payment.bank.account_name },
-                        { label: "Account Number", value: data.payment.bank.account_number },
-                        { label: "IFSC Code", value: data.payment.bank.ifsc },
-                        ...(data.payment.bank.bank_name ? [{ label: "Bank", value: data.payment.bank.bank_name }] : []),
+                        { label: T.beneficiary, value: data.payment.bank.account_name },
+                        { label: T.accountNumber, value: data.payment.bank.account_number },
+                        { label: T.ifsc, value: data.payment.bank.ifsc },
+                        ...(data.payment.bank.bank_name ? [{ label: T.bankName, value: data.payment.bank.bank_name }] : []),
                       ]
                     : []
                   ).map((field) => (
@@ -543,7 +623,8 @@ export function PublicPayPage() {
                       <button
                         onClick={() => copyToClipboard(field.value, field.label)}
                         className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
-                        title="Copy to clipboard"
+                        title={T.copy}
+                        aria-label={`${T.copy}: ${field.label}`}
                       >
                         {copiedField === field.label ? (
                           <Check className="h-4 w-4 text-emerald-400" />
@@ -559,7 +640,7 @@ export function PublicPayPage() {
                       onClick={() => setActiveTab("proof")}
                       className="btn-primary w-full h-10 text-xs font-bold"
                     >
-                      I have made the transfer → Submit UTR Reference
+                      {T.transferMade}
                     </button>
                   </div>
                 </div>
@@ -584,24 +665,24 @@ export function PublicPayPage() {
 
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                      UTR / Bank Reference ID *
+                      {T.utrLabel}
                     </label>
                     <input
                       type="text"
                       required
-                      placeholder="e.g. 332410982734 or CMS-WIRE-889"
+                      placeholder={T.utrPlaceholder}
                       value={utr}
                       onChange={(e) => setUtr(e.target.value)}
                       className="input w-full bg-slate-950 border-white/10 text-white font-mono text-xs"
                     />
                     <span className="text-[10px] text-slate-500 mt-1 block">
-                      Found in your bank receipt or UPI transaction details.
+                      {T.utrHint}
                     </span>
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                      Amount Paid ({data.currency}) *
+                      {T.amountPaid(data.currency)}
                     </label>
                     <input
                       type="number"
@@ -615,11 +696,11 @@ export function PublicPayPage() {
 
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                      Additional Notes (Optional)
+                      {T.notesLabel}
                     </label>
                     <textarea
                       rows={2}
-                      placeholder="e.g. Deducted 10% TDS (challan attached), or paid from personal account."
+                      placeholder={T.notesPlaceholder}
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       className="input w-full bg-slate-950 border-white/10 text-white text-xs resize-none"
@@ -628,7 +709,7 @@ export function PublicPayPage() {
 
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                      Payment screenshot (optional, helps get confirmed faster)
+                      {T.screenshotLabel}
                     </label>
                     <input
                       type="file"
@@ -647,7 +728,7 @@ export function PublicPayPage() {
                       }}
                       className="block w-full text-[11px] text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white hover:file:bg-white/20"
                     />
-                    {screenshot && <img src={screenshot} alt="Screenshot preview" className="mt-2 max-h-32 rounded-lg border border-white/10" />}
+                    {screenshot && <img src={screenshot} alt={T.screenshotAlt} className="mt-2 max-h-32 rounded-lg border border-white/10" />}
                   </div>
 
                   <TurnstileWidget onToken={setHumanToken} resetKey={humanReset} />
@@ -660,12 +741,12 @@ export function PublicPayPage() {
                     {submittingProof ? (
                       <>
                         <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                        <span>Verifying Reference...</span>
+                        <span>{T.verifying}</span>
                       </>
                     ) : (
                       <>
                         <Check className="h-3.5 w-3.5" />
-                        <span>Confirm Payment Submission</span>
+                        <span>{T.confirmSubmit}</span>
                       </>
                     )}
                   </button>
@@ -676,19 +757,19 @@ export function PublicPayPage() {
         </div>
       </main>
 
-      {/* Compliance & Escrow Footer */}
+      {/* Footer */}
       <footer className="mt-16 border-t border-white/5 py-8 text-center text-xs text-slate-500">
         <div className="flex flex-wrap items-center justify-center gap-6">
-          <Link to="/privacy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
+          <Link to="/privacy" className="hover:text-slate-300 transition-colors">{T.privacy}</Link>
           <span className="text-slate-700">•</span>
-          <Link to="/terms" className="hover:text-slate-300 transition-colors">Terms of Service</Link>
+          <Link to="/terms" className="hover:text-slate-300 transition-colors">{T.terms}</Link>
           <span className="text-slate-700">•</span>
-          <span>You pay the seller directly</span>
+          <span>{T.moneyStraight(data.organization.name)}</span>
           <span className="text-slate-700">•</span>
-          <span>Your details stay private</span>
+          <span>{T.filesAfterPay}</span>
         </div>
         <p className="mt-3 text-[11px] text-slate-600">
-          Paivo helps sellers send invoices and confirm payments. Your payment goes straight to the seller. We never store card or bank login details and never hold customer funds.
+          {T.footerNote}
         </p>
       </footer>
     </div>

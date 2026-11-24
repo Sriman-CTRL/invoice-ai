@@ -1,3 +1,4 @@
+import { outstandingOf, settledByCredit } from "../lib/invoiceBalance";
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { getOrgSettings } from "../lib/orgSettings";
@@ -44,6 +45,7 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
                     where: { status: "SUCCEEDED" },
                     orderBy: { created_at: "desc" },
                 },
+                credit_notes: { select: { amount: true } },
             },
         });
 
@@ -54,7 +56,9 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
 
         const paidAmount = invoice.payments.reduce((acc, p) => acc + Number(p.amount), 0);
         const invoiceAmount = Number(invoice.amount);
-        const outstandingAmount = Math.max(0, invoiceAmount - paidAmount);
+        const creditedAmount = invoice.credit_notes.reduce((acc, c) => acc + Number(c.amount), 0);
+        // Credit notes reduce what is owed, so the client is never asked for more than they owe.
+        const outstandingAmount = outstandingOf(invoiceAmount, paidAmount, creditedAmount);
 
         // Check for deliverable vault URL in external_invoice_id
         let deliverableUrl: string | null = null;
@@ -99,6 +103,8 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
             invoice_number: invoice.invoice_number,
             amount: invoiceAmount,
             paid_amount: paidAmount,
+            credited_amount: creditedAmount,
+            settled_by_credit: settledByCredit(invoice.status, invoiceAmount, paidAmount, creditedAmount),
             outstanding_amount: outstandingAmount,
             currency: invoice.currency,
             issued_at: invoice.issued_at,
@@ -181,6 +187,7 @@ router.post("/:invoice_number/submit-proof", turnstileGuard, async (req: Request
                 customers: true,
                 organizations: true,
                 payments: { where: { status: "SUCCEEDED" } },
+                credit_notes: { select: { amount: true } },
             },
         });
 
@@ -190,7 +197,8 @@ router.post("/:invoice_number/submit-proof", turnstileGuard, async (req: Request
         }
 
         const paidAmount = invoice.payments.reduce((acc, p) => acc + Number(p.amount), 0);
-        const outstandingAmount = Math.max(0, Number(invoice.amount) - paidAmount);
+        const creditedAmount = invoice.credit_notes.reduce((acc, c) => acc + Number(c.amount), 0);
+        const outstandingAmount = outstandingOf(Number(invoice.amount), paidAmount, creditedAmount);
         if (invoice.status === "PAID" || invoice.status === "CANCELLED" || outstandingAmount <= 0) {
             res.status(409).json({ error: "This invoice is already settled." });
             return;

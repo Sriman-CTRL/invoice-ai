@@ -534,7 +534,8 @@ export function InvoiceDetailPage() {
         const fin = data.financial_summary;
         const totalAmount = Number(fin.invoice_amount) || 1;
         const paidAmount = Number(fin.paid_amount) || 0;
-        const progressPct = Math.min(100, Math.round((paidAmount / totalAmount) * 100));
+        const creditedAmount = Number(fin.credited_amount) || 0;
+        const progressPct = Math.min(100, Math.round(((paidAmount + creditedAmount) / totalAmount) * 100));
         const outstanding = Number(fin.outstanding_amount) || 0;
 
         return (
@@ -620,7 +621,7 @@ export function InvoiceDetailPage() {
                   {/* Payment Progress Bar */}
                   <div className="mt-6">
                     <div className="flex justify-between text-xs font-semibold text-slate-500 mb-1.5">
-                      <span>{progressPct}% Settled</span>
+                      <span>{fin.settled_by_credit ? (paidAmount > 0 ? "Settled: payment + credit note" : "Settled by credit note") : `${progressPct}% Settled`}</span>
                       <span>Outstanding: {money(fin.outstanding_amount, fin.currency)}</span>
                     </div>
                     <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
@@ -635,8 +636,9 @@ export function InvoiceDetailPage() {
                     <div className="pr-4">
                       <p className="text-xs font-medium text-slate-400">Total Settled</p>
                       <p className="mt-1 font-mono text-lg font-bold text-emerald-600">
-                        {money(fin.paid_amount, fin.currency)}
+                        {money(paidAmount + creditedAmount, fin.currency)}
                       </p>
+                      {creditedAmount > 0 && <p className="mt-0.5 text-[11px] text-slate-400">incl. credit notes {money(creditedAmount, fin.currency)}</p>}
                     </div>
                     <div className="px-4">
                       <p className="text-xs font-medium text-slate-400">Remaining Due</p>
@@ -828,13 +830,13 @@ export function InvoiceDetailPage() {
                   </div>
                 </section>
 
-                {/* Deliverable Vault Escrow Status */}
+                {/* Final files status */}
                 {inv.external_invoice_id && (inv.external_invoice_id.startsWith("vault:") || inv.external_invoice_id.startsWith("http")) && (
                   <section className="panel p-6 border-indigo-200/80 bg-gradient-to-br from-indigo-50/40 to-white">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <Lock className="h-4 w-4 text-indigo-600" />
-                        <h3 className="font-bold text-slate-900 text-sm">Deliverable Vault</h3>
+                        <h3 className="font-bold text-slate-900 text-sm">Final files</h3>
                       </div>
                       <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
                         inv.status === "PAID"
@@ -846,8 +848,8 @@ export function InvoiceDetailPage() {
                     </div>
                     <p className="text-xs text-slate-600 mb-3 leading-relaxed">
                       {inv.status === "PAID"
-                        ? "Payment is settled. Client has unlocked instant access to these project deliverables via their payment portal."
-                        : "Deliverables are locked. Client cannot access the files until full payment is settled."}
+                        ? "Payment is settled. Your client can now open these files from their payment page."
+                        : "The files are locked. Your client can open them only after you confirm full payment."}
                     </p>
                     <div className="rounded-lg border border-slate-200 bg-white p-2.5 flex items-center justify-between text-xs font-mono">
                       <span className="truncate text-slate-600 max-w-[200px]">

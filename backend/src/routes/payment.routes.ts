@@ -1,3 +1,4 @@
+import { creditedTotal } from "../lib/invoiceBalance";
 import { Router } from "express";
 import prisma from "../lib/prisma";
 import { auditLogger } from "../lib/auditLogger";
@@ -72,9 +73,11 @@ router.post("/", async (req, res) => {
         _sum: { amount: true },
       });
       const alreadyPaid = Number(settled._sum.amount ?? 0);
+      // Credit notes already reduced what is owed, so they count toward the balance like payments do.
+      const credited = await creditedTotal(tx, organization_id, invoice_id);
       const invoiceAmount = Number(invoice.amount);
 
-      if (alreadyPaid + paymentAmount > invoiceAmount) {
+      if (alreadyPaid + credited + paymentAmount > invoiceAmount + 0.001) {
         throw new Error("PAYMENT_EXCEEDS_INVOICE");
       }
 
@@ -93,7 +96,7 @@ router.post("/", async (req, res) => {
       // Invoice status only moves for money that actually settled.
       let newInvoiceStatus = invoice.status;
       if (paymentStatus === "SUCCEEDED") {
-        const newPaidAmount = alreadyPaid + paymentAmount;
+        const newPaidAmount = alreadyPaid + credited + paymentAmount;
         if (newPaidAmount >= invoiceAmount) {
           newInvoiceStatus = "PAID";
         } else if (newPaidAmount > 0) {

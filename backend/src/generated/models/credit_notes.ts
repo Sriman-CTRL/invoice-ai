@@ -256,8 +256,8 @@ export type credit_notesWhereInput = {
   reason?: Prisma.StringFilter<"credit_notes"> | string
   issued_at?: Prisma.DateTimeFilter<"credit_notes"> | Date | string
   created_at?: Prisma.DateTimeFilter<"credit_notes"> | Date | string
-  invoices?: Prisma.XOR<Prisma.InvoicesScalarRelationFilter, Prisma.invoicesWhereInput>
   customers?: Prisma.XOR<Prisma.CustomersScalarRelationFilter, Prisma.customersWhereInput>
+  invoices?: Prisma.XOR<Prisma.InvoicesScalarRelationFilter, Prisma.invoicesWhereInput>
   organizations?: Prisma.XOR<Prisma.OrganizationsScalarRelationFilter, Prisma.organizationsWhereInput>
 }
 
@@ -272,8 +272,8 @@ export type credit_notesOrderByWithRelationInput = {
   reason?: Prisma.SortOrder
   issued_at?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
-  invoices?: Prisma.invoicesOrderByWithRelationInput
   customers?: Prisma.customersOrderByWithRelationInput
+  invoices?: Prisma.invoicesOrderByWithRelationInput
   organizations?: Prisma.organizationsOrderByWithRelationInput
 }
 
@@ -292,8 +292,8 @@ export type credit_notesWhereUniqueInput = Prisma.AtLeast<{
   reason?: Prisma.StringFilter<"credit_notes"> | string
   issued_at?: Prisma.DateTimeFilter<"credit_notes"> | Date | string
   created_at?: Prisma.DateTimeFilter<"credit_notes"> | Date | string
-  invoices?: Prisma.XOR<Prisma.InvoicesScalarRelationFilter, Prisma.invoicesWhereInput>
   customers?: Prisma.XOR<Prisma.CustomersScalarRelationFilter, Prisma.customersWhereInput>
+  invoices?: Prisma.XOR<Prisma.InvoicesScalarRelationFilter, Prisma.invoicesWhereInput>
   organizations?: Prisma.XOR<Prisma.OrganizationsScalarRelationFilter, Prisma.organizationsWhereInput>
 }, "id" | "organization_id_credit_note_number">
 
@@ -339,8 +339,8 @@ export type credit_notesCreateInput = {
   reason: string
   issued_at?: Date | string
   created_at?: Date | string
-  invoices: Prisma.invoicesCreateNestedOneWithoutCredit_notesInput
   customers: Prisma.customersCreateNestedOneWithoutCredit_notesInput
+  invoices: Prisma.invoicesCreateNestedOneWithoutCredit_notesInput
   organizations: Prisma.organizationsCreateNestedOneWithoutCredit_notesInput
 }
 
@@ -365,8 +365,8 @@ export type credit_notesUpdateInput = {
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   issued_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  invoices?: Prisma.invoicesUpdateOneRequiredWithoutCredit_notesNestedInput
   customers?: Prisma.customersUpdateOneRequiredWithoutCredit_notesNestedInput
+  invoices?: Prisma.invoicesUpdateOneRequiredWithoutCredit_notesNestedInput
   organizations?: Prisma.organizationsUpdateOneRequiredWithoutCredit_notesNestedInput
 }
 
@@ -731,8 +731,8 @@ export type credit_notesCreateWithoutOrganizationsInput = {
   reason: string
   issued_at?: Date | string
   created_at?: Date | string
-  invoices: Prisma.invoicesCreateNestedOneWithoutCredit_notesInput
   customers: Prisma.customersCreateNestedOneWithoutCredit_notesInput
+  invoices: Prisma.invoicesCreateNestedOneWithoutCredit_notesInput
 }
 
 export type credit_notesUncheckedCreateWithoutOrganizationsInput = {
@@ -889,8 +889,8 @@ export type credit_notesUpdateWithoutOrganizationsInput = {
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   issued_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  invoices?: Prisma.invoicesUpdateOneRequiredWithoutCredit_notesNestedInput
   customers?: Prisma.customersUpdateOneRequiredWithoutCredit_notesNestedInput
+  invoices?: Prisma.invoicesUpdateOneRequiredWithoutCredit_notesNestedInput
 }
 
 export type credit_notesUncheckedUpdateWithoutOrganizationsInput = {
@@ -930,8 +930,8 @@ export type credit_notesSelect<ExtArgs extends runtime.Types.Extensions.Internal
   reason?: boolean
   issued_at?: boolean
   created_at?: boolean
-  invoices?: boolean | Prisma.invoicesDefaultArgs<ExtArgs>
   customers?: boolean | Prisma.customersDefaultArgs<ExtArgs>
+  invoices?: boolean | Prisma.invoicesDefaultArgs<ExtArgs>
   organizations?: boolean | Prisma.organizationsDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["credit_notes"]>
 
@@ -946,8 +946,8 @@ export type credit_notesSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   reason?: boolean
   issued_at?: boolean
   created_at?: boolean
-  invoices?: boolean | Prisma.invoicesDefaultArgs<ExtArgs>
   customers?: boolean | Prisma.customersDefaultArgs<ExtArgs>
+  invoices?: boolean | Prisma.invoicesDefaultArgs<ExtArgs>
   organizations?: boolean | Prisma.organizationsDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["credit_notes"]>
 
@@ -962,8 +962,8 @@ export type credit_notesSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   reason?: boolean
   issued_at?: boolean
   created_at?: boolean
-  invoices?: boolean | Prisma.invoicesDefaultArgs<ExtArgs>
   customers?: boolean | Prisma.customersDefaultArgs<ExtArgs>
+  invoices?: boolean | Prisma.invoicesDefaultArgs<ExtArgs>
   organizations?: boolean | Prisma.organizationsDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["credit_notes"]>
 
@@ -982,26 +982,26 @@ export type credit_notesSelectScalar = {
 
 export type credit_notesOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "organization_id" | "invoice_id" | "customer_id" | "credit_note_number" | "amount" | "currency" | "reason" | "issued_at" | "created_at", ExtArgs["result"]["credit_notes"]>
 export type credit_notesInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  invoices?: boolean | Prisma.invoicesDefaultArgs<ExtArgs>
   customers?: boolean | Prisma.customersDefaultArgs<ExtArgs>
+  invoices?: boolean | Prisma.invoicesDefaultArgs<ExtArgs>
   organizations?: boolean | Prisma.organizationsDefaultArgs<ExtArgs>
 }
 export type credit_notesIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  invoices?: boolean | Prisma.invoicesDefaultArgs<ExtArgs>
   customers?: boolean | Prisma.customersDefaultArgs<ExtArgs>
+  invoices?: boolean | Prisma.invoicesDefaultArgs<ExtArgs>
   organizations?: boolean | Prisma.organizationsDefaultArgs<ExtArgs>
 }
 export type credit_notesIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  invoices?: boolean | Prisma.invoicesDefaultArgs<ExtArgs>
   customers?: boolean | Prisma.customersDefaultArgs<ExtArgs>
+  invoices?: boolean | Prisma.invoicesDefaultArgs<ExtArgs>
   organizations?: boolean | Prisma.organizationsDefaultArgs<ExtArgs>
 }
 
 export type $credit_notesPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "credit_notes"
   objects: {
-    invoices: Prisma.$invoicesPayload<ExtArgs>
     customers: Prisma.$customersPayload<ExtArgs>
+    invoices: Prisma.$invoicesPayload<ExtArgs>
     organizations: Prisma.$organizationsPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1409,8 +1409,8 @@ readonly fields: credit_notesFieldRefs;
  */
 export interface Prisma__credit_notesClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  invoices<T extends Prisma.invoicesDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.invoicesDefaultArgs<ExtArgs>>): Prisma.Prisma__invoicesClient<runtime.Types.Result.GetResult<Prisma.$invoicesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   customers<T extends Prisma.customersDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.customersDefaultArgs<ExtArgs>>): Prisma.Prisma__customersClient<runtime.Types.Result.GetResult<Prisma.$customersPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  invoices<T extends Prisma.invoicesDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.invoicesDefaultArgs<ExtArgs>>): Prisma.Prisma__invoicesClient<runtime.Types.Result.GetResult<Prisma.$invoicesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   organizations<T extends Prisma.organizationsDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.organizationsDefaultArgs<ExtArgs>>): Prisma.Prisma__organizationsClient<runtime.Types.Result.GetResult<Prisma.$organizationsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.

@@ -91,6 +91,29 @@ export function AdminGrowthPage() {
         </section>
       </div>
 
+      <section className="panel mt-6 p-6">
+        <h2 className="text-base font-bold text-slate-900">Visits and sign-ups by campaign link</h2>
+        <p className="mt-1 text-xs text-slate-400">From links tagged like paivo.in/?utm_source=linkedin&amp;utm_medium=dm. </p>
+        {d.sources.length ? (
+          <table className="mt-4 w-full text-sm">
+            <thead><tr className="text-left text-[11px] font-bold uppercase tracking-wider text-slate-500"><th className="py-2">Source</th><th>Medium</th><th>Campaign</th><th className="text-right">Visitors</th><th className="text-right">Sign-ups</th></tr></thead>
+            <tbody className="divide-y divide-slate-100">
+              {d.sources.map((x) => (
+                <tr key={`${x.source}|${x.medium}|${x.campaign}`}><td className="py-2 text-slate-700">{x.source || "(none)"}</td><td className="text-slate-500">{x.medium || "-"}</td><td className="text-slate-500">{x.campaign || "-"}</td><td className="text-right font-mono text-slate-500">{x.visitors}</td><td className="text-right font-mono text-slate-500">{x.signups}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        ) : <p className="mt-4 text-sm text-slate-400">No tagged visits yet. Add ?utm_source=... to the links you share.</p>}
+        <h3 className="mt-6 text-sm font-bold text-slate-900">"How did you hear about us?" answers at sign-up</h3>
+        {d.heard.length ? (
+          <ul className="mt-2 divide-y divide-slate-100 text-sm">
+            {d.heard.map((x) => (
+              <li key={x.answer} className="flex justify-between py-2"><span className="text-slate-700">{x.answer}</span><span className="font-mono text-slate-500">{x.signups}</span></li>
+            ))}
+          </ul>
+        ) : <p className="mt-2 text-sm text-slate-400">No answers yet.</p>}
+      </section>
+
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <section className="panel p-6">
           <h2 className="text-base font-bold text-slate-900">Views per day</h2>

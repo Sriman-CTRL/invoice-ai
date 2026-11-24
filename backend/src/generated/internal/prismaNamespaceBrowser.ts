@@ -60,7 +60,17 @@ export const ModelName = {
   payments: 'payments',
   users: 'users',
   suppressions: 'suppressions',
-  credit_notes: 'credit_notes'
+  credit_notes: 'credit_notes',
+  analytics_events: 'analytics_events',
+  auth_failures: 'auth_failures',
+  invoice_details: 'invoice_details',
+  auto_reminder_claims: 'auto_reminder_claims',
+  invoice_views: 'invoice_views',
+  leads: 'leads',
+  payment_proof_images: 'payment_proof_images',
+  plan_requests: 'plan_requests',
+  rate_limits: 'rate_limits',
+  recurring_invoices: 'recurring_invoices'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -169,7 +179,18 @@ export const OrganizationsScalarFieldEnum = {
   name: 'name',
   slug: 'slug',
   created_at: 'created_at',
-  updated_at: 'updated_at'
+  updated_at: 'updated_at',
+  upi_id: 'upi_id',
+  payee_name: 'payee_name',
+  bank_account_name: 'bank_account_name',
+  bank_account_number: 'bank_account_number',
+  bank_ifsc: 'bank_ifsc',
+  bank_name: 'bank_name',
+  gstin: 'gstin',
+  plan: 'plan',
+  brand_color: 'brand_color',
+  logo_data: 'logo_data',
+  auto_reminders: 'auto_reminders'
 } as const
 
 export type OrganizationsScalarFieldEnum = (typeof OrganizationsScalarFieldEnum)[keyof typeof OrganizationsScalarFieldEnum]
@@ -197,6 +218,7 @@ export const UsersScalarFieldEnum = {
   email: 'email',
   password_hash: 'password_hash',
   name: 'name',
+  google_sub: 'google_sub',
   created_at: 'created_at',
   updated_at: 'updated_at'
 } as const
@@ -230,6 +252,126 @@ export const Credit_notesScalarFieldEnum = {
 } as const
 
 export type Credit_notesScalarFieldEnum = (typeof Credit_notesScalarFieldEnum)[keyof typeof Credit_notesScalarFieldEnum]
+
+
+export const Analytics_eventsScalarFieldEnum = {
+  id: 'id',
+  at: 'at',
+  event: 'event',
+  path: 'path',
+  referrer: 'referrer',
+  visitor: 'visitor'
+} as const
+
+export type Analytics_eventsScalarFieldEnum = (typeof Analytics_eventsScalarFieldEnum)[keyof typeof Analytics_eventsScalarFieldEnum]
+
+
+export const Auth_failuresScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  ip: 'ip',
+  at: 'at'
+} as const
+
+export type Auth_failuresScalarFieldEnum = (typeof Auth_failuresScalarFieldEnum)[keyof typeof Auth_failuresScalarFieldEnum]
+
+
+export const Invoice_detailsScalarFieldEnum = {
+  invoice_id: 'invoice_id',
+  organization_id: 'organization_id',
+  items: 'items',
+  discount: 'discount',
+  tax_percent: 'tax_percent',
+  tax_mode: 'tax_mode',
+  notes: 'notes',
+  created_at: 'created_at'
+} as const
+
+export type Invoice_detailsScalarFieldEnum = (typeof Invoice_detailsScalarFieldEnum)[keyof typeof Invoice_detailsScalarFieldEnum]
+
+
+export const Auto_reminder_claimsScalarFieldEnum = {
+  id: 'id',
+  organization_id: 'organization_id',
+  invoice_id: 'invoice_id',
+  step: 'step',
+  status: 'status',
+  claimed_at: 'claimed_at',
+  finished_at: 'finished_at'
+} as const
+
+export type Auto_reminder_claimsScalarFieldEnum = (typeof Auto_reminder_claimsScalarFieldEnum)[keyof typeof Auto_reminder_claimsScalarFieldEnum]
+
+
+export const Invoice_viewsScalarFieldEnum = {
+  id: 'id',
+  organization_id: 'organization_id',
+  invoice_id: 'invoice_id',
+  viewed_at: 'viewed_at'
+} as const
+
+export type Invoice_viewsScalarFieldEnum = (typeof Invoice_viewsScalarFieldEnum)[keyof typeof Invoice_viewsScalarFieldEnum]
+
+
+export const LeadsScalarFieldEnum = {
+  id: 'id',
+  at: 'at',
+  kind: 'kind',
+  email: 'email',
+  plan: 'plan',
+  message: 'message'
+} as const
+
+export type LeadsScalarFieldEnum = (typeof LeadsScalarFieldEnum)[keyof typeof LeadsScalarFieldEnum]
+
+
+export const Payment_proof_imagesScalarFieldEnum = {
+  id: 'id',
+  organization_id: 'organization_id',
+  payment_id: 'payment_id',
+  mime: 'mime',
+  data: 'data',
+  created_at: 'created_at'
+} as const
+
+export type Payment_proof_imagesScalarFieldEnum = (typeof Payment_proof_imagesScalarFieldEnum)[keyof typeof Payment_proof_imagesScalarFieldEnum]
+
+
+export const Plan_requestsScalarFieldEnum = {
+  id: 'id',
+  organization_id: 'organization_id',
+  plan: 'plan',
+  utr: 'utr',
+  status: 'status',
+  created_at: 'created_at'
+} as const
+
+export type Plan_requestsScalarFieldEnum = (typeof Plan_requestsScalarFieldEnum)[keyof typeof Plan_requestsScalarFieldEnum]
+
+
+export const Rate_limitsScalarFieldEnum = {
+  key: 'key',
+  count: 'count',
+  reset_at: 'reset_at'
+} as const
+
+export type Rate_limitsScalarFieldEnum = (typeof Rate_limitsScalarFieldEnum)[keyof typeof Rate_limitsScalarFieldEnum]
+
+
+export const Recurring_invoicesScalarFieldEnum = {
+  id: 'id',
+  organization_id: 'organization_id',
+  customer_id: 'customer_id',
+  template: 'template',
+  frequency: 'frequency',
+  next_run: 'next_run',
+  active: 'active',
+  last_invoice_id: 'last_invoice_id',
+  runs: 'runs',
+  created_at: 'created_at'
+} as const
+
+export type Recurring_invoicesScalarFieldEnum = (typeof Recurring_invoicesScalarFieldEnum)[keyof typeof Recurring_invoicesScalarFieldEnum]
 
 
 export const SortOrder = {

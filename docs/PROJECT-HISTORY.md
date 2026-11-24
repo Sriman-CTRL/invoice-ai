@@ -36,6 +36,34 @@ Last updated: 24 Nov 2026.
 | 23 Nov (night) | `e5e6e56` **Security hardening from pre-launch audit**: shared database rate limiting, admin-email sign-up block, org-scoped recurring-invoice edits, account deletion, pinned dependency versions, required inbound-webhook timestamp, `security.txt`, removed stale RLS SQL, build bundle (`api/index.js`) no longer committed. `382f5dc` privacy/security contact moved to `paivo.in`. |
 | 24 Nov | Pinned dependency versions: root `package.json` uses caret ranges matching the lockfile instead of `latest`. |
 | 24 Nov | Fixed shared rate limiting under the restricted DB role: `rate_limits` is now created by `enable-rls.cjs` (the app role cannot run DDL), the runtime CREATE is tried once per process, and the in-memory fallback logs one warning. Corrected `AGENTS.md` (api/index.js is git-ignored, inbound timestamp, public-repo rule). |
+| 24 Nov (night build) | T0: `night-build` branch, local DB set up, green baseline recorded (54/54 integration tests, build OK). |
+| 24 Nov (night build) | R1: market research in `docs/research/MARKET-2026-11.md`. |
+| 24 Nov (night build) | R4: competitor teardown in `docs/research/TEARDOWN.md`. |
+| 24 Nov (night build) | G1: go-to-market pack in `docs/gtm/` (ICP, channels, messages, demo, 14-day plan, content, launch checklist). |
+| 24 Nov (night build) | R2: open-source scouting in `docs/research/OSS-INTEGRATIONS.md`. |
+| 24 Nov (night build) | T1: SEO tags, link preview image (`og.png`), crawlable fallback, robots.txt and sitemap. |
+| 24 Nov (night build) | U1: conversion changes from the teardown (landing, pricing, pay page). |
+| 24 Nov (night build) | G2: first-party campaign attribution (utm_*, ref) and sign-ups by source in admin Growth. |
+| 24 Nov (night build) | G3: demo screenshots (`scripts/screenshots.mjs`, 16 PNGs in `docs/gtm/assets/`). |
+| 24 Nov (night build) | T2: README rewritten for visitors; docs fixes. |
+| 24 Nov (night build) | T3: `schema.prisma` now mirrors the real database. |
+| 24 Nov (night build) | T4: route code-splitting; first download cut from 632 kB to 251 kB (173 to 79 kB gzip). |
+| 24 Nov (night build) | T5: money-path tests (17 new) and two real bugs fixed. |
+| 24 Nov (night build) | B1: GSTIN check-digit validation, clearer IFSC errors, inline errors in Settings. |
+| 24 Nov (night build) | B2: amount in words (Indian numbering) on the PDF and the pay page. |
+| 24 Nov (night build) | T6: automatic overdue reminders (built, off by default; [soon] labels untouched). |
+| 24 Nov (night build) | T7: Google sign-in (inert until GOOGLE_CLIENT_ID / VITE_GOOGLE_CLIENT_ID are set). |
+| 24 Nov (night build) | T8: /whats-new page and changelog. |
+| 24 Nov (night build) | T9: bank-alert payment suggestions (suggest-only, not advertised). |
+| 24 Nov (night build) | R3: proposals doc; Hinglish pay-page explainer built behind `VITE_FEATURE_HINGLISH_PAY` (off by default). |
+| 24 Nov (night build) | T10: night report in `docs/NIGHT-REPORT.md`. |
+| 24 Nov (night build, phase 2) | P0: review fixes: Google sign-in links on Google's account id (`users.google_sub`), automatic reminders claim each step before sending (`auto_reminder_claims`), bank-alert suggestions need a DMARC-passing sender, pay page and PDF use the balance after credit notes, honest pay-page and legal wording. |
+| 24 Nov (night build, phase 2) | P1: market research verified against vendors' own pages; pay-to-unlock and late-payment evidence updated in `docs/research/MARKET-2026-11.md`. |
+| 24 Nov (night build, phase 2) | P2: free tools (GST calculator, TDS calculator, payment reminder writer) at `/tools/*`, no login, all in the browser. |
+| 24 Nov (night build, phase 2) | P3: five static guides in `public/guides/` (invoicing, TDS, UPI limits, late-payment follow-up, getting paid before sending files) with sitemap and footer link. |
+| 24 Nov (night build, phase 2) | P4: end-to-end test of the core money flow (`npm run e2e`, local only, not in CI). |
+| 24 Nov (night build, phase 2) | P5: Hindi (हिन्दी) switch on the client pay page; labels only, needs native review. |
+| 24 Nov (night build, phase 2) | P6: whole-night review; fixed unsourced claims and UPI-for-non-INR bug. P7: night report updated with phase 2 and review. |
 
 ## 3. Key decisions (and why)
 
@@ -60,6 +88,8 @@ partial payments, credit notes, PDF invoices, email reminders (manual send) + Wh
 approval), client portal, CSV import, cash-flow forecast, analytics, GST report, activity feed + bell, data
 export/erasure, account deletion, admin plan approvals, analytics/growth page.
 
+**Added in the night builds (on branch `night-build`, merge pending):** free tools at `/tools/*`, five guides at `/guides/`, Hindi switch on the pay page, Google sign-in (inert until keys), What's new page, credit-note-aware balances.
+
 **Built but not offered to users yet ("soon"):** reading client replies with AI (inbound email → classify → action
 queue), automatic scheduled reminders, per-seller billing email address.
 
@@ -76,6 +106,6 @@ Ranked from `docs/COMPETITOR-KWILL.md`, minus what's done. Let the interviews de
 4. Google sign-in; "What's new" changelog; locked-feature previews once paid plans open.
 5. Quotes that turn into invoices; lead/enquiry form; custom domain per seller (paid tier).
 6. Reconsider Pro price (₹399–499) until automation works; add yearly pricing.
-7. Housekeeping: rewrite README; bring `schema.prisma` in line with `enable-rls.cjs`; add pre-rendered/meta tags so Google and link previews can read the landing page.
+7. Housekeeping: add pre-rendered/meta tags so Google and link previews can read the landing page (meta tags and a static fallback are done in the night build; real pre-rendering is not).
 
 **Not building for now:** e-signed contracts, CRM/pipeline, projects/time tracking, team seats, per-client chat.

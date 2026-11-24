@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
 import type { InvoiceDetail, OrgSettings } from "./types";
+import { amountInWords } from "./amountInWords";
 
 export const PUBLIC_BASE_URL = "https://paivo.in";
 
@@ -125,7 +126,7 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   set(paid ? GREEN : AMBER);
-  doc.text(inv.status.replace(/_/g, " "), mx + 24, y + 14);
+  doc.text(fin.settled_by_credit ? (fin.paid_amount > 0 ? "SETTLED (PAYMENT + CREDIT NOTE)" : "SETTLED BY CREDIT NOTE") : inv.status.replace(/_/g, " "), mx + 24, y + 14);
 
   // Line items
   y = 88;
@@ -180,10 +181,20 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   if (dt && data.details?.tax_mode === "GST_INTER") row(`IGST ${data.details?.tax_percent}%`, inr(dt.igst, currency));
   if (dt && dt.tax > 0) row("Invoice total", inr(dt.total, currency), false, INK);
   if (fin.paid_amount > 0) row("Payments received", `- ${inr(fin.paid_amount, currency)}`, false, GREEN);
+  if ((fin.credited_amount ?? 0) > 0) row("Credit notes", `- ${inr(Number(fin.credited_amount), currency)}`, false, GREEN);
   doc.setDrawColor(...INK);
   doc.line(tx, y - 3, W - M, y - 3);
   y += 2;
   row("Balance due", inr(fin.outstanding_amount, currency), true, paid ? GREEN : INK);
+
+  // Invoice total in words (Indian numbering). Only for rupee invoices.
+  const totalWords = currency === "INR" ? amountInWords(Number(dt ? dt.total : fin.invoice_amount)) : null;
+  if (totalWords) {
+    doc.setFont("helvetica", "italic"); doc.setFontSize(8.5); set(MUTED);
+    const wordLines = doc.splitTextToSize(`Invoice total in words: ${totalWords}`, W - 2 * M) as string[];
+    doc.text(wordLines, W - M - 3, y, { align: "right" });
+    y += wordLines.length * 4 + 2;
+  }
 
   if (data.details?.notes) {
     y += 2;
@@ -217,19 +228,19 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   const cleanOrg = (st?.payee_name || org).replace(/[^a-zA-Z0-9 ]/g, "").slice(0, 25) || "Payee";
   const upiId = st?.upi_id || "";
   const upi = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(cleanOrg)}&am=${Number(fin.outstanding_amount).toFixed(2)}&cu=INR&tn=${encodeURIComponent(`Invoice ${inv.invoice_number}`)}`;
-  if (!paid && fin.outstanding_amount > 0 && upiId) {
+  if (!paid && fin.outstanding_amount > 0 && upiId && currency === "INR") {
     const qr = await QRCode.toDataURL(upi, { width: 320, margin: 1, color: { dark: "#0f172a", light: "#ffffff" } });
     doc.addImage(qr, "PNG", M + 5, qy + 6, 40, 40);
   } else {
     doc.setFillColor(...(paid ? ([236, 253, 245] as Rgb) : ([241, 245, 249] as Rgb)));
     doc.roundedRect(M + 5, qy + 6, 40, 40, 3, 3, "F");
     doc.setFont("helvetica", "bold"); doc.setFontSize(paid ? 11 : 8); set(paid ? GREEN : MUTED);
-    doc.text(paid ? "PAID" : "Pay via link", M + 25, qy + 27, { align: "center" });
+    doc.text(paid ? (fin.settled_by_credit ? "SETTLED" : "PAID") : "Pay via link", M + 25, qy + 27, { align: "center" });
   }
   const px = M + 52;
-  label(paid ? "Payment received" : "Scan to pay with any UPI app", px, qy + 10);
+  label(paid ? (fin.settled_by_credit ? "Settled by credit note" : "Payment received") : "Scan to pay with any UPI app", px, qy + 10);
   doc.setFont("helvetica", "normal"); doc.setFontSize(9); set(MUTED);
-  doc.text(paid ? "Thank you. This invoice is settled in full." : upiId ? `UPI: ${upiId} (zero fees)` : "Use the secure link below to pay.", px, qy + 16);
+  doc.text(paid ? "Thank you. This invoice is settled in full." : upiId && currency === "INR" ? `UPI: ${upiId} (zero fees)` : "Use the link below to pay.", px, qy + 16);
   if (!paid && st?.bank_account_number && st.bank_ifsc) {
     doc.setFontSize(8);
     doc.text(`Bank: ${st.bank_account_name || org} | A/C ${st.bank_account_number} | IFSC ${st.bank_ifsc}`, px, qy + 21);
@@ -238,7 +249,7 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   doc.setFont("helvetica", "bold"); doc.setFontSize(9); set(BRAND);
   doc.textWithLink(payUrl, px, qy + 33, { url: payUrl });
 
-  // Vault badge
+  // Final-files badge
   const ext = inv.external_invoice_id || "";
   const hasVault = ext.startsWith("vault:") || ext.startsWith("http");
   if (hasVault) {
@@ -247,7 +258,7 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
     doc.setFillColor(...(paid ? ([209, 250, 229] as Rgb) : ([254, 243, 199] as Rgb)));
     doc.roundedRect(bx, by, 78, 8, 4, 4, "F");
     doc.setFont("helvetica", "bold"); doc.setFontSize(8); set(paid ? GREEN : AMBER);
-    doc.text(paid ? "DELIVERABLE VAULT: UNLOCKED" : "DELIVERABLE VAULT: HELD IN ESCROW", bx + 39, by + 5.2, { align: "center" });
+    doc.text(paid ? "FINAL FILES: UNLOCKED" : "FINAL FILES: LOCKED UNTIL PAID", bx + 39, by + 5.2, { align: "center" });
   }
 
   // Footer

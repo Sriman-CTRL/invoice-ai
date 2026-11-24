@@ -54,21 +54,21 @@ model conversations {
 }
 
 model customers {
-  id                   String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organization_id      String               @db.Uuid
-  name                 String               @db.VarChar(255)
-  email                String               @db.VarChar(320)
-  company_name         String?              @db.VarChar(255)
-  phone                String?              @db.VarChar(50)
-  external_customer_id String?              @db.VarChar(255)
-  processing_restricted Boolean             @default(false)
-  created_at           DateTime             @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime             @default(now()) @db.Timestamptz(6)
-  collection_actions   collection_actions[]
-  conversations        conversations[]
-  organizations        organizations        @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  invoices             invoices[]
-  credit_notes         credit_notes[]
+  id                    String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id       String               @db.Uuid
+  name                  String               @db.VarChar(255)
+  email                 String               @db.VarChar(320)
+  company_name          String?              @db.VarChar(255)
+  phone                 String?              @db.VarChar(50)
+  external_customer_id  String?              @db.VarChar(255)
+  processing_restricted Boolean              @default(false)
+  created_at            DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime             @default(now()) @db.Timestamptz(6)
+  collection_actions    collection_actions[]
+  conversations         conversations[]
+  credit_notes          credit_notes[]
+  organizations         organizations        @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  invoices              invoices[]
 
   @@unique([organization_id, email])
   @@index([organization_id, created_at])
@@ -90,10 +90,10 @@ model invoices {
   updated_at          DateTime             @default(now()) @db.Timestamptz(6)
   collection_actions  collection_actions[]
   conversations       conversations[]
+  credit_notes        credit_notes[]
   customers           customers            @relation(fields: [customer_id], references: [id], onUpdate: NoAction)
   organizations       organizations        @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   payments            payments[]
-  credit_notes        credit_notes[]
 
   @@unique([organization_id, invoice_number])
   @@index([organization_id, status])
@@ -124,20 +124,31 @@ model messages {
 }
 
 model organizations {
-  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name               String               @db.VarChar(255)
-  slug               String               @unique @db.VarChar(100)
-  created_at         DateTime             @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
-  collection_actions collection_actions[]
-  conversations      conversations[]
-  customers          customers[]
-  invoices           invoices[]
-  messages           messages[]
-  payments           payments[]
-  suppressions       suppressions[]
-  credit_notes       credit_notes[]
-  users              users[]
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String               @db.VarChar(255)
+  slug                String               @unique @db.VarChar(100)
+  created_at          DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime             @default(now()) @db.Timestamptz(6)
+  upi_id              String?              @db.VarChar(255)
+  payee_name          String?              @db.VarChar(255)
+  bank_account_name   String?              @db.VarChar(255)
+  bank_account_number String?              @db.VarChar(255)
+  bank_ifsc           String?              @db.VarChar(255)
+  bank_name           String?              @db.VarChar(255)
+  gstin               String?              @db.VarChar(255)
+  plan                String               @default("FREE") @db.VarChar(20)
+  brand_color         String?              @db.VarChar(9)
+  logo_data           String?
+  auto_reminders      Boolean              @default(false)
+  collection_actions  collection_actions[]
+  conversations       conversations[]
+  credit_notes        credit_notes[]
+  customers           customers[]
+  invoices            invoices[]
+  messages            messages[]
+  payments            payments[]
+  suppressions        suppressions[]
+  users               users[]
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -159,12 +170,14 @@ model payments {
   @@index([invoice_id, status])
 }
 
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model users {
   id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   organization_id String        @db.Uuid
   email           String        @db.VarChar(320)
   password_hash   String?       @db.VarChar(255)
   name            String?       @db.VarChar(255)
+  google_sub      String?       @unique @db.VarChar(255)
   created_at      DateTime      @default(now()) @db.Timestamptz(6)
   updated_at      DateTime      @default(now()) @db.Timestamptz(6)
   organizations   organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -197,10 +210,122 @@ model credit_notes {
   reason             String        @db.VarChar(255)
   issued_at          DateTime      @default(now()) @db.Timestamptz(6)
   created_at         DateTime      @default(now()) @db.Timestamptz(6)
-  invoices           invoices      @relation(fields: [invoice_id], references: [id], onUpdate: NoAction)
   customers          customers     @relation(fields: [customer_id], references: [id], onUpdate: NoAction)
+  invoices           invoices      @relation(fields: [invoice_id], references: [id], onUpdate: NoAction)
   organizations      organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([organization_id, credit_note_number])
   @@index([organization_id, invoice_id])
 }
+
+model analytics_events {
+  id       BigInt   @id @default(autoincrement())
+  at       DateTime @default(now()) @db.Timestamptz(6)
+  event    String   @db.VarChar(40)
+  path     String   @db.VarChar(200)
+  referrer String?  @db.VarChar(100)
+  visitor  String?  @db.VarChar(40)
+
+  @@index([at], map: "analytics_events_at")
+}
+
+model auth_failures {
+  id    BigInt   @id @default(autoincrement())
+  email String   @db.VarChar(255)
+  ip    String   @db.VarChar(64)
+  at    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([email, at], map: "auth_failures_email_at")
+  @@index([ip, at], map: "auth_failures_ip_at")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model invoice_details {
+  invoice_id      String   @id @db.Uuid
+  organization_id String   @db.Uuid
+  items           Json     @default("[]")
+  discount        Decimal  @default(0) @db.Decimal(14, 2)
+  tax_percent     Decimal  @default(0) @db.Decimal(5, 2)
+  tax_mode        String   @default("NONE") @db.VarChar(10)
+  notes           String?  @db.VarChar(2000)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model auto_reminder_claims {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String    @db.Uuid
+  invoice_id      String    @db.Uuid
+  step            Int
+  status          String    @default("CLAIMED") @db.VarChar(12)
+  claimed_at      DateTime  @default(now()) @db.Timestamptz(6)
+  finished_at     DateTime? @db.Timestamptz(6)
+
+  @@unique([invoice_id, step], map: "auto_reminder_claims_invoice_step_key")
+  @@index([organization_id], map: "auto_reminder_claims_org")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model invoice_views {
+  id              BigInt   @id @default(autoincrement())
+  organization_id String   @db.Uuid
+  invoice_id      String   @db.Uuid
+  viewed_at       DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([invoice_id, viewed_at(sort: Desc)], map: "invoice_views_invoice")
+  @@index([organization_id, viewed_at(sort: Desc)], map: "invoice_views_org_at")
+}
+
+model leads {
+  id      BigInt   @id @default(autoincrement())
+  at      DateTime @default(now()) @db.Timestamptz(6)
+  kind    String   @db.VarChar(20)
+  email   String?  @db.VarChar(255)
+  plan    String?  @db.VarChar(20)
+  message String?  @db.VarChar(1000)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model payment_proof_images {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String   @db.Uuid
+  payment_id      String   @db.Uuid
+  mime            String   @db.VarChar(20)
+  data            String
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([payment_id], map: "payment_proof_images_payment")
+}
+
+model plan_requests {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String   @db.Uuid
+  plan            String   @db.VarChar(20)
+  utr             String   @db.VarChar(32)
+  status          String   @default("PENDING") @db.VarChar(20)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model rate_limits {
+  key      String   @id
+  count    Int
+  reset_at DateTime @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model recurring_invoices {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String   @db.Uuid
+  customer_id     String   @db.Uuid
+  template        Json
+  frequency       String   @db.VarChar(12)
+  next_run        DateTime @db.Date
+  active          Boolean  @default(true)
+  last_invoice_id String?  @db.Uuid
+  runs            Int      @default(0)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([active, next_run], map: "recurring_invoices_due")
+}
+
+

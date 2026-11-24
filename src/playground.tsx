@@ -1129,13 +1129,13 @@ export function PlaygroundPage() {
                 <div className="flex items-center gap-2 mb-1">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Regulatory Guardrails Active
+                    Built-in safety checks
                   </span>
-                  <span className="text-xs text-slate-400 font-mono">PCI-DSS · CAN-SPAM · FDCPA/UDAP · GST/VAT</span>
+                  <span className="text-xs text-slate-400 font-mono">Opt-outs · card-number redaction · reminder cooldown · credit notes</span>
                 </div>
-                <h3 className="text-lg font-bold text-white tracking-tight">FinTech Legal & Compliance Operations Center</h3>
+                <h3 className="text-lg font-bold text-white tracking-tight">Reminder safety checks and credit notes</h3>
                 <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-                  Real-time enforcement of statutory debtor protections, mandatory cooling-off cadences, deterministic opt-out suppressions, and tax-compliant negative credit adjustments.
+                  Checks that run before a reminder is sent (opt-outs, a cooldown between reminders, open disputes), and credit notes for reducing what a client owes. This is not legal advice.
                 </p>
               </div>
               <div className="flex items-center gap-3 shrink-0">
@@ -1246,7 +1246,7 @@ export function PlaygroundPage() {
               </div>
 
               <p className="text-xs text-slate-600 mb-3">
-                Simulate n8n & agent dispatch checks. Enforces dispute freezes, 3-day cooling-off windows, and time-of-day quiet hours.
+                Simulate n8n & agent dispatch checks. Checks for open disputes, opt-outs and the 3-day gap between reminders.
               </p>
 
               <form onSubmit={checkComplianceAuth} className="space-y-3 mb-4">

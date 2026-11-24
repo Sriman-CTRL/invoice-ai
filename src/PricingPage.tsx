@@ -29,7 +29,7 @@ export function PricingPage() {
       <section className="mx-auto max-w-3xl px-5 pb-4 pt-12 text-center sm:pt-16">
         <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">Simple, honest pricing</h1>
         <p className="mx-auto mt-4 max-w-xl text-lg text-slate-400">
-          Start free. No percentage of your payments, ever.
+          Start free. No percentage of your payments, ever. Starter is free for 5 invoices a month, with the payment page, locked files and PDF invoices included. No card needed.
         </p>
         {!PAYMENTS_OPEN && (
           <p className="mx-auto mt-5 max-w-xl rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm leading-relaxed text-amber-100">
@@ -43,7 +43,7 @@ export function PricingPage() {
         <div className="grid gap-5 md:grid-cols-3">
           {PLANS.map((p) => (
             <div key={p.id} className={`relative flex flex-col rounded-2xl border p-7 ${p.highlight ? "border-indigo-400/60 bg-indigo-500/10 shadow-[0_0_60px_-15px_rgba(99,102,241,0.5)]" : "border-white/10 bg-white/[0.03]"}`}>
-              {p.highlight && <span className="absolute -top-3 left-7 rounded-full bg-indigo-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">Most popular</span>}
+              {p.highlight && <span className="absolute -top-3 left-7 rounded-full bg-indigo-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">Recommended</span>}
               <h2 className="text-lg font-bold text-white">{p.name}</h2>
               <p className="mt-1 min-h-[40px] text-sm text-slate-400">{p.tagline}</p>
               <p className="mt-6 flex items-baseline gap-1">

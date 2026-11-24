@@ -22,3 +22,9 @@ src/generated/
 AUDIT.md
 SECURITY-TODO.md
 api/index.js
+
+.claude/settings.local.json
+night-logs/
+
+test-results/
+playwright-report/

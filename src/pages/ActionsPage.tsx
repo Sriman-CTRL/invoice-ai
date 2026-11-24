@@ -71,7 +71,7 @@ export function ActionsPage() {
     setNotice(null);
     try {
       const res = await actionsApi.verifyProof(actionId);
-      toast.success("Payment settled - vault unlocked", res.message);
+      toast.success("Payment settled - files unlocked", res.message);
       setNotice(`Payment Settled! ${res.message}`);
       r.reload();
     } catch (err: any) {
@@ -83,7 +83,7 @@ export function ActionsPage() {
   };
 
   const pendingProofs = (r.data?.value || []).filter(
-    (a) => a.action_type === "VERIFY_PAYMENT_PROOF" && (a.status === "PENDING" || a.status === "PROCESSING")
+    (a) => (a.action_type === "VERIFY_PAYMENT_PROOF" || a.action_type === "PAYMENT_MATCH_SUGGESTED") && (a.status === "PENDING" || a.status === "PROCESSING")
   );
 
   return (
@@ -142,7 +142,7 @@ export function ActionsPage() {
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-slate-300 leading-relaxed">
-                  Clients have submitted UTR / reference IDs via your public checkout portal. Click &ldquo;1-Click Settle&rdquo; below to mark invoices PAID and automatically unlock deliverable vaults.
+                  Clients have submitted UTR / reference IDs via your public checkout portal. Click &ldquo;1-Click Settle&rdquo; below to mark invoices paid and unlock the final files.
                 </p>
               </div>
             </div>
@@ -196,7 +196,8 @@ export function ActionsPage() {
               <tbody className="divide-y divide-slate-100">
                 {r.data.value.map((action) => {
                   const meta = (action.metadata || {}) as Record<string, any>;
-                  const isProof = action.action_type === "VERIFY_PAYMENT_PROOF";
+                  const isProof = action.action_type === "VERIFY_PAYMENT_PROOF" || action.action_type === "PAYMENT_MATCH_SUGGESTED";
+                  const isSuggestion = action.action_type === "PAYMENT_MATCH_SUGGESTED";
                   const canSettle = isProof && (action.status === "PENDING" || action.status === "PROCESSING");
 
                   return (
@@ -220,7 +221,13 @@ export function ActionsPage() {
                               <p className="font-mono text-[11px] font-bold text-emerald-700">
                                 UTR: {meta.utr} {meta.amount ? `· ₹${meta.amount}` : ""}
                               </p>
-                            ) : (
+                            ) : null}
+                            {isSuggestion && (
+                              <p className="mt-0.5 max-w-md text-[11px] leading-snug text-slate-500">
+                                <b>{meta.match === "STRONG" ? "Strong match" : "Possible match"}</b> from a bank alert you forwarded. {String(meta.evidence || "")}{String(meta.evidence || "").includes("Emails can be faked") ? "" : " Check your bank app or statement before confirming. Emails can be faked."}
+                              </p>
+                            )}
+                            {!(isProof && meta.utr) && !isSuggestion && (
                               <p className="text-[11px] text-slate-400">
                                 {action.invoice_id ? "Invoice-level trigger" : "Account-level trigger"}
                               </p>

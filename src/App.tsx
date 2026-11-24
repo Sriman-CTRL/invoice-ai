@@ -1,17 +1,42 @@
-import { useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { trackPageView } from "./analytics";
-import { useAuth } from "./auth";
-import { Shell } from "./components";
-import { ActionsPage, AuthPage, ConversationDetailPage, ConversationsPage, CustomerDetailPage, CustomersPage, DashboardPage, InvoiceDetailPage, InvoicesPage, SettingsPage, AnalyticsPage, AdminPage, AdminGrowthPage } from "./pages";
 import { LandingPage } from "./LandingPage";
-import { PricingPage } from "./PricingPage";
-import { PlaygroundPage } from "./playground";
-import { ClientPortalPage } from "./ClientPortalPage";
-import { PublicPayPage } from "./PublicPayPage";
-import { PrivacyPolicyPage, TermsOfServicePage } from "./LegalPages";
 
-function Protected({ children }: { children: React.ReactNode }) { const { user } = useAuth(); return user ? <Shell>{children}</Shell> : <Navigate to="/login" replace/>; }
+// Only the landing page is in the first download. Everything else loads when its route is opened.
+const named = <T extends Record<string, React.ComponentType<any>>>(load: () => Promise<T>, key: keyof T) =>
+  lazy(async () => ({ default: (await load())[key] }));
+
+const WhatsNewPage = named(() => import("./WhatsNewPage"), "WhatsNewPage");
+const GstCalculatorPage = named(() => import("./ToolPages"), "GstCalculatorPage");
+const TdsCalculatorPage = named(() => import("./ToolPages"), "TdsCalculatorPage");
+const ReminderWriterPage = named(() => import("./ToolPages"), "ReminderWriterPage");
+const PricingPage = named(() => import("./PricingPage"), "PricingPage");
+const AuthPage = named(() => import("./pages/AuthPage"), "AuthPage");
+const PublicPayPage = named(() => import("./PublicPayPage"), "PublicPayPage");
+const ClientPortalPage = named(() => import("./ClientPortalPage"), "ClientPortalPage");
+const PrivacyPolicyPage = named(() => import("./LegalPages"), "PrivacyPolicyPage");
+const TermsOfServicePage = named(() => import("./LegalPages"), "TermsOfServicePage");
+const PlaygroundPage = named(() => import("./playground"), "PlaygroundPage");
+const DashboardPage = named(() => import("./pages/DashboardPage"), "DashboardPage");
+const InvoicesPage = named(() => import("./pages/InvoicesPage"), "InvoicesPage");
+const InvoiceDetailPage = named(() => import("./pages/InvoiceDetailPage"), "InvoiceDetailPage");
+const CustomersPage = named(() => import("./pages/CustomersPage"), "CustomersPage");
+const CustomerDetailPage = named(() => import("./pages/CustomerDetailPage"), "CustomerDetailPage");
+const ConversationsPage = named(() => import("./pages/ConversationsPage"), "ConversationsPage");
+const ConversationDetailPage = named(() => import("./pages/ConversationDetailPage"), "ConversationDetailPage");
+const ActionsPage = named(() => import("./pages/ActionsPage"), "ActionsPage");
+const SettingsPage = named(() => import("./pages/SettingsPage"), "SettingsPage");
+const AnalyticsPage = named(() => import("./pages/AnalyticsPage"), "AnalyticsPage");
+const AdminPage = named(() => import("./pages/AdminPage"), "AdminPage");
+const AdminGrowthPage = named(() => import("./pages/AdminGrowthPage"), "AdminGrowthPage");
+const ProtectedRoute = lazy(() => import("./ProtectedRoute"));
+
+function Protected({ children }: { children: React.ReactNode }) { return <ProtectedRoute>{children}</ProtectedRoute>; }
+
+function PageFallback() {
+  return <div role="status" aria-label="Loading" style={{ minHeight: "100vh", background: "#070a13", display: "grid", placeItems: "center", color: "#64748b", fontFamily: "system-ui, sans-serif", fontSize: 14 }}>Loading…</div>;
+}
 
 function RouteTracker() {
   const { pathname } = useLocation();
@@ -23,9 +48,14 @@ export function App() {
   return (
     <>
     <RouteTracker />
+    <Suspense fallback={<PageFallback />}>
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/whats-new" element={<WhatsNewPage />} />
+      <Route path="/tools/gst-invoice-calculator" element={<GstCalculatorPage />} />
+      <Route path="/tools/tds-calculator" element={<TdsCalculatorPage />} />
+      <Route path="/tools/payment-reminder-writer" element={<ReminderWriterPage />} />
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/register" element={<AuthPage mode="register" />} />
       <Route path="/pay/:invoiceNumber" element={<PublicPayPage />} />
@@ -47,6 +77,7 @@ export function App() {
       <Route path="/playground" element={<Protected><PlaygroundPage /></Protected>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
     </>
   );
 }

@@ -8,6 +8,28 @@
  * Cost: 100% Free on Cloudflare Free Tier
  */
 
+/**
+ * Returns the receiving server's own Authentication-Results header (the topmost one, which our mail server adds before
+ * anything else), or "" when it is missing or was not written by the expected server. A sender can put a fake
+ * Authentication-Results line in their message, but it sits BELOW the real one, so only the first is read and it must
+ * start with the expected server id (AUTHSERV_ID, default "mx.cloudflare.net").
+ */
+function topAuthenticationResults(rawEmail, expectedId) {
+  const headerBlock = rawEmail.split(/\r?\n\r?\n/, 1)[0].replace(/\r?\n[ \t]+/g, " ");
+  for (const line of headerBlock.split(/\r?\n/)) {
+    const m = /^authentication-results:\s*(.*)$/i.exec(line);
+    if (m) return m[1].trim().toLowerCase().startsWith(expectedId.toLowerCase()) ? m[1].trim() : "";
+  }
+  return "";
+}
+
+/** The address in the visible From header (what DMARC protects), not the envelope sender. */
+function headerFromAddress(message) {
+  const v = message.headers.get("from") || "";
+  const m = /<?([^\s<>@,;]+@[^\s<>@,;]+\.[^\s<>@,;]+)>?\s*$/.exec(v.trim());
+  return m ? m[1].toLowerCase() : "";
+}
+
 export default {
   async email(message, env, ctx) {
     try {
@@ -35,10 +57,13 @@ export default {
           "Content-Type": "application/json",
           "x-inbound-key": webhookSecret,
           "x-inbound-timestamp": timestamp,
+          // Lets Paivo tell whether the From domain really sent this (used only for bank-alert suggestions).
+          "x-inbound-auth": topAuthenticationResults(rawEmail, env.AUTHSERV_ID || "mx.cloudflare.net").slice(0, 2000),
         },
         body: JSON.stringify({
           to,
           from,
+          header_from: headerFromAddress(message),
           subject,
           text: textBody,
           channel: "EMAIL",

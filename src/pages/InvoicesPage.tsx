@@ -695,15 +695,15 @@ function CreateInvoiceModal({
             </select>
           </div>
 
-          {/* Deliverable Vault Escrow Lock (Fix My Itch: Freelancer Ghosting & SME Cashflow Shield) */}
+          {/* Final files link, locked until the invoice is paid */}
           <div className="rounded-xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/70 via-purple-50/40 to-white p-3.5 space-y-2">
             <div className="flex items-center gap-2">
               <div className="grid h-6 w-6 place-items-center rounded-lg bg-indigo-600/10 text-indigo-600">
                 <Lock className="h-3.5 w-3.5" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900">Deliverable Vault (locked until paid)</p>
-                <p className="text-[10px] text-slate-500">Lock work deliverables until client completes settlement</p>
+                <p className="text-xs font-bold text-slate-900">Final files link (locked until paid)</p>
+                <p className="text-[10px] text-slate-500">Your client sees this link only after you confirm full payment</p>
               </div>
             </div>
             <input
@@ -714,7 +714,7 @@ function CreateInvoiceModal({
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-mono text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none"
             />
             <p className="text-[10px] text-slate-500 leading-relaxed">
-              When attached, client sees a locked vault card on their checkout page. Once payment is verified, the deliverables unlock instantly with zero gateway transaction fees.
+              Your client sees a locked card for these files on their payment page. When you confirm the payment, the link unlocks. There is no gateway fee because the client pays you directly.
             </p>
           </div>
 
@@ -882,7 +882,7 @@ export function InvoicesPage() {
                         )}
                         {inv.external_invoice_id && (inv.external_invoice_id.startsWith("vault:") || inv.external_invoice_id.startsWith("http")) && (
                           <span
-                            title={inv.status === "PAID" ? "Deliverable Vault Unlocked" : "Deliverable locked until payment"}
+                            title={inv.status === "PAID" ? "Final files unlocked" : "Final files locked until payment"}
                             className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
                               inv.status === "PAID"
                                 ? "text-emerald-700 bg-emerald-50 border-emerald-200"
@@ -890,7 +890,7 @@ export function InvoicesPage() {
                             }`}
                           >
                             <Lock className="h-2.5 w-2.5" />
-                            {inv.status === "PAID" ? "Vault Unlocked" : "Vault"}
+                            {inv.status === "PAID" ? "Files unlocked" : "Files locked"}
                           </span>
                         )}
                       </div>

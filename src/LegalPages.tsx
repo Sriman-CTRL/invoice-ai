@@ -61,8 +61,8 @@ export function PrivacyPolicyPage() {
             Privacy & Data Protection Policy
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-400">
-            Transparent disclosure of how Invoice AI collects, encrypts, isolates, and governs
-            customer billing, Deliverable Vault files, and communication telemetry.
+            How Invoice AI collects, stores and uses customer billing details,
+            final-file links, and email replies.
           </p>
           <p className="mt-2 text-xs font-mono text-slate-500">
             Last Updated & Vetted: November 2026 · Effective Date: Immediate
@@ -102,7 +102,7 @@ export function PrivacyPolicyPage() {
             <Scale className="h-5 w-5 text-brand-400 mb-2" />
             <h4 className="text-xs font-bold text-white uppercase tracking-wider">Right to Erasure</h4>
             <p className="mt-1 text-[11px] text-slate-400 leading-relaxed">
-              Full GDPR and DPDP compliance with instant automated client record erasure endpoints.
+              You can erase a client's personal details from the app, or email us and ask.
             </p>
           </div>
         </div>
@@ -114,8 +114,8 @@ export function PrivacyPolicyPage() {
               <span className="font-mono text-brand-400 text-sm">01.</span> Scope & Data Controller
             </h2>
             <p>
-              Invoice AI (&ldquo;Platform&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;) provides an autonomous accounts-receivable,
-              deliverable escrow facilitation, and dispute resolution service for freelancers, agencies, and micro-SMEs.
+              Invoice AI (&ldquo;Platform&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;) provides an invoicing, payment-confirmation and
+              payment-reminder service for freelancers, agencies, and micro-SMEs. It is not an escrow or dispute-resolution service.
               This Privacy Policy explains how we process personal and commercial data when you access our dashboard
               at <code className="text-slate-200 bg-white/5 px-1 py-0.5 rounded font-mono text-xs">paivo.in</code> or
               interact with public checkout portals (<code className="text-slate-200 bg-white/5 px-1 py-0.5 rounded font-mono text-xs">/pay/:invoice_id</code>).
@@ -134,7 +134,7 @@ export function PrivacyPolicyPage() {
                 <strong className="text-slate-200">Invoicing & Customer Records:</strong> Client business names, corporate email addresses, phone numbers (for WhatsApp intent links), invoice line items, amounts, currency, and due dates.
               </li>
               <li>
-                <strong className="text-slate-200">Deliverable Vault Links:</strong> URLs to deliverables (e.g. Figma links, Google Drive assets, GitHub repositories, or zip files) held encrypted and locked until confirmed payment settlement.
+                <strong className="text-slate-200">Final-file links:</strong> URLs to deliverables (e.g. Figma links, Google Drive assets, GitHub repositories, or zip files) stored with the invoice and shown to your client only after you confirm full payment. We store the link, not the files.
               </li>
               <li>
                 <strong className="text-slate-200">Payment Reference Metadata:</strong> Client-reported 12-digit UTR (Unique Transaction Reference) codes, NPCI UPI transaction reference strings, and TDS deduction tax categories (Section 194C/194J). <em>We do not hold funds or store payment instruments (no card numbers, CVVs, or bank net-banking passwords).</em>
@@ -147,13 +147,12 @@ export function PrivacyPolicyPage() {
 
           <section className="rounded-2xl border border-white/10 bg-slate-900/40 p-6 sm:p-8 space-y-3">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <span className="font-mono text-brand-400 text-sm">03.</span> How We Protect Deliverable Vault Assets
+              <span className="font-mono text-brand-400 text-sm">03.</span> How Final-File Links Are Shown
             </h2>
             <p>
-              When a merchant uploads or links deliverables to an invoice, the asset URL is protected by the Deliverable Vault.
-              Public clients viewing <code className="text-slate-200 bg-white/5 px-1 py-0.5 rounded font-mono text-xs">/pay/:invoice_id</code> receive
-              a masked status confirming the file is attached, but direct access is cryptographically restricted until the
-              invoice status transitions to <span className="font-mono text-emerald-400 font-bold">PAID</span>.
+              When a merchant adds a final-files link to an invoice, the client's payment page only says that files are attached.
+              Clients viewing <code className="text-slate-200 bg-white/5 px-1 py-0.5 rounded font-mono text-xs">/pay/:invoice_id</code> do not receive the link itself until the
+              invoice status becomes <span className="font-mono text-emerald-400 font-bold">PAID</span>.
             </p>
           </section>
 
@@ -165,26 +164,26 @@ export function PrivacyPolicyPage() {
               All customer and invoice data is hosted on serverless Neon PostgreSQL with enforced tenant isolation. Every database
               read, update, and row-lock operation executes strictly within the authenticated organization boundary
               (<code className="text-slate-200 bg-white/5 px-1 py-0.5 rounded font-mono text-xs">organization_id</code>). All API communication is
-              enforced over TLS 1.3 encryption in transit and AES-256 at rest.
+              sent over HTTPS. Our database rules (row-level security) keep each business's records separate.
             </p>
           </section>
 
           <section className="rounded-2xl border border-white/10 bg-slate-900/40 p-6 sm:p-8 space-y-3">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <span className="font-mono text-brand-400 text-sm">05.</span> Automated Outreach Compliance (CAN-SPAM & FDCPA)
+              <span className="font-mono text-brand-400 text-sm">05.</span> Reminder Emails and Opt-Outs
             </h2>
             <p>
-              Invoice AI&apos;s autonomous collection engine enforces strict regulatory compliance standards:
+              Reminder emails sent through Invoice AI follow these rules:
             </p>
             <ul className="list-disc pl-5 space-y-1.5 text-slate-400">
               <li>
-                <strong className="text-slate-200">Quiet Hours:</strong> Outreach emails and WhatsApp reminders are restricted to recipient local working hours (8:00 AM – 9:00 PM).
+                <strong className="text-slate-200">Limits:</strong> An invoice gets at most one reminder email in 24 hours, and a daily cap applies to each business.
               </li>
               <li>
-                <strong className="text-slate-200">Automated Suppressions:</strong> If a customer requests opt-out or disputes a charge, their address is automatically added to the global suppression list to prevent unwanted follow-ups.
+                <strong className="text-slate-200">Automated Suppressions:</strong> If a customer opts out, their address is added to a suppression list and no more reminders are sent to it. Reminders also pause while an invoice is marked as disputed.
               </li>
               <li>
-                <strong className="text-slate-200">Commercial Disclosures:</strong> Every reminder includes statutory debt-collection disclosures and merchant contact information.
+                <strong className="text-slate-200">Every email includes:</strong> the payment link, an unsubscribe link, and the seller's address as Reply-To.
               </li>
             </ul>
           </section>
@@ -261,14 +260,14 @@ export function TermsOfServicePage() {
         <div className="mx-auto max-w-5xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 text-xs font-mono font-bold text-brand-400 mb-4">
             <Scale className="h-3.5 w-3.5" />
-            <span>ESCROW & WORKFLOW CHARTER</span>
+            <span>TERMS OF SERVICE</span>
           </div>
           <h1 className="text-3xl font-black tracking-tight text-white sm:text-5xl">
-            Terms of Service & Escrow Charter
+            Terms of Service
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-400">
-            Terms governing the use of Invoice AI, Deliverable Vault escrow locking, direct peer-to-peer
-            settlement verification, and automated collection outreach.
+            Terms for using Invoice AI: invoices, final-file links that unlock after payment, direct client-to-seller
+            payment confirmation, and payment reminders. Invoice AI is not an escrow service.
           </p>
           <p className="mt-2 text-xs font-mono text-slate-500">
             Last Updated: November 2026 · Legally Binding Agreement
@@ -290,7 +289,7 @@ export function TermsOfServicePage() {
 
           <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-5 backdrop-blur-sm">
             <Lock className="h-5 w-5 text-amber-400 mb-2" />
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Deliverable Escrow</h4>
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Files Unlock After Payment</h4>
             <p className="mt-1 text-[11px] text-slate-400 leading-relaxed">
               Project deliverables remain locked until the merchant confirms payment settlement.
             </p>
@@ -308,7 +307,7 @@ export function TermsOfServicePage() {
             <FileCheck className="h-5 w-5 text-emerald-400 mb-2" />
             <h4 className="text-xs font-bold text-white uppercase tracking-wider">Valid Claims Only</h4>
             <p className="mt-1 text-[11px] text-slate-400 leading-relaxed">
-              Outreach automation is restricted strictly to legitimate, verified commercial business invoices.
+              You may only send reminders for real, legitimate invoices.
             </p>
           </div>
         </div>
@@ -322,8 +321,8 @@ export function TermsOfServicePage() {
             <p>
               By signing up for an account, generating an invoice, or accessing a public checkout link, you agree
               to be legally bound by these Terms of Service. Invoice AI operates solely as an independent software
-              platform providing autonomous accounts-receivable tracking, deliverable vault gating, and collection
-              workflow automation.
+              platform for invoice tracking, locking final-file links until payment is confirmed, and
+              payment reminders.
             </p>
           </section>
 
@@ -352,11 +351,12 @@ export function TermsOfServicePage() {
 
           <section className="rounded-2xl border border-white/10 bg-slate-900/40 p-6 sm:p-8 space-y-3">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <span className="font-mono text-brand-400 text-sm">03.</span> Deliverable Vault (Escrow Lock) Terms
+              <span className="font-mono text-brand-400 text-sm">03.</span> Final-File Links (Locked Until Paid)
             </h2>
             <p>
-              The Deliverable Vault feature allows creators, freelancers, and agencies to attach final work
+              This feature allows creators, freelancers, and agencies to attach a link to final work
               deliverables (e.g. Figma files, source code repositories, design assets, or analytical reports) to an invoice.
+              Invoice AI stores only the link. It is not an escrow agent and does not hold files or money.
             </p>
             <ul className="list-disc pl-5 space-y-1.5 text-slate-400">
               <li>
@@ -389,7 +389,7 @@ export function TermsOfServicePage() {
                 You may not use autonomous email or WhatsApp dispatch to harass, defame, intimidate, or send deceptive messages.
               </li>
               <li>
-                All collection triggers automatically respect FDCPA quiet hours and global suppression records. Bypassing or attempting
+                Reminders respect suppression (opt-out) records. Bypassing or attempting
                 to circumvent suppressions constitutes grounds for immediate account termination.
               </li>
             </ul>
