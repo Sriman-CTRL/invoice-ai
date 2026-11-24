@@ -502,7 +502,7 @@ router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<vo
     });
   } catch (error) {
     console.error("Error verifying payment proof:", error);
-    return serverError(res, error, error instanceof Error ? error.message : "Failed to verify payment proof");
+    return serverError(res, error, "Failed to verify payment proof");
   }
 });
 
