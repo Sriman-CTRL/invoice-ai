@@ -422,9 +422,11 @@ PROPOSALS.md and build nothing. Never change pricing, plans or marketing claims.
 
 **Notes (R3):** Proposals in docs/research/PROPOSALS.md. Ideas #1-#5 and #10 were already built, so they were not repeated; #7-#9 need product decisions and were left for the owner. Built ONE idea (R3a): Hinglish explainer on the client pay page (idea #6, scoped to the 'who you are paying / UTR / what happens next' block), src/payCopy.ts + a small English/Hinglish switch, shown only when VITE_FEATURE_HINGLISH_PAY=true at build time (default off, so production is unchanged; nothing stored). A native speaker should review the Hinglish before turning the flag on. Tests: tests/payCopy.test.ts (3). R3b: nothing else qualified. DoD: typecheck pass; backend 106 run/106 pass/0 skip; build pass; test:web 17 pass.
 
-## [ ] T10. Night report
+## [x] T10. Night report
 
 Write `docs/NIGHT-REPORT.md`: start with **"Your next 3 days"** (exact first outreach actions from `docs/gtm/`, which messages to send first and where), then the 5 most important findings from R1/R4/R2, then one section per task with status, commit hash, what changed, test counts, anything
 skipped or uncertain, and **exact steps the owner must do before merging** (production `enable-rls.cjs` run for new
 columns, env vars to add in Vercel, keys needed, labels to flip after review). Commit `[night] T10: night report`,
 push `night-build`. Then stop and print the report.
+
+**Notes (T10):** report written to docs/NIGHT-REPORT.md.

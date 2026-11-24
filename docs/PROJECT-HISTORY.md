@@ -56,6 +56,7 @@ Last updated: 24 Nov 2026.
 | 24 Nov (night build) | T8: /whats-new page and changelog. |
 | 24 Nov (night build) | T9: bank-alert payment suggestions (suggest-only, not advertised). |
 | 24 Nov (night build) | R3: proposals doc; Hinglish pay-page explainer built behind `VITE_FEATURE_HINGLISH_PAY` (off by default). |
+| 24 Nov (night build) | T10: night report in `docs/NIGHT-REPORT.md`. |
 
 ## 3. Key decisions (and why)
 
