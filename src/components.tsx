@@ -19,7 +19,6 @@ import {
   Search,
   Settings,
   ShieldCheck,
-  Sparkles,
   Terminal,
   Users,
   X,
@@ -32,6 +31,7 @@ import { LeadDialog } from "./LeadForms";
 import { CommandPalette } from "./CommandPalette";
 import { ActivityBell } from "./ActivityBell";
 import { useAuth } from "./auth";
+import { PaivoLogo } from "./Brand";
 import { initials, titleCase } from "./lib";
 
 export function Badge({ value, kind }: { value: string; kind?: "status" | "intent" }) {
@@ -273,14 +273,6 @@ const nav = [
   },
 ];
 
-function BrandMark() {
-  return (
-    <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-violet-500 text-white shadow-md shadow-brand-500/30 ring-1 ring-white/20">
-      <Sparkles className="h-5 w-5" />
-    </div>
-  );
-}
-
 function SidebarContent({ close }: { close?: () => void }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -298,12 +290,9 @@ function SidebarContent({ close }: { close?: () => void }) {
       {/* Brand Header */}
       <div className="flex h-20 items-center justify-between border-b border-white/10 px-6">
         <Link to="/dashboard" className="flex items-center gap-3" onClick={close}>
-          <BrandMark />
           <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-base font-extrabold tracking-tight text-white">
-                Paivo
-              </span>
+            <div className="flex items-center gap-2 text-white">
+              <PaivoLogo height={26} />
               <span className="rounded-md bg-brand-500/20 px-1.5 py-0.5 text-[10px] font-bold text-brand-300 ring-1 ring-inset ring-brand-400/30">
                 AI
               </span>

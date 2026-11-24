@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { PaivoLogo } from "./Brand";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -11,7 +12,6 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
-  Sparkles,
   Zap,
 } from "lucide-react";
 
@@ -30,12 +30,7 @@ export function PrivacyPolicyPage() {
           </Link>
 
           <div className="flex items-center gap-3">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-brand-600 via-indigo-600 to-violet-500">
-              <Sparkles className="h-3.5 w-3.5 text-white" />
-            </div>
-            <span className="font-mono text-sm font-black tracking-tight text-white">
-              INVOICE<span className="text-brand-400">.AI</span>
-            </span>
+            <Link to="/" aria-label="Paivo home" className="flex text-white"><PaivoLogo height={26} /></Link>
           </div>
 
           <Link
@@ -250,12 +245,7 @@ export function TermsOfServicePage() {
           </Link>
 
           <div className="flex items-center gap-3">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-brand-600 via-indigo-600 to-violet-500">
-              <Sparkles className="h-3.5 w-3.5 text-white" />
-            </div>
-            <span className="font-mono text-sm font-black tracking-tight text-white">
-              INVOICE<span className="text-brand-400">.AI</span>
-            </span>
+            <Link to="/" aria-label="Paivo home" className="flex text-white"><PaivoLogo height={26} /></Link>
           </div>
 
           <Link

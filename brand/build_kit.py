@@ -80,3 +80,13 @@ write("paivo-wordmark.svg", svg(f"{WORD_X0-8} {WORD_Y0-8} {ww+16} {WORD_Y1-WORD_
 tile = (f'<rect width="256" height="256" rx="56" fill="url(#g)"/><g transform="translate(25.6 22) scale(0.8)">{mark(SMALL, "#fff")}</g>')
 write("paivo-app-tile.svg", svg("0 0 256 256", tile, "Paivo", GRAD))
 print("wrote", sorted(p.name for p in OUT.iterdir()))
+
+# --- social: link preview (1200x630, dark) --- render with render_png.py (the tagline is live text: ship the PNG)
+import re as _re
+def _inner(name):
+    return _re.sub(r'<svg[^>]*>|</svg>|<title[^>]*>.*?</title>', '', (OUT/name).read_text(encoding="utf-8"), flags=_re.S)
+_vbw = hw - 38; _sc = 760 / _vbw
+_og = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630"><rect width="1200" height="630" fill="{DARK}"/>'
+       f'<g transform="translate({600 - _vbw*_sc/2 - 38*_sc:.1f} 110) scale({_sc:.4f})">{_inner("paivo-horizontal-dark.svg")}</g>'
+       f'<text x="600" y="470" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="36" fill="#A9B0C6">Get paid for your work, without chasing.</text></svg>')
+(OUT.parent/"social"/"og-image.svg").write_text(_og, encoding="utf-8")

@@ -13,7 +13,6 @@ import {
   QrCode,
   RefreshCw,
   ShieldCheck,
-  Sparkles,
   Unlock,
   Building2,
   CreditCard,
@@ -27,6 +26,7 @@ import { buildUpiUri } from "./upi";
 import { amountInWords } from "./amountInWords";
 import { HINGLISH_PAY_ENABLED, payExplainer, type PayLang } from "./payCopy";
 import { PAY_TEXT, loadLang, saveLang, type Lang } from "./payI18n";
+import { PaivoLogo, PaivoMarkClosing } from "./Brand";
 
 function upiLinkFor(d: PublicInvoiceDetail) {
   return buildUpiUri({
@@ -206,16 +206,13 @@ export function PublicPayPage() {
             {data.organization.logo_data ? (
               <img src={data.organization.logo_data} alt="" className="h-9 w-9 rounded-xl bg-white object-contain p-0.5" />
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 shadow-glow" style={data.organization.brand_color ? { background: data.organization.brand_color } : undefined}>
-                <Sparkles className="h-4 w-4 text-white" />
-              </div>
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 text-sm font-black text-white" style={data.organization.brand_color ? { background: data.organization.brand_color } : undefined} aria-hidden="true">
+                {data.organization.name[0]?.toUpperCase()}
+              </span>
             )}
             <div>
               <span className="font-extrabold text-sm tracking-tight text-white block">
                 {data.organization.name}
-              </span>
-              <span className="text-[10px] text-slate-400 font-mono">
-                {T.poweredBy}
               </span>
             </div>
           </div>
@@ -442,7 +439,7 @@ export function PublicPayPage() {
           <div>
             {isPaid && (
               <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-8 text-center shadow-2xl sticky top-24">
-                <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-500/20 text-emerald-300"><CheckCircle2 className="h-7 w-7" /></span>
+                <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-500/20 text-emerald-300"><PaivoMarkClosing size={30} /></span>
                 <h2 className="mt-4 text-xl font-black text-white">{T.paymentReceived}</h2>
                 <p className="mt-1.5 text-sm text-emerald-100/80">{T.thankYou(data.organization.name)}</p>
                 {data.has_deliverable && <p className="mt-3 text-xs text-emerald-100/70">{T.filesUnlockedNote}</p>}
@@ -771,6 +768,9 @@ export function PublicPayPage() {
         <p className="mt-3 text-[11px] text-slate-600">
           {T.footerNote}
         </p>
+        <Link to="/" className="mt-4 inline-flex items-center gap-2 text-[11px] text-slate-500 hover:text-slate-300 transition-colors">
+          {T.poweredBy.split("Paivo").flatMap((part, i) => (i === 0 ? [<span key="a">{part}</span>] : [<PaivoLogo key="l" height={14} className="text-slate-300" />, <span key="b">{part}</span>]))}
+        </Link>
       </footer>
     </div>
   );
