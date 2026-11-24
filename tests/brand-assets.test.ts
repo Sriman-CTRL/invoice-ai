@@ -29,9 +29,9 @@ test("link preview image is 1200x630 and under 300 KB", () => {
 test("guides use the logo from the site itself (no new external origin)", () => {
   for (const f of fs.readdirSync("public/guides").filter((n) => n.endsWith(".html"))) {
     const t = fs.readFileSync(`public/guides/${f}`, "utf8");
-    assert.ok(t.includes('src="/brand/paivo-horizontal-dark.svg"'), f);
+    assert.ok(t.includes('src="/brand/paivo-wordmark-dark.svg"'), f);
   }
-  assert.ok(fs.existsSync("public/brand/paivo-horizontal-dark.svg"));
+  assert.ok(fs.existsSync("public/brand/paivo-wordmark-dark.svg"));
 });
 
 test("no source file still shows the old INVOICE.AI wordmark", () => {

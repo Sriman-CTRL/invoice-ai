@@ -31,7 +31,7 @@ import { LeadDialog } from "./LeadForms";
 import { CommandPalette } from "./CommandPalette";
 import { ActivityBell } from "./ActivityBell";
 import { useAuth } from "./auth";
-import { PaivoLogo } from "./Brand";
+import { PaivoWordmark } from "./Brand";
 import { initials, titleCase } from "./lib";
 
 export function Badge({ value, kind }: { value: string; kind?: "status" | "intent" }) {
@@ -292,7 +292,7 @@ function SidebarContent({ close }: { close?: () => void }) {
         <Link to="/dashboard" className="flex items-center gap-3" onClick={close}>
           <div>
             <div className="flex items-center gap-2 text-white">
-              <PaivoLogo height={26} />
+              <PaivoWordmark height={28} />
               <span className="rounded-md bg-brand-500/20 px-1.5 py-0.5 text-[10px] font-bold text-brand-300 ring-1 ring-inset ring-brand-400/30">
                 AI
               </span>

@@ -26,7 +26,7 @@ import { buildUpiUri } from "./upi";
 import { amountInWords } from "./amountInWords";
 import { HINGLISH_PAY_ENABLED, payExplainer, type PayLang } from "./payCopy";
 import { PAY_TEXT, loadLang, saveLang, type Lang } from "./payI18n";
-import { PaivoLogo, PaivoMarkClosing } from "./Brand";
+import { PaivoMark, PaivoMarkClosing } from "./Brand";
 
 function upiLinkFor(d: PublicInvoiceDetail) {
   return buildUpiUri({
@@ -769,7 +769,8 @@ export function PublicPayPage() {
           {T.footerNote}
         </p>
         <Link to="/" className="mt-4 inline-flex items-center gap-2 text-[11px] text-slate-500 hover:text-slate-300 transition-colors">
-          {T.poweredBy.split("Paivo").flatMap((part, i) => (i === 0 ? [<span key="a">{part}</span>] : [<PaivoLogo key="l" height={14} className="text-slate-300" />, <span key="b">{part}</span>]))}
+          <PaivoMark size={16} />
+          <span>{T.poweredBy}</span>
         </Link>
       </footer>
     </div>

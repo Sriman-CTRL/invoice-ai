@@ -26,11 +26,13 @@ def ring(cx, cy, r, w):
 def dot(cx, cy, r): return f"M{g(cx-r)} {cy}A{r} {r} 0 1 0 {g(cx+r)} {cy}A{r} {r} 0 1 0 {g(cx-r)} {cy}Z"
 
 W = 26  # wordmark stroke
-word_ink = [ring(40,140,40,W), ring(164,140,40,W), ring(460,140,40,W),
-            pill(0,100,0,232,W), pill(204,100,204,180,W), pill(248,100,248,180,W),
-            pill(296,100,336,180,W), pill(336,180,376,100,W)]
-word_dot = dot(248, 62, 15)
-WORD_X0, WORD_X1, WORD_Y0, WORD_Y1 = -13, 513, 47, 245   # ink bounds of the wordmark
+# "paivo": the p IS the open-loop mark at x-height (same open gap as A1) with a descending stem; "aivo" are monoline shapes.
+P_WORD = p_open(sw=W, r=40, gap=20, sx=0, ty=100, cx=44, bot=232)
+word_rings = [ring(168,140,40,W), ring(464,140,40,W)]                                   # a, o
+word_stems = [pill(208,100,208,180,W), pill(252,100,252,180,W), pill(300,100,340,180,W), pill(340,180,380,100,W)]  # a stem, i, v
+word_dot = dot(252, 62, 15)
+WORD_X0, WORD_X1, WORD_Y0, WORD_Y1 = -13, 517, 47, 245   # ink bounds of the wordmark
+WORD_VB = f"{WORD_X0-4} {WORD_Y0-4} {WORD_X1-WORD_X0+8} {WORD_Y1-WORD_Y0+8}"   # -17 43 538 206
 
 def svg(vb, body, title, defs=""):
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vb}" role="img" aria-labelledby="t"><title id="t">{title}</title>'
@@ -38,43 +40,27 @@ def svg(vb, body, title, defs=""):
 GRAD = (f'<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{INDIGO}"/>'
         f'<stop offset="1" stop-color="{VIOLET}"/></linearGradient></defs>')
 def mark(d, fill): return f'<path d="{d}" fill="{fill}"/>'
-def word(ink, dotc):
-    return (f'<path fill-rule="evenodd" d="{"".join(p for p in word_ink[:3])}" fill="{ink}"/>'
-            f'<path d="{"".join(word_ink[3:])}" fill="{ink}"/><path d="{word_dot}" fill="{dotc}"/>')
+def word(ink, dotc, pfill):
+    return (f'<path d="{P_WORD}" fill="{pfill}"/><path fill-rule="evenodd" d="{"".join(word_rings)}" fill="{ink}"/>'
+            f'<path d="{"".join(word_stems)}" fill="{ink}"/><path d="{word_dot}" fill="{dotc}"/>')
 
 OPEN, CLOSED, SMALL = p_open(), p_closed(), p_open(sw=46, gap=30)
 def write(name, s): (OUT/name).write_text(s, encoding="utf-8")
+for old in list(OUT.glob("paivo-horizontal*")) + list(OUT.glob("paivo-stacked*")): old.unlink()   # superseded: the mark beside the wordmark read as "Ppaivo"
 
-# symbols
+# symbols (icon uses: favicon, app icons, pay-page footer, paid animation)
 for tag, d in (("", OPEN), ("-closed", CLOSED), ("-small", SMALL)):
     write(f"paivo-symbol{tag}.svg", svg("0 0 256 256", mark(d, "url(#g)"), "Paivo", GRAD))
     write(f"paivo-symbol{tag}-black.svg", svg("0 0 256 256", mark(d, "#000"), "Paivo"))
     write(f"paivo-symbol{tag}-white.svg", svg("0 0 256 256", mark(d, "#fff"), "Paivo"))
-
-# horizontal lockup: symbol 256 tall, wordmark beside it
-GAP = 36; WS = 1.0; wy = 128 - (WORD_Y0+WORD_Y1)/2
-wx = 256 - 64 + GAP - WORD_X0      # symbol ink ends ~x=210 (outer bowl), so start after that
-hw = int(wx + WORD_X1 + 8)
-def horizontal(mk, ink, dotc, defs=""):
-    return svg(f"38 0 {hw-38} 256", mk + f'<g transform="translate({g(wx)} {g(wy)})">{word(ink, dotc)}</g>', "Paivo", defs)
-write("paivo-horizontal.svg", horizontal(mark(OPEN, "url(#g)"), INK, VIOLET, GRAD))
-write("paivo-horizontal-dark.svg", horizontal(mark(OPEN, "url(#g)"), "#fff", VIOLET, GRAD))
-write("paivo-horizontal-black.svg", horizontal(mark(OPEN, "#000"), "#000", "#000"))
-write("paivo-horizontal-white.svg", horizontal(mark(OPEN, "#fff"), "#fff", "#fff"))
-
-# stacked lockup
-ww = WORD_X1 - WORD_X0; sw_ = 400
-def stacked(ink, dotc, mk_fill, defs=""):
-    W_ = ww + 80; sc = 0.9
-    mk = f'<g transform="translate({g(W_/2-128*sc)} 0) scale({sc})">{mark(OPEN, mk_fill)}</g>'
-    w = f'<g transform="translate({g(W_/2 - (WORD_X0+WORD_X1)/2)} {g(256*sc+24-WORD_Y0)})">{word(ink, dotc)}</g>'
-    H = 256*sc + 24 + (WORD_Y1-WORD_Y0) + 22
-    return svg(f"0 0 {g(W_)} {g(H)}", mk + w, "Paivo", defs)
 write("paivo-symbol-indigo.svg", svg("0 0 256 256", mark(OPEN, INDIGO), "Paivo"))
-write("paivo-horizontal-indigo.svg", horizontal(mark(OPEN, INDIGO), INDIGO, INDIGO))
-write("paivo-stacked.svg", stacked(INK, VIOLET, "url(#g)", GRAD))
-write("paivo-stacked-dark.svg", stacked("#fff", VIOLET, "url(#g)", GRAD))
-write("paivo-wordmark.svg", svg(f"{WORD_X0-8} {WORD_Y0-8} {ww+16} {WORD_Y1-WORD_Y0+16}", word(INK, VIOLET), "Paivo"))
+
+# primary logo: the wordmark (no separate symbol beside it)
+write("paivo-wordmark.svg", svg(WORD_VB, word(INK, VIOLET, "url(#g)"), "Paivo", GRAD))
+write("paivo-wordmark-dark.svg", svg(WORD_VB, word("#fff", VIOLET, "url(#g)"), "Paivo", GRAD))
+write("paivo-wordmark-black.svg", svg(WORD_VB, word("#000", "#000", "#000"), "Paivo"))
+write("paivo-wordmark-white.svg", svg(WORD_VB, word("#fff", "#fff", "#fff"), "Paivo"))
+write("paivo-wordmark-indigo.svg", svg(WORD_VB, word(INDIGO, INDIGO, INDIGO), "Paivo"))
 
 # app tile (favicon / app icon source): gradient tile + white small-cut P, optically centred
 tile = (f'<rect width="256" height="256" rx="56" fill="url(#g)"/><g transform="translate(25.6 22) scale(0.8)">{mark(SMALL, "#fff")}</g>')
@@ -85,8 +71,15 @@ print("wrote", sorted(p.name for p in OUT.iterdir()))
 import re as _re
 def _inner(name):
     return _re.sub(r'<svg[^>]*>|</svg>|<title[^>]*>.*?</title>', '', (OUT/name).read_text(encoding="utf-8"), flags=_re.S)
-_vbw = hw - 38; _sc = 760 / _vbw
+_vw, _vh = WORD_X1 - WORD_X0 + 8, WORD_Y1 - WORD_Y0 + 8
+_sc = 740 / _vw
 _og = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630"><rect width="1200" height="630" fill="{DARK}"/>'
-       f'<g transform="translate({600 - _vbw*_sc/2 - 38*_sc:.1f} 110) scale({_sc:.4f})">{_inner("paivo-horizontal-dark.svg")}</g>'
+       f'<g transform="translate({600 - _vw*_sc/2 - (WORD_X0-4)*_sc:.1f} {250 - _vh*_sc/2 - (WORD_Y0-4)*_sc:.1f}) scale({_sc:.4f})">{_inner("paivo-wordmark-dark.svg")}</g>'
        f'<text x="600" y="470" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="36" fill="#A9B0C6">Get paid for your work, without chasing.</text></svg>')
 (OUT.parent/"social"/"og-image.svg").write_text(_og, encoding="utf-8")
+
+# --- social: "Powered by Paivo" badge for light backgrounds (invoice PDFs, emails) ---
+_h = 22; _s = _h / _vh
+(OUT.parent/"social"/"powered-by-paivo.svg").write_text(
+    f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {64 + _vw*_s:.0f} 30"><text x="0" y="20" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#6B7280">Powered by</text>'
+    f'<g transform="translate({64 - (WORD_X0-4)*_s:.2f} {4 - (WORD_Y0-4)*_s:.2f}) scale({_s:.4f})">{_inner("paivo-wordmark.svg")}</g></svg>', encoding="utf-8")

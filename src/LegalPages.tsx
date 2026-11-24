@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { PaivoLogo } from "./Brand";
+import { PaivoWordmark } from "./Brand";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -30,7 +30,7 @@ export function PrivacyPolicyPage() {
           </Link>
 
           <div className="flex items-center gap-3">
-            <Link to="/" aria-label="Paivo home" className="flex text-white"><PaivoLogo height={26} /></Link>
+            <Link to="/" aria-label="Paivo home" className="flex text-white"><PaivoWordmark height={26} /></Link>
           </div>
 
           <Link
@@ -245,7 +245,7 @@ export function TermsOfServicePage() {
           </Link>
 
           <div className="flex items-center gap-3">
-            <Link to="/" aria-label="Paivo home" className="flex text-white"><PaivoLogo height={26} /></Link>
+            <Link to="/" aria-label="Paivo home" className="flex text-white"><PaivoWordmark height={26} /></Link>
           </div>
 
           <Link

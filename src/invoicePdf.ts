@@ -270,7 +270,7 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   doc.text(`${org} - Deliverables unlock once payment is confirmed.`, M, H - 14);
   doc.text("Computer-generated invoice; no signature required.", M, H - 9.5);
   // Small "Powered by Paivo" badge, bottom right. The seller's details stay primary.
-  const badgeH = 4.2, badgeW = badgeH * PAIVO_BADGE_RATIO;
+  const badgeH = 5.2, badgeW = badgeH * PAIVO_BADGE_RATIO;
   doc.setFontSize(7);
   doc.text("Powered by", W - M - badgeW - 1.5, H - 9.5, { align: "right" });
   doc.addImage(PAIVO_BADGE_PNG, "PNG", W - M - badgeW, H - 9.5 - badgeH + 1.2, badgeW, badgeH);

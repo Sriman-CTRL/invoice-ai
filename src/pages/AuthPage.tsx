@@ -2,7 +2,7 @@ import { TURNSTILE_SITE_KEY, TurnstileWidget } from "../TurnstileWidget";
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Check, CheckCircle2, RefreshCw, Sparkles, X, Zap } from "lucide-react";
-import { PaivoLogo } from "../Brand";
+import { PaivoWordmark } from "../Brand";
 import { Badge } from "../components";
 import { useAuth } from "../auth";
 import { loadAttribution } from "../attribution";
@@ -101,7 +101,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
         <div className="flex items-center justify-between z-10">
           <div className="flex items-center gap-3">
             <div>
-              <span className="block text-white"><PaivoLogo height={36} /></span>
+              <span className="block text-white"><PaivoWordmark height={40} /></span>
               <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
                 Invoices & payments
               </span>
@@ -212,7 +212,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
           {/* Mobile Brand Header */}
           <div className="mb-6 flex items-center justify-between lg:hidden">
             <div className="flex items-center gap-2.5">
-              <span className="text-white"><PaivoLogo height={30} /></span>
+              <span className="text-white"><PaivoWordmark height={32} /></span>
             </div>
             <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
               Beta

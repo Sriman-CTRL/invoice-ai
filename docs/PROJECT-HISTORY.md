@@ -94,7 +94,7 @@ export/erasure, account deletion, admin plan approvals, analytics/growth page.
 
 **Error reporting (Sentry), code complete on `feat/sentry`, off until DSNs are set:** errors only, scrubbed of emails, UPI IDs, UTRs, IFSC, account numbers, GSTINs, tokens and URL ids before sending. Owner must create the Sentry projects, put the ingest origin in `vercel.json` `connect-src`, fill the data region on the privacy page, and add the env vars in Vercel (see the PR).
 
-**Brand (`feat/logo`, PR open):** the logo is a P whose bowl stays open until the money arrives; unpaid shows the open mark, paid shows the closed one. Source of truth is `brand/build_kit.py` (SVG masters, icons, link preview, `brand/GUIDELINES.md`); the site uses `src/Brand.tsx` (inline SVG, path data copied from the generator) and static copies in `public/` (favicon set, `site.webmanifest`, `og.png`, `brand/`). Still open: trademark search (classes 9, 36, 42), print colour values.
+**Brand (`feat/logo`, PR open):** the primary logo is the wordmark "paivo" whose p is the open-loop mark (a symbol beside the wordmark read as "Ppaivo"); the standalone P mark (bowl open until the money arrives, closed once paid) is for icons, the pay-page credit and the paid animation. Source of truth is `brand/build_kit.py` (SVG masters, icons, link preview, `brand/GUIDELINES.md`); the site uses `src/Brand.tsx` (inline SVG, path data copied from the generator) and static copies in `public/` (favicon set, `site.webmanifest`, `og.png`, `brand/`). Still open: trademark search (classes 9, 36, 42), print colour values.
 
 **Built but not offered to users yet ("soon"):** reading client replies with AI (inbound email → classify → action
 queue), automatic scheduled reminders, per-seller billing email address.
