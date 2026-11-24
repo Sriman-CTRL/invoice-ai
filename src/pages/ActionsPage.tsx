@@ -71,7 +71,7 @@ export function ActionsPage() {
     setNotice(null);
     try {
       const res = await actionsApi.verifyProof(actionId);
-      toast.success("Payment settled - vault unlocked", res.message);
+      toast.success("Payment settled - files unlocked", res.message);
       setNotice(`Payment Settled! ${res.message}`);
       r.reload();
     } catch (err: any) {
@@ -142,7 +142,7 @@ export function ActionsPage() {
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-slate-300 leading-relaxed">
-                  Clients have submitted UTR / reference IDs via your public checkout portal. Click &ldquo;1-Click Settle&rdquo; below to mark invoices PAID and automatically unlock deliverable vaults.
+                  Clients have submitted UTR / reference IDs via your public checkout portal. Click &ldquo;1-Click Settle&rdquo; below to mark invoices paid and unlock the final files.
                 </p>
               </div>
             </div>

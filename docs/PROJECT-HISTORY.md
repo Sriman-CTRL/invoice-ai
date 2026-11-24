@@ -57,6 +57,7 @@ Last updated: 24 Nov 2026.
 | 24 Nov (night build) | T9: bank-alert payment suggestions (suggest-only, not advertised). |
 | 24 Nov (night build) | R3: proposals doc; Hinglish pay-page explainer built behind `VITE_FEATURE_HINGLISH_PAY` (off by default). |
 | 24 Nov (night build) | T10: night report in `docs/NIGHT-REPORT.md`. |
+| 24 Nov (night build, phase 2) | P0: review fixes: Google sign-in links on Google's account id (`users.google_sub`), automatic reminders claim each step before sending (`auto_reminder_claims`), bank-alert suggestions need a DMARC-passing sender, pay page and PDF use the balance after credit notes, honest pay-page and legal wording. |
 
 ## 3. Key decisions (and why)
 

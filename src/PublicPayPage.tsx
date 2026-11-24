@@ -220,7 +220,7 @@ export function PublicPayPage() {
             </button>
             <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
               <ShieldCheck className="h-3 w-3" />
-              <span>256-Bit Encrypted</span>
+              <span>Secure connection (HTTPS)</span>
             </div>
           </div>
         </div>
@@ -229,7 +229,7 @@ export function PublicPayPage() {
       {/* Main Container */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-          {/* Left Column: Invoice Details & Vault */}
+          {/* Left Column: Invoice details and final files */}
           <div className="space-y-6">
             {/* Status & Identity Card */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
@@ -357,7 +357,7 @@ export function PublicPayPage() {
               </div>
             </div>
 
-            {/* FREELANCER PROTECTION: The Deliverables Vault */}
+            {/* Final files: shown locked until the seller confirms full payment */}
             {data.has_deliverable && (
               <div
                 className={`rounded-2xl border p-6 backdrop-blur-md transition-all ${
@@ -379,21 +379,21 @@ export function PublicPayPage() {
 
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <span>Secure Deliverables Vault</span>
+                      <span>Final files</span>
                       {isPaid ? (
                         <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full">
                           Unlocked
                         </span>
                       ) : (
                         <span className="text-[10px] font-bold text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded-full">
-                          Locked Pending Settlement
+                          Locked until paid
                         </span>
                       )}
                     </h3>
                     <p className="text-xs text-slate-300 mt-1 leading-relaxed">
                       {isPaid
-                        ? "Your payment is verified. You now have full access to the project deliverables, source assets, and handoff files."
-                        : "The creator has attached final deliverables to this invoice. Complete payment or submit your UTR reference to unlock immediate access."}
+                        ? "The seller has confirmed your payment. The final files are available below."
+                        : "The seller has attached the final files to this invoice. They unlock after the seller confirms your payment: pay, then enter your UTR below so they can check it."}
                     </p>
 
                     {isPaid && data.deliverable_url && (
@@ -731,16 +731,16 @@ export function PublicPayPage() {
         </div>
       </main>
 
-      {/* Compliance & Escrow Footer */}
+      {/* Footer */}
       <footer className="mt-16 border-t border-white/5 py-8 text-center text-xs text-slate-500">
         <div className="flex flex-wrap items-center justify-center gap-6">
           <Link to="/privacy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
           <span className="text-slate-700">•</span>
           <Link to="/terms" className="hover:text-slate-300 transition-colors">Terms of Service</Link>
           <span className="text-slate-700">•</span>
-          <span>You pay the seller directly</span>
+          <span>Money goes straight to {data.organization.name}; Paivo never holds it</span>
           <span className="text-slate-700">•</span>
-          <span>Your details stay private</span>
+          <span>Final files unlock after payment</span>
         </div>
         <p className="mt-3 text-[11px] text-slate-600">
           Paivo helps sellers send invoices and confirm payments. Your payment goes straight to the seller. We never store card or bank login details and never hold customer funds.

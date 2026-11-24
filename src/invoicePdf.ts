@@ -249,7 +249,7 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   doc.setFont("helvetica", "bold"); doc.setFontSize(9); set(BRAND);
   doc.textWithLink(payUrl, px, qy + 33, { url: payUrl });
 
-  // Vault badge
+  // Final-files badge
   const ext = inv.external_invoice_id || "";
   const hasVault = ext.startsWith("vault:") || ext.startsWith("http");
   if (hasVault) {
@@ -258,7 +258,7 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
     doc.setFillColor(...(paid ? ([209, 250, 229] as Rgb) : ([254, 243, 199] as Rgb)));
     doc.roundedRect(bx, by, 78, 8, 4, 4, "F");
     doc.setFont("helvetica", "bold"); doc.setFontSize(8); set(paid ? GREEN : AMBER);
-    doc.text(paid ? "DELIVERABLE VAULT: UNLOCKED" : "DELIVERABLE VAULT: HELD IN ESCROW", bx + 39, by + 5.2, { align: "center" });
+    doc.text(paid ? "FINAL FILES: UNLOCKED" : "FINAL FILES: LOCKED UNTIL PAID", bx + 39, by + 5.2, { align: "center" });
   }
 
   // Footer
