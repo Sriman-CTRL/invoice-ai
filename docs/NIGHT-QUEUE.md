@@ -411,7 +411,7 @@ Only if T0–T8 are done. Sellers may forward bank credit-alert emails to their 
 
 **Notes (T9):** lib/bankAlert.ts: conservative parser (must say credited, not debited or future/failed, exactly one non-balance amount, exactly one reference with 6+ digits; otherwise null). services/bankAlertService.ts + a hook at the top of processInboundEmail: only when the sender is one of the business's own users (a stranger's email, or any debit alert, takes the normal pipeline). Match: STRONG when an open invoice has a PENDING client proof whose UTR equals the alert reference; WEAK when exactly one open invoice has an outstanding balance equal to the credited amount; otherwise no suggestion; repeated alerts are de-duplicated. Output is only a PAYMENT_MATCH_SUGGESTED collection action (metadata: match, utr, amount, payment_id for strong, evidence) in the Action Queue, shown with an evidence line and settled by the existing one-click verify-proof (same keys as a client proof). It NEVER creates a payment or changes invoice status; tests assert zero SUCCEEDED payments, no extra payment row and unchanged status after an alert, and that settlement happens only via the seller's confirmation. Tenant-scoped (another business's invoices are never matched); inbound key and timestamp still required. Fixtures are synthetic ('Example Bank'); no bank-specific accuracy is claimed. Landing/pricing/changelog do not mention it. Tests: 7 in bank-alert.test.ts. DoD: typecheck pass; backend 106 run/106 pass/0 skip; build pass.
 
-## [ ] R3. Build from the research (your own judgement, flagged off)
+## [x] R3. Build from the research (your own judgement, flagged off)
 
 Re-read `docs/research/MARKET-2026-11.md` and `docs/research/OSS-INTEGRATIONS.md`. Pick **up to two** ideas that are:
 high value for "get paid without chasing", size S or M, need no new API key (or are fully inert without one), and
@@ -419,6 +419,8 @@ don't conflict with AGENTS.md. Write a short spec for each in `docs/research/PRO
 with links, design, risks, how to test). Then build each behind a default-off flag (org setting or `VITE_FEATURE_*`
 env), with tests, one commit per idea (`[night] R3a: ...`, `[night] R3b: ...`). If nothing qualifies, write why in
 PROPOSALS.md and build nothing. Never change pricing, plans or marketing claims.
+
+**Notes (R3):** Proposals in docs/research/PROPOSALS.md. Ideas #1-#5 and #10 were already built, so they were not repeated; #7-#9 need product decisions and were left for the owner. Built ONE idea (R3a): Hinglish explainer on the client pay page (idea #6, scoped to the 'who you are paying / UTR / what happens next' block), src/payCopy.ts + a small English/Hinglish switch, shown only when VITE_FEATURE_HINGLISH_PAY=true at build time (default off, so production is unchanged; nothing stored). A native speaker should review the Hinglish before turning the flag on. Tests: tests/payCopy.test.ts (3). R3b: nothing else qualified. DoD: typecheck pass; backend 106 run/106 pass/0 skip; build pass; test:web 17 pass.
 
 ## [ ] T10. Night report
 

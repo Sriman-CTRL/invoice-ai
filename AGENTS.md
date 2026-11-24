@@ -101,7 +101,7 @@ Backend: `DATABASE_URL` (owner), `DATABASE_URL_APP` (restricted `app_user`; turn
 `CRON_TIME_BUDGET_MS` (default 8000), `AUTO_REMINDER_RUN_CAP` (default 200), `AUTO_REMINDERS_DRY_RUN` (`1` = log, don't send),
 `GOOGLE_CLIENT_ID` (enables `POST /api/auth/google`; 503 while unset), `TURNSTILE_SECRET`, `CRON_SECRET`, `PLATFORM_ADMIN_EMAILS`, `AUTH_RATE_LIMIT_MAX`, `INTEGRATION_TESTS`.
 
-Frontend (Vite): `VITE_API_BASE_URL`, `VITE_PAYMENTS_OPEN`, `VITE_PLATFORM_UPI_ID`, `VITE_SUPPORT_EMAIL`, `VITE_TURNSTILE_SITE_KEY`, `VITE_GOOGLE_CLIENT_ID` (shows the Google button).
+Frontend (Vite): `VITE_API_BASE_URL`, `VITE_PAYMENTS_OPEN`, `VITE_PLATFORM_UPI_ID`, `VITE_SUPPORT_EMAIL`, `VITE_TURNSTILE_SITE_KEY`, `VITE_GOOGLE_CLIENT_ID` (shows the Google button), `VITE_FEATURE_HINGLISH_PAY` (`true` = English/Hinglish switch on the pay page explainer; off by default, needs native-speaker review first).
 
 ## Related documentation
 

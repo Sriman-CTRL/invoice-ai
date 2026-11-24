@@ -25,6 +25,7 @@ import { TURNSTILE_SITE_KEY, TurnstileWidget } from "./TurnstileWidget";
 import type { PublicInvoiceDetail } from "./types";
 import { buildUpiUri } from "./upi";
 import { amountInWords } from "./amountInWords";
+import { HINGLISH_PAY_ENABLED, payExplainer, type PayLang } from "./payCopy";
 
 function upiLinkFor(d: PublicInvoiceDetail) {
   return buildUpiUri({
@@ -52,6 +53,7 @@ export function PublicPayPage() {
 
   // Payment tab: "upi" | "bank" | "proof"
   const [activeTab, setActiveTab] = useState<"upi" | "bank" | "proof">("upi");
+  const [payLang, setPayLang] = useState<PayLang>("en");
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
@@ -421,9 +423,31 @@ export function PublicPayPage() {
             )}
             <div className={`rounded-2xl border border-white/10 bg-slate-900/90 p-6 backdrop-blur-md shadow-2xl sticky top-24 ${isPaid ? "hidden" : ""}`}>
               <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-3.5 text-left text-xs leading-relaxed text-slate-300">
-                <p className="font-bold text-white">You're paying {data.organization.name}</p>
-                <p className="mt-1">Your payment goes straight to their UPI ID or bank account. Paivo never holds the money.</p>
-                <p className="mt-1">After you pay, enter the UTR (the transaction reference shown in your UPI or banking app). {data.organization.name} checks their bank and confirms{data.has_deliverable ? ", and then the files unlock on this page" : ""}.</p>
+                {HINGLISH_PAY_ENABLED && (
+                  <div className="mb-2 flex gap-1" role="group" aria-label="Language">
+                    {([["en", "English"], ["hinglish", "Hinglish"]] as const).map(([k, label]) => (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => setPayLang(k)}
+                        aria-pressed={payLang === k}
+                        className={`min-h-[32px] rounded-lg px-2.5 text-[11px] font-bold ${payLang === k ? "bg-brand-500/30 text-white" : "bg-white/5 text-slate-400"}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {(() => {
+                  const ex = payExplainer(payLang, data.organization.name, data.has_deliverable);
+                  return (
+                    <>
+                      <p className="font-bold text-white">{ex.title}</p>
+                      <p className="mt-1">{ex.direct}</p>
+                      <p className="mt-1">{ex.next}</p>
+                    </>
+                  );
+                })()}
               </div>
               <div className="border-b border-white/10 pb-4 mb-5">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
