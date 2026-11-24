@@ -152,6 +152,33 @@ function GoogleConfirmCard({ confirmed, onToken }: { confirmed: boolean; onToken
   );
 }
 
+/** Password accounts can connect Google so "Sign in with Google" reaches the same account (never matched on email alone). */
+function ConnectGoogleCard({ linked, onLinked }: { linked: boolean; onLinked: () => void }) {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const link = async (idToken: string) => {
+    setBusy(true);
+    try {
+      await accountApi.linkGoogle(idToken);
+      toast.success("Google connected", "You can now sign in with Google too.");
+      onLinked();
+    } catch (err: any) {
+      toast.error("Could not connect Google", err?.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <section className="panel mt-6 p-6">
+      <h2 className="text-base font-bold text-slate-900">Sign in with Google</h2>
+      <p className="mt-1 text-xs text-slate-500">
+        {linked ? "Google is connected to this account." : "Connect the Google account that uses the same email as this account, so you can sign in with one click. Your password keeps working."}
+      </p>
+      {!linked && <div className={"mt-4" + (busy ? " opacity-60" : "")}><GoogleButton text="continue_with" onCredential={link} /></div>}
+    </section>
+  );
+}
+
 function ChangePasswordCard({ googleOnly = false, googleToken = null, onPasswordSet = () => {} }: { googleOnly?: boolean; googleToken?: string | null; onPasswordSet?: () => void }) {
   const toast = useToast();
   const [current, setCurrent] = useState("");
@@ -344,6 +371,7 @@ export function SettingsPage() {
 
       <BrandingCard key={`${r.data.brand_color || ""}-${r.data.logo_data?.length || 0}`} settings={r.data} onSaved={r.reload} />
 
+      {GOOGLE_CLIENT_ID && user?.has_password !== false && <ConnectGoogleCard linked={Boolean(user?.google_linked)} onLinked={() => updateUser({ google_linked: true })} />}
       {googleOnly && <GoogleConfirmCard confirmed={Boolean(googleToken)} onToken={setGoogleToken} />}
       <ChangePasswordCard googleOnly={googleOnly} googleToken={googleToken} onPasswordSet={() => { updateUser({ has_password: true }); setGoogleToken(null); }} />
       <DeleteAccountCard googleOnly={googleOnly} googleToken={googleToken} />

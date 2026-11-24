@@ -32,6 +32,7 @@ export const authApi = {
   google: (data: { id_token: string; accepted_terms?: boolean; heard_from?: string; attribution?: object }) => request<{ token: string; user: User }>("/auth/google", { method: "POST", body: JSON.stringify(data) }),
 };
 export const accountApi = {
+  linkGoogle: (id_token: string) => request<{ success: boolean; google_linked: boolean }>("/auth/google/link", { method: "POST", body: JSON.stringify({ id_token }) }),
   deleteAccount: (data: { password?: string; confirm: string; id_token?: string }) => request<{ success: boolean }>("/auth/account", { method: "DELETE", body: JSON.stringify(data) }),
   changePassword: (data: { current_password?: string; new_password: string; id_token?: string }) => request<{ success: boolean; message: string }>("/auth/password", { method: "PUT", body: JSON.stringify(data) }),
 };

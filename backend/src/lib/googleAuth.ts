@@ -50,5 +50,6 @@ export async function verifyGoogleToken(idToken: unknown): Promise<GoogleIdentit
   if (identity.aud !== audience) throw new Error("wrong_audience");
   if (identity.iss && !ISSUERS.includes(identity.iss)) throw new Error("bad_issuer");
   if (identity.email_verified !== true) throw new Error("email_not_verified");
+  if (typeof identity.sub !== "string" || !identity.sub || identity.sub.length > 255) throw new Error("bad_token");
   return { ...identity, email: identity.email.trim().toLowerCase() };
 }

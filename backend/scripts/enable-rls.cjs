@@ -80,6 +80,9 @@ const TENANT_TABLES = ["invoice_details", "invoice_views", "recurring_invoices",
   )`);
   await run(`CREATE INDEX IF NOT EXISTS recurring_invoices_due ON recurring_invoices (active, next_run)`);
   await run(`CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_unique ON users (lower(email))`);
+  // Google sign-in is matched on Google's stable account id (sub), never on email alone.
+  await run(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_sub VARCHAR(255)`);
+  await run(`CREATE UNIQUE INDEX IF NOT EXISTS users_google_sub_key ON users (google_sub)`);
 
   await run(`CREATE OR REPLACE FUNCTION app_current_org_id() RETURNS uuid LANGUAGE plpgsql STABLE AS $$
     BEGIN RETURN NULLIF(current_setting('app.current_org_id', true), '')::uuid;

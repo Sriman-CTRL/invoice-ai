@@ -19,8 +19,11 @@ let prismaModule: any;
 let prisma: any;
 const createdEmails: string[] = [];
 
-const token = (over: Record<string, unknown> = {}) =>
-  JSON.stringify({ email: `g-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`, email_verified: true, name: "Gita Rao", aud: CLIENT_ID, iss: "https://accounts.google.com", ...over });
+const token = (over: Record<string, unknown> = {}) => {
+  const email = (over.email as string) || `g-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
+  // By default the Google account id (sub) is derived from the email, like one person owning one Google account.
+  return JSON.stringify({ email, email_verified: true, name: "Gita Rao", aud: CLIENT_ID, iss: "https://accounts.google.com", sub: `sub-${email.toLowerCase()}`, ...over });
+};
 
 async function call(method: string, path: string, body?: unknown, bearer?: string) {
   const res = await fetch(base + path, {
@@ -73,6 +76,7 @@ test("verifyGoogleToken: audience, issuer and verified email are all enforced on
   await assert.rejects(() => verifyGoogleToken(token({ email_verified: false })), /email_not_verified/);
   await assert.rejects(() => verifyGoogleToken(token({ throw: true })), /bad_token/);
   await assert.rejects(() => verifyGoogleToken("short"), /bad_token/);
+  await assert.rejects(() => verifyGoogleToken(token({ sub: undefined })), /bad_token/, "a token without a Google account id is refused");
   await assert.rejects(() => verifyGoogleToken(undefined), /bad_token/);
   const prev = process.env.GOOGLE_CLIENT_ID;
   delete process.env.GOOGLE_CLIENT_ID;
@@ -112,17 +116,61 @@ test("GOOGLE: a new user needs the terms ticked, then gets a business on the fre
   assert.equal(consent[0].n, 1, "consent evidence recorded like email sign-up");
 });
 
-test("GOOGLE: an existing account with the same email is signed in, not duplicated", opts, async () => {
+test("GOOGLE: a pre-registered password account is NOT handed to a Google user (pre-hijacking), no session is issued", opts, async () => {
   const email = `existing-${Date.now()}@example.com`;
   createdEmails.push(email);
   const reg = await call("POST", "/api/auth/register", { email, password: "Existing-Pass-8642-xy", organization_name: "Existing Co", accepted_terms: true });
   assert.equal(reg.status, 201);
   const res = await call("POST", "/api/auth/google", { id_token: token({ email: email.toUpperCase() }) });
-  assert.equal(res.status, 200);
-  assert.equal(res.json.user.id, reg.json.user.id);
-  assert.equal(res.json.user.has_password, true);
+  assert.equal(res.status, 409);
+  assert.equal(res.json.code, "LINK_REQUIRED");
+  assert.match(res.json.error, /Sign in with your password, then connect Google in Settings/);
+  assert.equal(res.json.token, undefined, "no session");
   assert.equal(await sys(() => prisma.users.count({ where: { email } })), 1, "no duplicate user");
-  assert.equal(await sys(() => prisma.organizations.count({ where: { id: reg.json.user.organization_id } })), 1);
+  const row = await sys(() => prisma.users.findFirst({ where: { email } }));
+  assert.equal(row.google_sub, null, "nothing linked by a failed attempt");
+});
+
+test("GOOGLE LINK: sign in with the password, connect Google, then Google sign-in works (and only for that Google account)", opts, async () => {
+  const email = `link-${Date.now()}@example.com`;
+  createdEmails.push(email);
+  const reg = await call("POST", "/api/auth/register", { email, password: "Linkable-Pass-8642-xy", organization_name: "Link Co", accepted_terms: true });
+  assert.equal(reg.status, 201);
+  const login = await call("POST", "/api/auth/login", { email, password: "Linkable-Pass-8642-xy" });
+  const bearer = login.json.token as string;
+  assert.equal(login.json.user.google_linked, false);
+
+  assert.equal((await call("POST", "/api/auth/google/link", { id_token: token({ email }) })).status, 401, "needs a signed-in session");
+  assert.equal((await call("POST", "/api/auth/google/link", { id_token: token({ email: `other-${Date.now()}@example.com` }) }, bearer)).status, 400, "Google email must equal the account email");
+  assert.equal((await call("POST", "/api/auth/google/link", { id_token: token({ email, email_verified: false }) }, bearer)).status, 400);
+
+  const linked = await call("POST", "/api/auth/google/link", { id_token: token({ email, sub: "sub-real-owner" }) }, bearer);
+  assert.equal(linked.status, 200, JSON.stringify(linked.json));
+  assert.equal((await sys(() => prisma.users.findFirst({ where: { email } }))).google_sub, "sub-real-owner");
+
+  const ok = await call("POST", "/api/auth/google", { id_token: token({ email, sub: "sub-real-owner" }) });
+  assert.equal(ok.status, 200);
+  assert.equal(ok.json.user.id, reg.json.user.id);
+  assert.equal(ok.json.user.google_linked, true);
+
+  // Same email but a different Google account id: refused.
+  const imposter = await call("POST", "/api/auth/google", { id_token: token({ email, sub: "sub-someone-else" }) });
+  assert.equal(imposter.status, 409);
+  assert.equal(imposter.json.token, undefined);
+  // Linking a different Google account over the existing link is refused too.
+  assert.equal((await call("POST", "/api/auth/google/link", { id_token: token({ email, sub: "sub-someone-else" }) }, bearer)).status, 409);
+});
+
+test("GOOGLE LINK: one Google account cannot be linked to two Paivo accounts", opts, async () => {
+  const a = `dup-a-${Date.now()}@example.com`;
+  const b = `dup-b-${Date.now()}@example.com`;
+  createdEmails.push(a, b);
+  await call("POST", "/api/auth/register", { email: a, password: "Linkable-Pass-8642-xy", organization_name: "A Co", accepted_terms: true });
+  await call("POST", "/api/auth/register", { email: b, password: "Linkable-Pass-8642-xy", organization_name: "B Co", accepted_terms: true });
+  const tokA = (await call("POST", "/api/auth/login", { email: a, password: "Linkable-Pass-8642-xy" })).json.token;
+  const tokB = (await call("POST", "/api/auth/login", { email: b, password: "Linkable-Pass-8642-xy" })).json.token;
+  assert.equal((await call("POST", "/api/auth/google/link", { id_token: token({ email: a, sub: "shared-sub" }) }, tokA)).status, 200);
+  assert.equal((await call("POST", "/api/auth/google/link", { id_token: token({ email: b, sub: "shared-sub" }) }, tokB)).status, 409);
 });
 
 test("GOOGLE: unverified email, wrong audience and bad tokens are refused", opts, async () => {
@@ -160,6 +208,8 @@ test("GOOGLE-ONLY ACCOUNT: can set a password after a fresh Google confirmation"
   assert.equal(none.json.code, "GOOGLE_REAUTH_REQUIRED");
   const other = await call("PUT", "/api/auth/password", { new_password: "A-Fresh-Passphrase-2468", id_token: token({ email: `someone-else-${Date.now()}@example.com` }) }, bearer);
   assert.equal(other.status, 400, "a different Google account does not count");
+  const sameEmailOtherSub = await call("PUT", "/api/auth/password", { new_password: "A-Fresh-Passphrase-2468", id_token: token({ email, sub: "an-attackers-google-sub" }) }, bearer);
+  assert.equal(sameEmailOtherSub.status, 400, "same email but a different Google account id does not count");
   const weak = await call("PUT", "/api/auth/password", { new_password: "short", id_token: token({ email }) }, bearer);
   assert.equal(weak.status, 400);
 
@@ -179,6 +229,7 @@ test("GOOGLE-ONLY ACCOUNT: deleting the account needs fresh Google confirmation 
 
   assert.equal((await call("DELETE", "/api/auth/account", { confirm: "DELETE" }, bearer)).status, 400, "no confirmation");
   assert.equal((await call("DELETE", "/api/auth/account", { confirm: "DELETE", id_token: token({ email: `nope-${Date.now()}@example.com` }) }, bearer)).status, 400, "wrong Google account");
+  assert.equal((await call("DELETE", "/api/auth/account", { confirm: "DELETE", id_token: token({ email, sub: "an-attackers-google-sub" }) }, bearer)).status, 400, "same email, different Google account id");
   assert.equal((await call("DELETE", "/api/auth/account", { id_token: token({ email }) }, bearer)).status, 400, "must type DELETE");
   assert.equal(await sys(() => prisma.users.count({ where: { email } })), 1, "still there after the failed attempts");
 
