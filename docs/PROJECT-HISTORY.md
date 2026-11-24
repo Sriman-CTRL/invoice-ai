@@ -67,6 +67,7 @@ Last updated: 24 Nov 2026.
 | 24 Nov | `feat/sentry` (PR open, not deployed): privacy-first error reporting (Sentry, errors only) for the web app and the API, with scrubbers, admin test buttons and a privacy-page section. Inert until `SENTRY_DSN` / `VITE_SENTRY_DSN` are set; needs the real ingest host in `vercel.json` first. |
 | 24 Nov | `feat/logo` (PR open, not deployed): Paivo logo kit in `brand/` (open-loop P, closed "paid" state) and wired into the site: favicon set + manifest, new link-preview image, header/footer/sidebar/auth/legal/portal logos, "Powered by Paivo" on the pay page and invoice PDF, one-time open→closed animation next to the paid state. |
 | 25 Nov | `chore/release-script`: `release.ps1` at the repo root, run by the owner (Windows PowerShell 5.1). Builds `origin/main` in a temp worktree, optional `-Migrate` (owner URL, `enable-rls.cjs`), deploys with `--skip-domain`, probes, asks before promoting, live-checks paivo.in and rolls back on failure. `-DryRun` prints every vercel/database command. Claude Code no longer needs Vercel access. |
+| 25 Nov | `docs/first-10`: `docs/gtm/FIRST-10.md`, the one-page outreach plan: first segment (freelance designers and video editors), 3 places, search queries, 10 EN/Hinglish messages with a `{something they made}` slot, follow-up schedule, tracker rules. |
 
 ## 3. Key decisions (and why)
 
@@ -100,7 +101,8 @@ export/erasure, account deletion, admin plan approvals, analytics/growth page.
 **Built but not offered to users yet ("soon"):** reading client replies with AI (inbound email → classify → action
 queue), automatic scheduled reminders, per-seller billing email address.
 
-**Releases:** the owner runs `.elease.ps1` (add `-Migrate` when `enable-rls.cjs` changed). Claude Code never runs `vercel` and never touches the production database.
+**Releases:** the owner runs `.
+elease.ps1` (add `-Migrate` when `enable-rls.cjs` changed). Claude Code never runs `vercel` and never touches the production database.
 
 **Business stage:** product works; the current priority is **talking to the first 10 users** (see
 `docs/FIRST-10-USERS.md`) before building much more.
