@@ -103,6 +103,10 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
   must list `λ api/index` (about 2.5-2.7 MB), check `vercel curl /health --deployment <url>` (200, database connected),
   a random login (401) and a random `/api/public/invoices/<uuid>` (JSON 404), then `vercel promote <url>`. Rollback:
   `vercel rollback <previous production url> --yes`. In Git Bash set `MSYS_NO_PATHCONV=1` before `vercel curl /path`.
+- **Releases are run by the owner with `.elease.ps1`** (add `-Migrate` when `enable-rls.cjs` changed; `-DryRun` prints every vercel and
+  database command instead of running it). It builds `origin/main` in a temp worktree, deploys with `--skip-domain`, probes the
+  deployment, asks before promoting, checks paivo.in and rolls back on failure; logs go to `release-logs/` (git-ignored).
+  **Claude Code never runs `vercel` or touches the production database.** The manual steps above are what the script automates.
 - **Run `enable-rls.cjs` on production before deploying** any change that adds a column to a Prisma model (Prisma selects every
   model column, so pages crash until the column exists). Order for a release: owner-URL `enable-rls.cjs` first, then deploy.
 - **Never send personal data to Sentry; all events go through the scrubbers.** `src/lib/sentryScrub.ts` (browser) and
