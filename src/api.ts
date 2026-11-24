@@ -157,6 +157,7 @@ export const leadsApi = {
 export type Lead = { id: string; at: string; kind: string; email: string | null; plan: string | null; message: string | null };
 export const adminApi = {
   me: () => request<{ is_admin: boolean }>("/admin/me"),
+  sentryTest: () => request<never>("/admin/sentry-test"),
   planRequests: () => request<PlanRequest[]>("/admin/plan-requests"),
   leads: () => request<{ leads: Lead[]; counts: Record<string, number> }>("/admin/leads"),
   analytics: (days: number) => request<AdminAnalytics>(`/admin/analytics?days=${days}`),

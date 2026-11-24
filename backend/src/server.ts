@@ -1,3 +1,4 @@
+import "./instrument";
 import "dotenv/config";
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
@@ -25,6 +26,7 @@ import clientPortalRoutes from "./routes/client-portal.routes";
 import { recurringRouter, cronRouter } from "./routes/recurring.routes";
 import { authMiddleware } from "./middleware/auth.middleware";
 import { rateLimit } from "./middleware/rateLimit";
+import { Sentry, flushErrors } from "./lib/monitoring";
 
 const app = express();
 
@@ -183,14 +185,19 @@ app.use((_req, res) => {
   res.status(404).json({ error: "Not found" });
 });
 
+// Reports unhandled 5xx errors (scrubbed, see instrument.ts). Must come after the routes, before our own handler.
+Sentry.setupExpressErrorHandler(app);
+
 // Last-resort error handler: never leak stack traces to clients.
-app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+app.use(async (err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   // A blocked browser origin is a refusal, not a server fault.
   if (err instanceof Error && err.message.startsWith("CORS blocked")) {
     res.status(403).json({ error: "This site is not allowed to call the API." });
     return;
   }
   console.error("Unhandled error:", err);
+  // The function can freeze once the response is sent, so give Sentry a moment first.
+  await flushErrors();
   res.status(500).json({ error: "Internal server error" });
 });
 

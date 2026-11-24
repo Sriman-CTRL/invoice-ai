@@ -38,6 +38,11 @@ router.get("/me", async (req, res) => {
   }
 });
 
+// Lets an admin check that error reporting works end to end. Answers 500 on purpose; the error shows up in Sentry.
+router.get("/sentry-test", requireAdmin, () => {
+  throw new Error("Sentry test from Paivo API");
+});
+
 router.get("/plan-requests", requireAdmin, async (_req, res) => {
   try {
     await ensureOrgSettingsSchema();
