@@ -64,8 +64,10 @@ Last updated: 24 Nov 2026.
 | 24 Nov (night build, phase 2) | P4: end-to-end test of the core money flow (`npm run e2e`, local only, not in CI). |
 | 24 Nov (night build, phase 2) | P5: Hindi (हिन्दी) switch on the client pay page; labels only, needs native review. |
 | 24 Nov (night build, phase 2) | P6: whole-night review; fixed unsourced claims and UPI-for-non-INR bug. P7: night report updated with phase 2 and review. |
-| 24 Nov | `feat/sentry` (PR open, not deployed): privacy-first error reporting (Sentry, errors only) for the web app and the API, with scrubbers, admin test buttons and a privacy-page section. Inert until `SENTRY_DSN` / `VITE_SENTRY_DSN` are set; needs the real ingest host in `vercel.json` first. |
-| 24 Nov | `feat/logo` (PR open, not deployed): Paivo logo kit in `brand/` (open-loop P, closed "paid" state) and wired into the site: favicon set + manifest, new link-preview image, header/footer/sidebar/auth/legal/portal logos, "Powered by Paivo" on the pay page and invoice PDF, one-time open→closed animation next to the paid state. |
+| 24 Nov | `feat/sentry` (PR #12, merged and live): privacy-first error reporting (Sentry, errors only) for the web app and the API, with scrubbers, admin test buttons and a privacy-page section. Inert until `SENTRY_DSN` / `VITE_SENTRY_DSN` are set; needs the real ingest host in `vercel.json` first. |
+| 24 Nov | `feat/logo` (PR #13, merged and live): Paivo logo kit in `brand/` (open-loop P, closed "paid" state) and wired into the site: favicon set + manifest, new link-preview image, header/footer/sidebar/auth/legal/portal logos, "Powered by Paivo" on the pay page and invoice PDF, one-time open→closed animation next to the paid state. |
+| 24 Nov | Sentry error reporting released to paivo.in (CLI deploy; reporting runs only where `SENTRY_DSN` / `VITE_SENTRY_DSN` are set). `fix/deploy-notes` (PR #11) merged: the CLI release steps are now in `AGENTS.md`. |
+| 24 Nov | Logo released to paivo.in (PR #13, deployment `invoice-82aj8fffg`): new favicon set, manifest and link preview, wordmark everywhere, "Powered by Paivo" on the pay page and PDF, unlock copy that is true on every screen size and a footer that wraps cleanly on mobile. Live checks passed (health, 401 login, JSON 404 public invoice, assets, new `og.png`). |
 
 ## 3. Key decisions (and why)
 
@@ -92,9 +94,9 @@ export/erasure, account deletion, admin plan approvals, analytics/growth page.
 
 **Added in the night builds (on branch `night-build`, merge pending):** free tools at `/tools/*`, five guides at `/guides/`, Hindi switch on the pay page, Google sign-in (inert until keys), What's new page, credit-note-aware balances.
 
-**Error reporting (Sentry), code complete on `feat/sentry`, off until DSNs are set:** errors only, scrubbed of emails, UPI IDs, UTRs, IFSC, account numbers, GSTINs, tokens and URL ids before sending. Owner must create the Sentry projects, put the ingest origin in `vercel.json` `connect-src`, fill the data region on the privacy page, and add the env vars in Vercel (see the PR).
+**Error reporting (Sentry), live since 24 Nov 2026 (PR #12), reports only where the DSN env vars are set:** errors only, scrubbed of emails, UPI IDs, UTRs, IFSC, account numbers, GSTINs, tokens and URL ids before sending. Owner must create the Sentry projects, put the ingest origin in `vercel.json` `connect-src`, fill the data region on the privacy page, and add the env vars in Vercel (see the PR).
 
-**Brand (`feat/logo`, PR open):** the primary logo is the wordmark "paivo" whose p is the open-loop mark (a symbol beside the wordmark read as "Ppaivo"); the standalone P mark (bowl open until the money arrives, closed once paid) is for icons, the pay-page credit and the paid animation. Source of truth is `brand/build_kit.py` (SVG masters, icons, link preview, `brand/GUIDELINES.md`); the site uses `src/Brand.tsx` (inline SVG, path data copied from the generator) and static copies in `public/` (favicon set, `site.webmanifest`, `og.png`, `brand/`). Still open: trademark search (classes 9, 36, 42), print colour values.
+**Brand (PR #13, live since 24 Nov 2026):** the primary logo is the wordmark "paivo" whose p is the open-loop mark (a symbol beside the wordmark read as "Ppaivo"); the standalone P mark (bowl open until the money arrives, closed once paid) is for icons, the pay-page credit and the paid animation. Source of truth is `brand/build_kit.py` (SVG masters, icons, link preview, `brand/GUIDELINES.md`); the site uses `src/Brand.tsx` (inline SVG, path data copied from the generator) and static copies in `public/` (favicon set, `site.webmanifest`, `og.png`, `brand/`). Still open: trademark search (classes 9, 36, 42), print colour values.
 
 **Built but not offered to users yet ("soon"):** reading client replies with AI (inbound email → classify → action
 queue), automatic scheduled reminders, per-seller billing email address.
