@@ -45,7 +45,8 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
    added to its `TENANT_TABLES` list. The production app role cannot run DDL, so `prisma db push` alone is not enough.
    `lib/extraSchema.ts` is only a dev fallback.
 5. **Do not hand-edit or commit `api/index.js` or edit `backend/src/generated/**`.**
-   `api/index.js` is build output (`npm run build`) and is git-ignored; Vercel builds it on deploy.
+   `api/index.js` is build output (`npm run build`) and is git-ignored. **Vercel does not build it for you** (see the
+   deployment pitfall below): it must exist before `vercel deploy`.
 6. **Public links use the invoice's random UUID** (`/pay/:uuid`, `/client/:customerId/:token`), never invoice numbers
    (guessable, unique only per org).
 7. **Every marketing claim must be true.** Unbuilt features carry `[soon]` in `src/plans.ts`; paid plans stay waitlist-only
@@ -91,6 +92,17 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
 - **Bank alerts only suggest**: a credit-alert email forwarded by one of the business's own users (inbound pipeline,
   `lib/bankAlert.ts`, `services/bankAlertService.ts`) can only create a `PAYMENT_MATCH_SUGGESTED` action; the seller settles it
   with the normal one-click confirmation. Never create a payment or change invoice status from an alert. Not advertised to users. The sender must also pass DMARC (or SPF+DKIM), read from `x-inbound-auth`/`header_from` that the worker forwards (no header = no suggestion), and every suggestion says "Emails can be faked".
+- **Production is deployed with the Vercel CLI (the project is not connected to GitHub), so merging to `main` deploys nothing.**
+  `api/index.js` is git-ignored build output; deploying a clean checkout without `npm run build` first publishes the site with
+  NO API (all `/api` routes 404, the function `λ api/index` is missing; this happened on 24 Nov). All project env vars
+  (DATABASE_URL, JWT_SECRET, ...) and the build-time `VITE_*` values are scoped to **Production only**, so a Preview build
+  has no database and its API crashes (`FUNCTION_INVOCATION_FAILED`): previews can't run the API, and `vercel promote` of a
+  preview would put an env-less build live. Release steps, from a clean checkout of `main` (never your working folder, which
+  has a local `.env`): `npm ci` (root and `backend/`), `npx prisma generate` in `backend/`, `npm run build`, then
+  `vercel deploy --prod --skip-domain` (builds with the production env, does not touch paivo.in), `vercel inspect <url>`
+  must list `λ api/index` (about 2.5-2.7 MB), check `vercel curl /health --deployment <url>` (200, database connected),
+  a random login (401) and a random `/api/public/invoices/<uuid>` (JSON 404), then `vercel promote <url>`. Rollback:
+  `vercel rollback <previous production url> --yes`. In Git Bash set `MSYS_NO_PATHCONV=1` before `vercel curl /path`.
 - **Run `enable-rls.cjs` on production before deploying** any change that adds a column to a Prisma model (Prisma selects every
   model column, so pages crash until the column exists). Order for a release: owner-URL `enable-rls.cjs` first, then deploy.
 - **Never send personal data to Sentry; all events go through the scrubbers.** `src/lib/sentryScrub.ts` (browser) and
