@@ -137,7 +137,7 @@ the report. Tests that every key exists in both languages.
 
 **Notes (P5):** English / हिन्दी switch in the pay page header (default English, remembered in localStorage inside try/catch, sets the page's lang attribute). src/payI18n.ts is a typed dictionary (no dependency) covering every label, instruction, status badge, tab, form field, error and the footer on the pay page; the Hinglish explainer from R3a is untouched and still needs its own flag. NOT translated, on purpose: amounts, dates, names, invoice line items and notes, the UPI ID and the UPI link, amount-in-words (stays English), and messages returned by the server (for example the text after submitting a UTR). tests/payI18n.test.ts: every key exists in both languages with the same kind of value, Hindi is Devanagari for the long texts, templates keep amounts, currency and names verbatim, storage failures are harmless; e2e/pay-hindi.spec.ts (real browser, 390px wide): the UPI link href and the amount are identical in both languages, the files link stays hidden, the choice survives a reload. Both e2e specs pass. THE HINDI NEEDS A NATIVE SPEAKER'S REVIEW before you rely on it (it is my draft; tone, the word choices for UTR/IFSC context, and the formal-vs-friendly register especially). English wording changes made on the way: "Official Tax Invoice" is now "Invoice" (it said tax invoice even for sellers with no GST), "Loading Secure Payment Portal" and "Powered by Paivo Secure Pay" lost the word Secure, "official billing account details" became "the account details below", and the unverified "Most UPI apps allow up to about ₹1 lakh per payment" became "UPI apps and banks set a limit on each payment, so a large amount may not go through"; the HTTPS badge is hidden on very small screens to make room for the switch. 121 backend/121 pass/0 skip, build pass, test:web 31, e2e 2/2.
 
-## [ ] P6. Review the whole night's work
+## [x] P6. Review the whole night's work
 
 Review every `[night]` commit (`git log origin/main..night-build`) as a strict reviewer: tenant isolation (every new
 query scoped or in tenant context), AGENTS.md rule 1 (no AI or alert changing invoice status), XSS in new pages and
@@ -145,8 +145,12 @@ guides, CSP compatibility of every new page/script, secrets, honest copy (no unv
 broken links, accessibility basics (labels, contrast, focus). Fix real issues (one commit per fix theme). Write
 findings and fixes into `docs/NIGHT-REPORT.md` under a new "Phase 2 review" section.
 
-## [ ] P7. Update the night report
+**Notes (P6):** review written into docs/NIGHT-REPORT.md ("Phase 2 review"). Fixes: P6a unsourced claims (UPI limit figure on landing and pay page, 'most late payments', isolation wording); P6b UPI QR/link for INR invoices only (a USD invoice would have shown a rupee QR), manual reminder tolerates a missing claims table. Gate: 121 backend/121 pass/0 skip, build pass, test:web 31, e2e 3/3.
+
+## [x] P7. Update the night report
 
 Add a "Phase 2" section to `docs/NIGHT-REPORT.md` (status and commit per P-task, what to check before merging, any
 production steps), and refresh "Your next 3 days" if phase 2 changed what should be done first (e.g. share the free
 tools and guides). Commit `[night] P7: report`, push, then stop.
+
+**Notes (P7):** Phase 2 section, review section, refreshed "Your next 3 days" and the merge order are in docs/NIGHT-REPORT.md.

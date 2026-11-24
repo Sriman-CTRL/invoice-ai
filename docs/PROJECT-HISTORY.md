@@ -63,6 +63,7 @@ Last updated: 24 Nov 2026.
 | 24 Nov (night build, phase 2) | P3: five static guides in `public/guides/` (invoicing, TDS, UPI limits, late-payment follow-up, getting paid before sending files) with sitemap and footer link. |
 | 24 Nov (night build, phase 2) | P4: end-to-end test of the core money flow (`npm run e2e`, local only, not in CI). |
 | 24 Nov (night build, phase 2) | P5: Hindi (हिन्दी) switch on the client pay page; labels only, needs native review. |
+| 24 Nov (night build, phase 2) | P6: whole-night review; fixed unsourced claims and UPI-for-non-INR bug. P7: night report updated with phase 2 and review. |
 
 ## 3. Key decisions (and why)
 
@@ -86,6 +87,8 @@ pay page with UPI QR + bank details + UTR/screenshot proof, files unlock on full
 partial payments, credit notes, PDF invoices, email reminders (manual send) + WhatsApp, recurring invoices (draft
 approval), client portal, CSV import, cash-flow forecast, analytics, GST report, activity feed + bell, data
 export/erasure, account deletion, admin plan approvals, analytics/growth page.
+
+**Added in the night builds (on branch `night-build`, merge pending):** free tools at `/tools/*`, five guides at `/guides/`, Hindi switch on the pay page, Google sign-in (inert until keys), What's new page, credit-note-aware balances.
 
 **Built but not offered to users yet ("soon"):** reading client replies with AI (inbound email → classify → action
 queue), automatic scheduled reminders, per-seller billing email address.
