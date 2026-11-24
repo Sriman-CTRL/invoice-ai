@@ -199,7 +199,7 @@ export function PrivacyPolicyPage() {
             <ul className="list-disc pl-5 space-y-1.5 text-slate-400">
               <li><strong className="text-slate-200">What is sent:</strong> technical error details (the error message and where in the code it happened), your browser and device type, and the page address with ids and tokens removed (for example <code className="text-slate-200 bg-white/5 px-1 py-0.5 rounded font-mono text-xs">/pay/[id]</code>), plus an internal account id when you are signed in.</li>
               <li><strong className="text-slate-200">What is not sent:</strong> client names, email addresses, UPI IDs, UTRs, bank account numbers, GSTINs, passwords, sign-in tokens, request contents or cookies. These are removed on your device or our server before a report leaves it.</li>
-              <li><strong className="text-slate-200">Where it is stored:</strong> in the Sentry data region chosen for our project: [region to be confirmed by the owner before launch].</li>
+              <li><strong className="text-slate-200">Where it is stored:</strong> in Sentry's United States data region.</li>
             </ul>
           </section>
 
