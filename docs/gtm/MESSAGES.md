@@ -4,6 +4,8 @@ Rules: send each message **personally**, never in bulk. Say who you are. Fill ev
 specific. If someone says no or goes quiet after the final follow-up, stop. No made-up numbers, users or testimonials.
 Each DM below is under 60 words.
 
+The tagline to use everywhere: "Your client pays by UPI. Your files unlock when they do." (short form: "Get paid on UPI. Files unlock after payment.")
+
 ## Tag your links (so you know what worked)
 Use a different tag per channel; Paivo records `utm_source`, `utm_medium`, `utm_campaign` and `ref` (see G2):
 - LinkedIn DM: `https://paivo.in/?utm_source=linkedin&utm_medium=dm`
