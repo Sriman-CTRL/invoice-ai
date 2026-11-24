@@ -60,6 +60,7 @@ Last updated: 24 Nov 2026.
 | 24 Nov (night build, phase 2) | P0: review fixes: Google sign-in links on Google's account id (`users.google_sub`), automatic reminders claim each step before sending (`auto_reminder_claims`), bank-alert suggestions need a DMARC-passing sender, pay page and PDF use the balance after credit notes, honest pay-page and legal wording. |
 | 24 Nov (night build, phase 2) | P1: market research verified against vendors' own pages; pay-to-unlock and late-payment evidence updated in `docs/research/MARKET-2026-11.md`. |
 | 24 Nov (night build, phase 2) | P2: free tools (GST calculator, TDS calculator, payment reminder writer) at `/tools/*`, no login, all in the browser. |
+| 24 Nov (night build, phase 2) | P3: five static guides in `public/guides/` (invoicing, TDS, UPI limits, late-payment follow-up, getting paid before sending files) with sitemap and footer link. |
 
 ## 3. Key decisions (and why)
 

@@ -11,7 +11,7 @@
       "destination": "/api/index.js"
     },
     {
-      "source": "/((?!api/|health|robots\\.txt|sitemap\\.xml|og\\.png|\\.well-known/).*)",
+      "source": "/((?!api/|health|robots\\.txt|sitemap\\.xml|og\\.png|guides/|\\.well-known/).*)",
       "destination": "/index.html"
     }
   ],

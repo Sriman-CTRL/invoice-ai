@@ -244,7 +244,7 @@ export function ReminderWriterPage() {
     <ToolLayout
       title="Payment reminder writer"
       intro="A polite, plain message to nudge a client about an unpaid invoice. Edit it, copy it, or open it in WhatsApp."
-      cta="Paivo can email these reminders for you 1, 7 and 14 days after the due date, with a pay link and an unsubscribe link, once you switch it on in Settings."
+      cta="Paivo keeps the invoice, the pay link and your reminders in one place, so you are not hunting through chats. Automatic reminders are coming soon."
     >
       <div className="space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
         <div className="grid gap-4 sm:grid-cols-2">
