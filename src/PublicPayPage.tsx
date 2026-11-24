@@ -756,16 +756,13 @@ export function PublicPayPage() {
 
       {/* Footer */}
       <footer className="mt-16 border-t border-white/5 py-8 text-center text-xs text-slate-500">
-        <div className="flex flex-wrap items-center justify-center gap-6">
+        <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-x-6 gap-y-2 px-4">
           <Link to="/privacy" className="hover:text-slate-300 transition-colors">{T.privacy}</Link>
-          <span className="text-slate-700">•</span>
           <Link to="/terms" className="hover:text-slate-300 transition-colors">{T.terms}</Link>
-          <span className="text-slate-700">•</span>
           <span>{T.moneyStraight(data.organization.name)}</span>
-          <span className="text-slate-700">•</span>
           <span>{T.filesAfterPay}</span>
         </div>
-        <p className="mt-3 text-[11px] text-slate-600">
+        <p className="mx-auto mt-3 max-w-3xl px-4 text-[11px] text-slate-600">
           {T.footerNote}
         </p>
         <Link to="/" className="mt-4 inline-flex items-center gap-2 text-[11px] text-slate-500 hover:text-slate-300 transition-colors">

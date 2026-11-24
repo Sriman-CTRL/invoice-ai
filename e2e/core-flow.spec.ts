@@ -86,6 +86,8 @@ test("core flow: pay, submit UTR, seller confirms, files unlock", async ({ page,
   await client.reload();
   await expect(client.locator(`a[href="${filesUrl}"]`)).toBeVisible();
   await expect(client.locator(".paivo-closing")).toHaveCount(1); // mark shown next to the paid state
+  await expect(client.getByText("Your final files are unlocked.")).toBeVisible(); // wording must hold on every screen size
+  await expect(client.locator("footer")).not.toContainText("•"); // no standalone separators to wrap onto their own lines
   await client.emulateMedia({ reducedMotion: "reduce" });
   expect(await client.locator(".paivo-closing").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
   await clientCtx.close();
