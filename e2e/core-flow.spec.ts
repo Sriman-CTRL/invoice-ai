@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 
 /**
@@ -8,7 +9,7 @@ import { expect, test } from "@playwright/test";
 test("core flow: pay, submit UTR, seller confirms, files unlock", async ({ page, browser }) => {
   const stamp = Date.now();
   const email = `e2e-${stamp}@example.com`;
-  const password = "E2E-Flow-Pass-2468-xy";
+  const password = `E2E-${randomUUID()}`;
   const filesUrl = `https://example.com/e2e-final-files-${stamp}`;
   const invoiceNumber = `E2E-${stamp % 100000}`;
 

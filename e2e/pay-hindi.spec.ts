@@ -1,10 +1,11 @@
+import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 
 /** The Hindi switch changes words only: the amount, the UPI ID and the UPI link stay exactly the same. */
 test("pay page: Hindi switch changes labels, not amounts or the UPI link, and is remembered", async ({ page, request }) => {
   const stamp = Date.now();
   const email = `e2e-hi-${stamp}@example.com`;
-  const password = "E2E-Hindi-Pass-2468-xy";
+  const password = `E2E-${randomUUID()}`;
   await request.post("/api/auth/register", { data: { email, password, organization_name: "E2E Hindi Studio", accepted_terms: true } });
   const login = await (await request.post("/api/auth/login", { data: { email, password } })).json();
   const auth = { Authorization: `Bearer ${login.token}` };
@@ -49,7 +50,7 @@ test("pay page: Hindi switch changes labels, not amounts or the UPI link, and is
 test("pay page: a non-INR invoice offers no UPI QR or link", async ({ page, request }) => {
   const stamp = Date.now();
   const email = `e2e-usd-${stamp}@example.com`;
-  const password = "E2E-Dollar-Pass-2468-xy";
+  const password = `E2E-${randomUUID()}`;
   await request.post("/api/auth/register", { data: { email, password, organization_name: "E2E Dollar Studio", accepted_terms: true } });
   const login = await (await request.post("/api/auth/login", { data: { email, password } })).json();
   const auth = { Authorization: `Bearer ${login.token}` };

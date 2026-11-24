@@ -1,0 +1,3 @@
+# Fictional passwords for local-only e2e test accounts (removed from source in the commit that added this file). Not real credentials.
+472270ca2242a1078f867bfc82e3aa0886c1d349:e2e/pay-hindi.spec.ts:generic-api-key:7
+366afe858c068261077dd3ea1fc1dde2da6cd540:e2e/pay-hindi.spec.ts:generic-api-key:52
