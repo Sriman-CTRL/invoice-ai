@@ -534,7 +534,8 @@ export function InvoiceDetailPage() {
         const fin = data.financial_summary;
         const totalAmount = Number(fin.invoice_amount) || 1;
         const paidAmount = Number(fin.paid_amount) || 0;
-        const progressPct = Math.min(100, Math.round((paidAmount / totalAmount) * 100));
+        const creditedAmount = Number(fin.credited_amount) || 0;
+        const progressPct = Math.min(100, Math.round(((paidAmount + creditedAmount) / totalAmount) * 100));
         const outstanding = Number(fin.outstanding_amount) || 0;
 
         return (
@@ -620,7 +621,7 @@ export function InvoiceDetailPage() {
                   {/* Payment Progress Bar */}
                   <div className="mt-6">
                     <div className="flex justify-between text-xs font-semibold text-slate-500 mb-1.5">
-                      <span>{progressPct}% Settled</span>
+                      <span>{fin.settled_by_credit ? (paidAmount > 0 ? "Settled: payment + credit note" : "Settled by credit note") : `${progressPct}% Settled`}</span>
                       <span>Outstanding: {money(fin.outstanding_amount, fin.currency)}</span>
                     </div>
                     <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
@@ -635,8 +636,9 @@ export function InvoiceDetailPage() {
                     <div className="pr-4">
                       <p className="text-xs font-medium text-slate-400">Total Settled</p>
                       <p className="mt-1 font-mono text-lg font-bold text-emerald-600">
-                        {money(fin.paid_amount, fin.currency)}
+                        {money(paidAmount + creditedAmount, fin.currency)}
                       </p>
+                      {creditedAmount > 0 && <p className="mt-0.5 text-[11px] text-slate-400">incl. credit notes {money(creditedAmount, fin.currency)}</p>}
                     </div>
                     <div className="px-4">
                       <p className="text-xs font-medium text-slate-400">Remaining Due</p>

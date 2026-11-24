@@ -1,3 +1,4 @@
+import { creditedTotal, outstandingOf, settledByCredit } from "../lib/invoiceBalance";
 import prisma from "../lib/prisma";
 import { getDetails } from "../lib/invoiceDetails";
 
@@ -7,6 +8,8 @@ export interface InvoiceDetails {
     financial_summary: {
         invoice_amount: number;
         paid_amount: number;
+        credited_amount: number;
+        settled_by_credit: boolean;
         outstanding_amount: number;
         currency: string;
     };
@@ -74,7 +77,8 @@ export async function getInvoiceDetails(organization_id: string, invoice_id: str
     }
 
     const invoice_amount = Number(invoice.amount);
-    const outstanding_amount = Math.max(0, invoice_amount - paid_amount);
+    const credited_amount = await creditedTotal(prisma, organization_id, invoice_id);
+    const outstanding_amount = outstandingOf(invoice_amount, paid_amount, credited_amount);
 
     const details = await getDetails(invoice_id);
     const viewRows = await prisma.$queryRawUnsafe<{ n: number; last: Date | null }[]>(
@@ -90,6 +94,8 @@ export async function getInvoiceDetails(organization_id: string, invoice_id: str
         financial_summary: {
             invoice_amount,
             paid_amount,
+            credited_amount,
+            settled_by_credit: settledByCredit(String(invoice.status), invoice_amount, paid_amount, credited_amount),
             outstanding_amount,
             currency: invoice.currency
         },

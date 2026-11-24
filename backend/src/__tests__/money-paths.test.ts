@@ -247,6 +247,74 @@ test("CREDIT NOTE: two concurrent credit notes cannot together exceed the balanc
   assert.deepEqual(results.map((r) => r.status).sort(), [201, 409]);
 });
 
+// ---------- credit notes and what the client owes ----------
+
+const credit = (t: Tenant, invoiceId: string, amount: number) =>
+  call("POST", "/api/credit-notes", { invoice_id: invoiceId, amount, reason: "Scope reduced" }, t.token);
+
+test("CREDIT NOTE (partial): the pay page, the client portal and the invoice detail ask for what is really owed", opts, async () => {
+  const id = await makeInvoice(a, 1000, { external_invoice_id: "vault:https://example.com/final-files" });
+  assert.equal((await pay(a, id, 300)).status, 201);
+  assert.equal((await credit(a, id, 200)).status, 201);
+
+  const page = (await publicPage(id)).json;
+  assert.equal(page.amount, 1000);
+  assert.equal(page.paid_amount, 300);
+  assert.equal(page.credited_amount, 200);
+  assert.equal(page.outstanding_amount, 500, "1000 - 300 paid - 200 credit");
+  assert.equal(page.settled_by_credit, false);
+  assert.equal(page.deliverable_url, null, "still locked");
+
+  const detail = (await call("GET", `/api/invoices/${id}`, undefined, a.token)).json;
+  assert.equal(detail.financial_summary.outstanding_amount, 500);
+  assert.equal(detail.financial_summary.credited_amount, 200);
+
+  // The client cannot report paying more than they owe, and paying the remainder settles the invoice.
+  assert.equal((await submitProof(id, { utr: "CREDITPART0001", amount: 501 })).status, 400, "more than the credited balance");
+  const proof = await submitProof(id, { utr: "CREDITPART0002", amount: 500 });
+  assert.equal(proof.status, 200, JSON.stringify(proof.json));
+  assert.equal((await call("POST", `/api/collection-actions/${proof.json.action_id}/verify-proof`, {}, a.token)).status, 200);
+  assert.equal(await invoiceStatus(a, id), "PAID", "payment + credit cover the invoice");
+  const after = (await publicPage(id)).json;
+  assert.equal(after.outstanding_amount, 0);
+  assert.equal(after.settled_by_credit, true, "payments (800) plus the credit note (200) covered it, so it is not plain 'paid'");
+  assert.equal(after.deliverable_url, "https://example.com/final-files");
+});
+
+test("CREDIT NOTE (partial): a recorded payment cannot exceed the balance after the credit", opts, async () => {
+  const id = await makeInvoice(a, 1000);
+  assert.equal((await credit(a, id, 400)).status, 201);
+  assert.equal((await pay(a, id, 600.01)).status, 409, "only 600 is owed now");
+  assert.equal((await pay(a, id, 600)).status, 201);
+  assert.equal(await invoiceStatus(a, id), "PAID");
+});
+
+test("CREDIT NOTE (full): the invoice becomes PAID but is shown as settled by credit note, and the client owes nothing", opts, async () => {
+  const id = await makeInvoice(a, 800, { external_invoice_id: "vault:https://example.com/final-files" });
+  assert.equal((await credit(a, id, 800)).status, 201);
+  assert.equal(await invoiceStatus(a, id), "PAID", "unchanged rule: a credit that zeroes the balance marks it PAID");
+  const page = (await publicPage(id)).json;
+  assert.equal(page.outstanding_amount, 0);
+  assert.equal(page.settled_by_credit, true);
+  assert.equal(page.paid_amount, 0, "no money was received");
+  assert.equal((await call("GET", `/api/invoices/${id}`, undefined, a.token)).json.financial_summary.settled_by_credit, true);
+  assert.equal((await submitProof(id, { utr: "CREDITFULL0001" })).status, 409, "nothing left to pay");
+});
+
+test("CREDIT NOTE: the client portal lists the reduced balance", opts, async () => {
+  const id = await makeInvoice(a, 900);
+  assert.equal((await credit(a, id, 150)).status, 201);
+  const prismaModule: any = await import("../lib/prisma.js");
+  const prisma = prismaModule.default?.default ?? prismaModule.default;
+  const rows = await prismaModule.runAsSystem(async () => await prisma.$queryRawUnsafe(`SELECT customer_id FROM invoices WHERE id = $1::uuid`, id));
+  const customerId = rows[0].customer_id as string;
+  const { portalToken } = (await import("../routes/client-portal.routes.js")) as any;
+  const portal = await call("GET", `/api/public/client/${customerId}/${portalToken(customerId)}`);
+  assert.equal(portal.status, 200, JSON.stringify(portal.json));
+  const row = portal.json.invoices.find((i: any) => i.id === id);
+  assert.equal(row.outstanding, 750);
+});
+
 // ---------- pure functions ----------
 
 test("computeTotals: no GST", () => {

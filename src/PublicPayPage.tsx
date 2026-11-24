@@ -246,7 +246,7 @@ export function PublicPayPage() {
                 <div>
                   {isPaid ? (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3.5 py-1 text-xs font-bold text-emerald-400">
-                      <CheckCircle2 className="h-4 w-4" /> Paid & Settled
+                      <CheckCircle2 className="h-4 w-4" /> {data.settled_by_credit ? (data.paid_amount > 0 ? "Settled: payment + credit note" : "Settled by credit note") : "Paid & Settled"}
                     </span>
                   ) : isPartiallyPaid ? (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 px-3.5 py-1 text-xs font-bold text-amber-400">
@@ -346,6 +346,11 @@ export function PublicPayPage() {
                     </p>
                   </div>
                 </div>
+                {(data.credited_amount ?? 0) > 0 && (
+                  <p className="mt-3 border-t border-white/5 pt-3 text-center text-[11px] text-slate-300">
+                    Credit note applied: - {data.currency} {Number(data.credited_amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}. You only pay the remaining amount.
+                  </p>
+                )}
                 {data.currency === "INR" && amountInWords(totalAmount) && (
                   <p className="mt-3 border-t border-white/5 pt-3 text-center text-[11px] italic text-slate-400">{amountInWords(totalAmount)}</p>
                 )}

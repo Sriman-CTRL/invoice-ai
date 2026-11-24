@@ -35,7 +35,8 @@ router.get("/:customerId/:token", async (req: Request, res: Response): Promise<v
     const settings = await getOrgSettings(customer.organization_id);
     const rows = await prisma.$queryRawUnsafe<any[]>(
       `SELECT i.id, i.invoice_number, i.amount::float8 AS amount, i.currency, i.status, i.issued_at, i.due_at,
-              COALESCE((SELECT sum(p.amount) FROM payments p WHERE p.invoice_id = i.id AND p.status = 'SUCCEEDED'), 0)::float8 AS paid
+              COALESCE((SELECT sum(p.amount) FROM payments p WHERE p.invoice_id = i.id AND p.status = 'SUCCEEDED'), 0)::float8 AS paid,
+              COALESCE((SELECT sum(c.amount) FROM credit_notes c WHERE c.invoice_id = i.id), 0)::float8 AS credited
          FROM invoices i
         WHERE i.customer_id = $1::uuid AND i.status NOT IN ('DRAFT', 'CANCELLED')
         ORDER BY COALESCE(i.issued_at, i.created_at) DESC LIMIT 100`,
@@ -49,7 +50,7 @@ router.get("/:customerId/:token", async (req: Request, res: Response): Promise<v
       status: r.status,
       issued_at: r.issued_at,
       due_at: r.due_at,
-      outstanding: Math.max(0, Math.round((r.amount - r.paid) * 100) / 100),
+      outstanding: Math.max(0, Math.round((r.amount - r.paid - r.credited) * 100) / 100),
     }));
     res.json({
       organization: { name: customer.organizations.name, brand_color: settings.brand_color, logo_data: settings.logo_data },
