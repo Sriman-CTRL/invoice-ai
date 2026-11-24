@@ -44,3 +44,24 @@ test("pay page: Hindi switch changes labels, not amounts or the UPI link, and is
   await page.reload();
   await expect(page.getByText("Locked until paid")).toBeVisible();
 });
+
+/** UPI links are rupee-only (cu=INR). A dollar invoice must never offer a UPI QR or link for a rupee amount. */
+test("pay page: a non-INR invoice offers no UPI QR or link", async ({ page, request }) => {
+  const stamp = Date.now();
+  const email = `e2e-usd-${stamp}@example.com`;
+  const password = "E2E-Dollar-Pass-2468-xy";
+  await request.post("/api/auth/register", { data: { email, password, organization_name: "E2E Dollar Studio", accepted_terms: true } });
+  const login = await (await request.post("/api/auth/login", { data: { email, password } })).json();
+  const auth = { Authorization: `Bearer ${login.token}` };
+  await request.put("/api/organizations/settings", { headers: auth, data: { upi_id: "e2eusd@okdemo", payee_name: "E2E Dollar Studio" } });
+  const customer = await (await request.post("/api/customers", { headers: auth, data: { name: "Overseas Client", email: `c-${stamp}@example.com` } })).json();
+  const inv = await (await request.post("/api/invoices", {
+    headers: auth,
+    data: { customer_id: customer.id, invoice_number: `USD-${stamp % 100000}`, amount: 500, currency: "USD", issued_at: "2026-11-01", due_at: "2026-12-01", status: "OPEN" },
+  })).json();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/pay/${inv.id}`);
+  await expect(page.getByText("UPI is for rupee (INR) invoices only.")).toBeVisible();
+  await expect(page.locator('a[href^="upi://"]')).toHaveCount(0);
+  await expect(page.getByAltText("UPI Payment QR Code")).toHaveCount(0);
+});

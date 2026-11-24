@@ -228,7 +228,7 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   const cleanOrg = (st?.payee_name || org).replace(/[^a-zA-Z0-9 ]/g, "").slice(0, 25) || "Payee";
   const upiId = st?.upi_id || "";
   const upi = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(cleanOrg)}&am=${Number(fin.outstanding_amount).toFixed(2)}&cu=INR&tn=${encodeURIComponent(`Invoice ${inv.invoice_number}`)}`;
-  if (!paid && fin.outstanding_amount > 0 && upiId) {
+  if (!paid && fin.outstanding_amount > 0 && upiId && currency === "INR") {
     const qr = await QRCode.toDataURL(upi, { width: 320, margin: 1, color: { dark: "#0f172a", light: "#ffffff" } });
     doc.addImage(qr, "PNG", M + 5, qy + 6, 40, 40);
   } else {
@@ -240,7 +240,7 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
   const px = M + 52;
   label(paid ? (fin.settled_by_credit ? "Settled by credit note" : "Payment received") : "Scan to pay with any UPI app", px, qy + 10);
   doc.setFont("helvetica", "normal"); doc.setFontSize(9); set(MUTED);
-  doc.text(paid ? "Thank you. This invoice is settled in full." : upiId ? `UPI: ${upiId} (zero fees)` : "Use the secure link below to pay.", px, qy + 16);
+  doc.text(paid ? "Thank you. This invoice is settled in full." : upiId && currency === "INR" ? `UPI: ${upiId} (zero fees)` : "Use the link below to pay.", px, qy + 16);
   if (!paid && st?.bank_account_number && st.bank_ifsc) {
     doc.setFontSize(8);
     doc.text(`Bank: ${st.bank_account_name || org} | A/C ${st.bank_account_number} | IFSC ${st.bank_ifsc}`, px, qy + 21);

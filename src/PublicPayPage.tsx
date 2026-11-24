@@ -102,7 +102,7 @@ export function PublicPayPage() {
 
   // Generate dynamic UPI QR Code when invoice data is loaded
   useEffect(() => {
-    if (data && data.outstanding_amount > 0 && data.payment?.upi_id) {
+    if (data && data.outstanding_amount > 0 && data.payment?.upi_id && data.currency === "INR") {
       // Standard NPCI UPI URI Scheme, paying the invoice owner's own UPI ID
       const upiUri = upiLinkFor(data);
 
@@ -525,8 +525,9 @@ export function PublicPayPage() {
               </div>
 
               {/* TAB 1: UPI SCAN & PAY */}
-              {activeTab === "upi" && !data.payment?.upi_id && <NotConfigured what={T.notSetUp(T.whatUpi)} hint={T.notSetUpHint} />}
-              {activeTab === "upi" && data.payment?.upi_id && (
+              {activeTab === "upi" && data.currency !== "INR" && <NotConfigured what={T.upiInrOnly} hint={T.upiInrOnlyHint} />}
+              {activeTab === "upi" && data.currency === "INR" && !data.payment?.upi_id && <NotConfigured what={T.notSetUp(T.whatUpi)} hint={T.notSetUpHint} />}
+              {activeTab === "upi" && data.currency === "INR" && data.payment?.upi_id && (
                 <div className="space-y-4 text-center">
                   {/* Mobile only: open the UPI app directly (a QR can't be scanned on the same phone) */}
                   <a

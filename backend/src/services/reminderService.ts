@@ -82,6 +82,10 @@ export async function deliveryGuard({ organizationId, invoice, settings, strict 
   const claimed = await prisma.auto_reminder_claims.findFirst({
     where: { organization_id: organizationId, invoice_id: invoice.id, status: { in: ["CLAIMED", "SENT"] }, claimed_at: { gte: since } },
     select: { id: true },
+  }).catch((e) => {
+    // The table is created by enable-rls.cjs; if production has not run it yet, the manual button must keep working.
+    console.warn("reminder guard: could not read auto_reminder_claims:", (e as Error).message.split("\n").pop());
+    return null;
   });
   if (claimed) {
     return { code: "COOLDOWN", status: 429, error: "A reminder for this invoice was already emailed in the last 24 hours." };
