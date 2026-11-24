@@ -28,3 +28,6 @@ night-logs/
 
 test-results/
 playwright-report/
+
+# release script logs
+release-logs/
