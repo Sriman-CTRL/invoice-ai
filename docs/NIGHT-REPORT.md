@@ -61,8 +61,8 @@ Test counts: baseline 54, now 106 backend tests, 0 skipped; 17 frontend unit tes
 
 ## Before merging (exact steps)
 
-1. **Production database:** run `cd backend && DATABASE_URL=<owner url> APP_DB_PASSWORD=<existing app password> node scripts/enable-rls.cjs`.
-   It adds `organizations.auto_reminders` (T6). The app tolerates the column missing, but the reminders toggle will not work until it exists.
+1. **FIRST, BEFORE ANY DEPLOY: run the production database script.** `cd backend && DATABASE_URL=<owner url> APP_DB_PASSWORD=<existing app password> node scripts/enable-rls.cjs`.
+   It adds `organizations.auto_reminders` (T6), `users.google_sub` (P0.1) and the `auto_reminder_claims` table (P0.2). **Do this before the new code goes live:** Prisma selects every column of a model, so once the code is deployed without `users.google_sub`, sign-in, login and every page that reads users fail until the column exists. The script is idempotent and safe to run more than once.
 2. **Vercel env vars:**
    - Reminders: `RESEND_API_KEY`, `CRON_SECRET` must be set. Optional: `CRON_TIME_BUDGET_MS`, `AUTO_REMINDER_RUN_CAP`. Consider a first run with `AUTO_REMINDERS_DRY_RUN=1`.
    - Google sign-in (optional): the same OAuth web client id in `GOOGLE_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID`; add `https://paivo.in` as an authorised JavaScript origin; redeploy and test with a real account.
