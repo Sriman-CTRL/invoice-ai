@@ -252,6 +252,20 @@ model invoice_details {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model auto_reminder_claims {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String    @db.Uuid
+  invoice_id      String    @db.Uuid
+  step            Int
+  status          String    @default("CLAIMED") @db.VarChar(12)
+  claimed_at      DateTime  @default(now()) @db.Timestamptz(6)
+  finished_at     DateTime? @db.Timestamptz(6)
+
+  @@unique([invoice_id, step], map: "auto_reminder_claims_invoice_step_key")
+  @@index([organization_id], map: "auto_reminder_claims_org")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model invoice_views {
   id              BigInt   @id @default(autoincrement())
   organization_id String   @db.Uuid

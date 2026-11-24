@@ -410,6 +410,7 @@ export const ModelName = {
   analytics_events: 'analytics_events',
   auth_failures: 'auth_failures',
   invoice_details: 'invoice_details',
+  auto_reminder_claims: 'auto_reminder_claims',
   invoice_views: 'invoice_views',
   leads: 'leads',
   payment_proof_images: 'payment_proof_images',
@@ -431,7 +432,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "collection_actions" | "conversations" | "customers" | "invoices" | "messages" | "organizations" | "payments" | "users" | "suppressions" | "credit_notes" | "analytics_events" | "auth_failures" | "invoice_details" | "invoice_views" | "leads" | "payment_proof_images" | "plan_requests" | "rate_limits" | "recurring_invoices"
+    modelProps: "collection_actions" | "conversations" | "customers" | "invoices" | "messages" | "organizations" | "payments" | "users" | "suppressions" | "credit_notes" | "analytics_events" | "auth_failures" | "invoice_details" | "auto_reminder_claims" | "invoice_views" | "leads" | "payment_proof_images" | "plan_requests" | "rate_limits" | "recurring_invoices"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1397,6 +1398,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    auto_reminder_claims: {
+      payload: Prisma.$auto_reminder_claimsPayload<ExtArgs>
+      fields: Prisma.auto_reminder_claimsFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.auto_reminder_claimsFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$auto_reminder_claimsPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.auto_reminder_claimsFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$auto_reminder_claimsPayload>
+        }
+        findFirst: {
+          args: Prisma.auto_reminder_claimsFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$auto_reminder_claimsPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.auto_reminder_claimsFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$auto_reminder_claimsPayload>
+        }
+        findMany: {
+          args: Prisma.auto_reminder_claimsFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$auto_reminder_claimsPayload>[]
+        }
+        create: {
+          args: Prisma.auto_reminder_claimsCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$auto_reminder_claimsPayload>
+        }
+        createMany: {
+          args: Prisma.auto_reminder_claimsCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.auto_reminder_claimsCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$auto_reminder_claimsPayload>[]
+        }
+        delete: {
+          args: Prisma.auto_reminder_claimsDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$auto_reminder_claimsPayload>
+        }
+        update: {
+          args: Prisma.auto_reminder_claimsUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$auto_reminder_claimsPayload>
+        }
+        deleteMany: {
+          args: Prisma.auto_reminder_claimsDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.auto_reminder_claimsUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.auto_reminder_claimsUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$auto_reminder_claimsPayload>[]
+        }
+        upsert: {
+          args: Prisma.auto_reminder_claimsUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$auto_reminder_claimsPayload>
+        }
+        aggregate: {
+          args: Prisma.Auto_reminder_claimsAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAuto_reminder_claims>
+        }
+        groupBy: {
+          args: Prisma.auto_reminder_claimsGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Auto_reminder_claimsGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.auto_reminder_claimsCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Auto_reminder_claimsCountAggregateOutputType> | number
+        }
+      }
+    }
     invoice_views: {
       payload: Prisma.$invoice_viewsPayload<ExtArgs>
       fields: Prisma.invoice_viewsFieldRefs
@@ -2081,6 +2156,19 @@ export const Invoice_detailsScalarFieldEnum = {
 export type Invoice_detailsScalarFieldEnum = (typeof Invoice_detailsScalarFieldEnum)[keyof typeof Invoice_detailsScalarFieldEnum]
 
 
+export const Auto_reminder_claimsScalarFieldEnum = {
+  id: 'id',
+  organization_id: 'organization_id',
+  invoice_id: 'invoice_id',
+  step: 'step',
+  status: 'status',
+  claimed_at: 'claimed_at',
+  finished_at: 'finished_at'
+} as const
+
+export type Auto_reminder_claimsScalarFieldEnum = (typeof Auto_reminder_claimsScalarFieldEnum)[keyof typeof Auto_reminder_claimsScalarFieldEnum]
+
+
 export const Invoice_viewsScalarFieldEnum = {
   id: 'id',
   organization_id: 'organization_id',
@@ -2466,6 +2554,7 @@ export type GlobalOmitConfig = {
   analytics_events?: Prisma.analytics_eventsOmit
   auth_failures?: Prisma.auth_failuresOmit
   invoice_details?: Prisma.invoice_detailsOmit
+  auto_reminder_claims?: Prisma.auto_reminder_claimsOmit
   invoice_views?: Prisma.invoice_viewsOmit
   leads?: Prisma.leadsOmit
   payment_proof_images?: Prisma.payment_proof_imagesOmit

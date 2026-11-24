@@ -64,6 +64,7 @@ export const ModelName = {
   analytics_events: 'analytics_events',
   auth_failures: 'auth_failures',
   invoice_details: 'invoice_details',
+  auto_reminder_claims: 'auto_reminder_claims',
   invoice_views: 'invoice_views',
   leads: 'leads',
   payment_proof_images: 'payment_proof_images',
@@ -287,6 +288,19 @@ export const Invoice_detailsScalarFieldEnum = {
 } as const
 
 export type Invoice_detailsScalarFieldEnum = (typeof Invoice_detailsScalarFieldEnum)[keyof typeof Invoice_detailsScalarFieldEnum]
+
+
+export const Auto_reminder_claimsScalarFieldEnum = {
+  id: 'id',
+  organization_id: 'organization_id',
+  invoice_id: 'invoice_id',
+  step: 'step',
+  status: 'status',
+  claimed_at: 'claimed_at',
+  finished_at: 'finished_at'
+} as const
+
+export type Auto_reminder_claimsScalarFieldEnum = (typeof Auto_reminder_claimsScalarFieldEnum)[keyof typeof Auto_reminder_claimsScalarFieldEnum]
 
 
 export const Invoice_viewsScalarFieldEnum = {

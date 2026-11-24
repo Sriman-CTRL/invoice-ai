@@ -162,6 +162,7 @@ test("AUTO: later runs move on one step at a time, never a burst", opts, async (
   await run({ mailer: fakeMailer().mailer }); // day-1 step
   // Pretend that was sent 3 days ago so the 24 h cooldown has passed, then jump ahead to day 9 (step 7 is due).
   await sys(() => prisma.$executeRawUnsafe(`UPDATE collection_actions SET executed_at = now() - interval '3 days' WHERE organization_id = $1::uuid AND invoice_id = $2::uuid`, t.orgId, id));
+  await sys(() => prisma.$executeRawUnsafe(`UPDATE auto_reminder_claims SET claimed_at = now() - interval '3 days' WHERE organization_id = $1::uuid AND invoice_id = $2::uuid`, t.orgId, id));
   const later = fakeMailer();
   await run({ mailer: later.mailer, now: new Date(Date.now() + 7 * DAY) });
   const mine = later.sent.filter((m) => m.fromName === "Auto steps");
@@ -224,6 +225,63 @@ test("AUTO: respects the 24 hour cooldown and the daily cap", opts, async () => 
   } finally {
     if (previous === undefined) delete process.env.REMINDER_DAILY_CAP; else process.env.REMINDER_DAILY_CAP = previous;
   }
+});
+
+test("AUTO: two overlapping runs send the step exactly once (claim before send)", opts, async () => {
+  const t = await makeTenant("race", true);
+  const id = await overdueInvoice(t, 2);
+  const { sent, mailer } = fakeMailer();
+  const slow = async (input: any) => { await new Promise((r) => setTimeout(r, 150)); return mailer(input); };
+  const results = await Promise.all([run({ mailer: slow }), run({ mailer: slow }), run({ mailer: slow })]);
+  assert.equal(sent.filter((m) => m.fromName === "Auto race").length, 1, "one email in total");
+  assert.ok(results.some((r: any) => (r.skipped.already_claimed ?? 0) >= 1), "the others saw the claim");
+  const claims = await sys(() => prisma.auto_reminder_claims.findMany({ where: { organization_id: t.orgId, invoice_id: id } }));
+  assert.equal(claims.length, 1);
+  assert.equal(claims[0].status, "SENT");
+});
+
+test("AUTO: if the history record cannot be written after sending, the step is still never re-sent", opts, async () => {
+  const t = await makeTenant("recfail", true);
+  const id = await overdueInvoice(t, 2);
+  const pg = await import("pg");
+  const owner = new (pg.default?.Client ?? (pg as any).Client)({ connectionString: process.env.DATABASE_URL });
+  await owner.connect();
+  const fn = "trg_block_reminder_record_" + Math.floor(Math.random() * 1e9);
+  await owner.query(`CREATE FUNCTION ${fn}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.organization_id = '${t.orgId}'::uuid THEN RAISE EXCEPTION 'simulated write failure'; END IF; RETURN NEW; END $$`);
+  await owner.query(`CREATE TRIGGER ${fn} BEFORE INSERT ON collection_actions FOR EACH ROW EXECUTE FUNCTION ${fn}()`);
+  try {
+    const first = fakeMailer();
+    await run({ mailer: first.mailer });
+    assert.equal(first.sent.filter((m) => m.fromName === "Auto recfail").length, 1);
+    assert.equal((await reminderActions(t.orgId, id)).length, 0, "history write really failed");
+    const second = fakeMailer();
+    await run({ mailer: second.mailer });
+    assert.equal(second.sent.filter((m) => m.fromName === "Auto recfail").length, 0, "no resend");
+  } finally {
+    await owner.query(`DROP TRIGGER IF EXISTS ${fn} ON collection_actions`);
+    await owner.query(`DROP FUNCTION IF EXISTS ${fn}()`);
+    await owner.end();
+  }
+});
+
+test("AUTO: a failed send is retried on a later day, not straight away", opts, async () => {
+  const t = await makeTenant("retry", true);
+  const id = await overdueInvoice(t, 2);
+  const failing = async () => { throw new Error("provider down"); };
+  const r1 = await run({ mailer: failing });
+  assert.ok(r1.failed >= 1);
+  const claim = async () => (await sys(() => prisma.auto_reminder_claims.findMany({ where: { organization_id: t.orgId, invoice_id: id } })))[0];
+  assert.equal((await claim()).status, "FAILED");
+
+  const same = fakeMailer();
+  await run({ mailer: same.mailer });
+  assert.equal(same.sent.filter((m) => m.fromName === "Auto retry").length, 0, "not retried within hours");
+
+  await sys(() => prisma.$executeRawUnsafe(`UPDATE auto_reminder_claims SET finished_at = now() - interval '1 day', claimed_at = now() - interval '1 day' WHERE organization_id = $1::uuid`, t.orgId));
+  const next = fakeMailer();
+  await run({ mailer: next.mailer });
+  assert.equal(next.sent.filter((m) => m.fromName === "Auto retry").length, 1, "retried next day");
+  assert.equal((await claim()).status, "SENT");
 });
 
 test("AUTO: dry run sends and records nothing; run cap stops early", opts, async () => {

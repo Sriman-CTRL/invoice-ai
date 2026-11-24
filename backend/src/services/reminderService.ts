@@ -78,6 +78,14 @@ export async function deliveryGuard({ organizationId, invoice, settings, strict 
   if (delivered.some((a) => a.invoice_id === invoice.id)) {
     return { code: "COOLDOWN", status: 429, error: "A reminder for this invoice was already emailed in the last 24 hours." };
   }
+  // An automatic reminder that went out (or is being sent) counts even if its history record could not be written.
+  const claimed = await prisma.auto_reminder_claims.findFirst({
+    where: { organization_id: organizationId, invoice_id: invoice.id, status: { in: ["CLAIMED", "SENT"] }, claimed_at: { gte: since } },
+    select: { id: true },
+  });
+  if (claimed) {
+    return { code: "COOLDOWN", status: 429, error: "A reminder for this invoice was already emailed in the last 24 hours." };
+  }
   if (delivered.length >= reminderDailyCap()) {
     return { code: "DAILY_CAP", status: 429, error: `Daily limit of ${reminderDailyCap()} emailed reminders reached. Try again tomorrow.` };
   }
@@ -182,10 +190,37 @@ export interface AutoReminderResult {
   stopped_early: "time_budget" | "run_cap" | null;
 }
 
+/** A FAILED claim may be retried once it is at least this old ("next day"; the cron runs daily). */
+const FAILED_RETRY_AFTER_MS = 20 * 60 * 60 * 1000;
+
+/**
+ * Claims (invoice, step) before anything is sent. The unique key means exactly one run wins, even when two cron runs
+ * overlap. A claim left in CLAIMED (a run that died mid-send) is never retried automatically: at most once beats twice.
+ */
+async function claimStep(organizationId: string, invoiceId: string, step: number): Promise<boolean> {
+  const created = await prisma.auto_reminder_claims.createMany({
+    data: [{ organization_id: organizationId, invoice_id: invoiceId, step }],
+    skipDuplicates: true,
+  });
+  if (created.count === 1) return true;
+  const retried = await prisma.auto_reminder_claims.updateMany({
+    where: { organization_id: organizationId, invoice_id: invoiceId, step, status: "FAILED", finished_at: { lt: new Date(Date.now() - FAILED_RETRY_AFTER_MS) } },
+    data: { status: "CLAIMED", claimed_at: new Date(), finished_at: null },
+  });
+  return retried.count === 1;
+}
+
+async function finishClaim(organizationId: string, invoiceId: string, step: number, status: "SENT" | "FAILED"): Promise<void> {
+  await prisma.auto_reminder_claims
+    .updateMany({ where: { organization_id: organizationId, invoice_id: invoiceId, step }, data: { status, finished_at: new Date() } })
+    .catch((e) => console.error("could not update reminder claim:", (e as Error).message));
+}
+
 /**
  * Sends the scheduled reminders. Runs from the daily cron in system context, so every query below filters by
- * organization_id explicitly. Idempotent: a PAYMENT_REMINDER action with metadata {auto, step, delivered} is recorded
- * after each send and the same step is never sent twice.
+ * organization_id explicitly. Idempotent: each (invoice, step) is claimed in auto_reminder_claims BEFORE sending, so
+ * overlapping runs or a failed history write can never send the same step twice. After a send a PAYMENT_REMINDER action
+ * with metadata {auto, step, delivered} is recorded for the history and the daily cap.
  */
 export async function runAutoReminders(opts: AutoReminderOptions = {}): Promise<AutoReminderResult> {
   const started = Date.now();
@@ -224,7 +259,12 @@ export async function runAutoReminders(opts: AutoReminderOptions = {}): Promise<
       where: { organization_id: organizationId, invoice_id: { in: invoices.map((i) => i.id) }, action_type: "PAYMENT_REMINDER", status: "COMPLETED" },
       select: { invoice_id: true, metadata: true },
     });
+    const claims = await prisma.auto_reminder_claims.findMany({
+      where: { organization_id: organizationId, invoice_id: { in: invoices.map((i) => i.id) }, status: { in: ["CLAIMED", "SENT"] } },
+      select: { invoice_id: true, step: true },
+    });
     const sentSteps = new Map<string, number[]>();
+    for (const c of claims) sentSteps.set(c.invoice_id, [...(sentSteps.get(c.invoice_id) ?? []), c.step]);
     for (const a of earlier) {
       const m = (a.metadata ?? {}) as { auto?: boolean; step?: number; delivered?: boolean };
       if (m.auto === true && m.delivered === true && typeof m.step === "number" && a.invoice_id) {
@@ -259,15 +299,19 @@ export async function runAutoReminders(opts: AutoReminderOptions = {}): Promise<
         continue;
       }
 
+      if (!(await claimStep(organizationId, invoice.id, step))) { skip("already_claimed"); continue; }
+
       let providerId = "";
       try {
         providerId = (await sendReminderEmail({ organizationId, invoice, settings, replyTo: owner?.email, subject: mail.subject, text: mail.text, mailer })).id;
       } catch (e) {
         result.failed++;
         console.error("auto reminder email failed:", (e as Error).message);
+        await finishClaim(organizationId, invoice.id, step, "FAILED");
         continue;
       }
       result.sent++;
+      await finishClaim(organizationId, invoice.id, step, "SENT");
       try {
         let conversation = await prisma.conversations.findFirst({
           where: { organization_id: organizationId, customer_id: invoice.customer_id, invoice_id: invoice.id },
@@ -293,7 +337,7 @@ export async function runAutoReminders(opts: AutoReminderOptions = {}): Promise<
         });
         sentSteps.set(invoice.id, [...(sentSteps.get(invoice.id) ?? []), step]);
       } catch (e) {
-        // The email went out but could not be recorded; the 24 h guard still works from other records, so log loudly.
+        // The email went out but its history could not be written. The claim is already SENT, so it is never re-sent.
         console.error("auto reminder sent but not recorded:", (e as Error).message);
       }
     }

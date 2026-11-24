@@ -13,7 +13,7 @@
 require("dotenv").config();
 const { Client } = require("pg");
 
-const TENANT_TABLES = ["invoice_details", "invoice_views", "recurring_invoices", "payment_proof_images", "collection_actions", "conversations", "credit_notes", "customers", "invoices", "messages", "payments", "suppressions", "users"];
+const TENANT_TABLES = ["invoice_details", "invoice_views", "recurring_invoices", "payment_proof_images", "collection_actions", "conversations", "credit_notes", "customers", "invoices", "messages", "payments", "suppressions", "users", "auto_reminder_claims"];
 
 (async () => {
   const url = process.env.DATABASE_URL;
@@ -80,6 +80,19 @@ const TENANT_TABLES = ["invoice_details", "invoice_views", "recurring_invoices",
   )`);
   await run(`CREATE INDEX IF NOT EXISTS recurring_invoices_due ON recurring_invoices (active, next_run)`);
   await run(`CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_unique ON users (lower(email))`);
+  // One row per (invoice, automatic-reminder step): the unique key is what stops two overlapping cron runs from both
+  // sending the same email. CLAIMED = a run owns it, SENT = email went out, FAILED = sending failed (retried after a day).
+  await run(`CREATE TABLE IF NOT EXISTS auto_reminder_claims (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    invoice_id UUID NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+    step INTEGER NOT NULL,
+    status VARCHAR(12) NOT NULL DEFAULT 'CLAIMED',
+    claimed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    finished_at TIMESTAMPTZ,
+    CONSTRAINT auto_reminder_claims_invoice_step_key UNIQUE (invoice_id, step)
+  )`);
+  await run(`CREATE INDEX IF NOT EXISTS auto_reminder_claims_org ON auto_reminder_claims (organization_id)`);
   // Google sign-in is matched on Google's stable account id (sub), never on email alone.
   await run(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_sub VARCHAR(255)`);
   await run(`CREATE UNIQUE INDEX IF NOT EXISTS users_google_sub_key ON users (google_sub)`);
