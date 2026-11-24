@@ -301,6 +301,33 @@ test("CREDIT NOTE (full): the invoice becomes PAID but is shown as settled by cr
   assert.equal((await submitProof(id, { utr: "CREDITFULL0001" })).status, 409, "nothing left to pay");
 });
 
+test("VERIFY-PROOF: an action whose invoice is missing answers 404 and is not reported to Sentry", opts, async () => {
+  const id = await makeInvoice(a, 500);
+  const proof = await submitProof(id, { utr: "MISSING0000001", amount: 500 });
+  assert.equal(proof.status, 200);
+  const actionId = proof.json.action_id as string;
+  // Point org A's action at an invoice that belongs to org B, which A cannot see: the same as "the invoice is gone" for A.
+  const foreign = await makeInvoice(b, 500);
+  const prismaModule: any = await import("../lib/prisma.js");
+  const prisma = prismaModule.default?.default ?? prismaModule.default;
+  await prismaModule.runAsSystem(async () => await prisma.$executeRawUnsafe(`UPDATE collection_actions SET invoice_id = $2::uuid WHERE id = $1::uuid`, actionId, foreign));
+
+  const { reporter } = (await import("../lib/monitoring.js")) as any;
+  const orig = reporter.capture;
+  let reported = 0;
+  reporter.capture = () => { reported += 1; };
+  try {
+    const r = await call("POST", `/api/collection-actions/${actionId}/verify-proof`, {}, a.token);
+    assert.equal(r.status, 404, JSON.stringify(r.json));
+    assert.deepEqual(r.json, { error: "Invoice not found" });
+    assert.equal(reported, 0, "an expected not-found must not go to Sentry");
+  } finally {
+    reporter.capture = orig;
+  }
+  assert.equal(await invoiceStatus(a, id), "OPEN");
+  assert.equal(await invoiceStatus(b, foreign), "OPEN", "the other business's invoice is untouched");
+});
+
 test("CREDIT NOTE: the client portal lists the reduced balance", opts, async () => {
   const id = await makeInvoice(a, 900);
   assert.equal((await credit(a, id, 150)).status, 201);

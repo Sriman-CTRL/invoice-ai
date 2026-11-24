@@ -501,6 +501,11 @@ router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<vo
       ...result,
     });
   } catch (error) {
+    // The action points at an invoice this business cannot see or that is gone: an expected not-found, not a server fault.
+    if (error instanceof Error && error.message === "INVOICE_NOT_FOUND") {
+      res.status(404).json({ error: "Invoice not found" });
+      return;
+    }
     console.error("Error verifying payment proof:", error);
     return serverError(res, error, "Failed to verify payment proof");
   }
