@@ -5,6 +5,7 @@ import { getOrgSettings } from "../lib/orgSettings";
 import { getDetails } from "../lib/invoiceDetails";
 import { turnstileGuard } from "../lib/turnstile";
 import { ensureExtraSchema, parseScreenshot } from "../lib/extraSchema";
+import { serverError } from "../lib/monitoring";
 
 const router = Router();
 
@@ -144,7 +145,7 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
         });
     } catch (error) {
         console.error("Public invoice lookup error:", error);
-        res.status(500).json({ error: "Failed to load invoice." });
+        return serverError(res, error, "Failed to load invoice.");
     }
 });
 
@@ -308,7 +309,7 @@ router.post("/:invoice_number/submit-proof", turnstileGuard, async (req: Request
         });
     } catch (error) {
         console.error("Submit payment proof error:", error);
-        res.status(500).json({ error: "Failed to submit payment confirmation." });
+        return serverError(res, error, "Failed to submit payment confirmation.");
     }
 });
 

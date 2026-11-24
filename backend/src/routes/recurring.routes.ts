@@ -1,4 +1,4 @@
-import { captureJobFailure } from "../lib/monitoring";
+import { captureJobFailure, serverError } from "../lib/monitoring";
 import { Router } from "express";
 import crypto from "crypto";
 import prisma from "../lib/prisma";
@@ -57,7 +57,7 @@ recurringRouter.post("/", async (req, res) => {
     res.status(201).json({ id: rows[0].id });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: "Could not save the repeating invoice." });
+    return serverError(res, e, "Could not save the repeating invoice.");
   }
 });
 

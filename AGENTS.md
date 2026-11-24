@@ -96,8 +96,8 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
 - **Never send personal data to Sentry; all events go through the scrubbers.** `src/lib/sentryScrub.ts` (browser) and
   `backend/src/lib/sentryScrub.ts` (server) are identical copies wired into `beforeSend` and `beforeBreadcrumb`; change both and
   their tests. Sentry 11 has no `sendDefaultPii`; privacy is set with `dataCollection` in `src/sentry.tsx` and `backend/src/instrument.ts`.
-  `instrument.ts` must stay the first import of `server.ts`. Routes that catch an error themselves and answer 500 never reach Sentry;
-  only unhandled errors and cron failures (`captureJobFailure`) do. The Sentry ingest origin from the DSN is the only addition to
+  `instrument.ts` must stay the first import of `server.ts`. A route that catches its own error and answers 500 must end with
+  `return serverError(res, err, "<public message>")` (`lib/monitoring.ts`) so it is reported; do not use it for 4xx. Cron failures use `captureJobFailure`. The Sentry ingest origin from the DSN is the only addition to
   `connect-src` in `vercel.json`.
 - **Shared rate limits** (`shared: true` in middleware/rateLimit.ts) use the `rate_limits` table, created by enable-rls.cjs.
 

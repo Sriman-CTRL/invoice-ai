@@ -2,6 +2,7 @@ import { Router } from "express";
 import prisma from "../lib/prisma";
 import { getCustomerDetails } from "../services/customerService";
 import { portalToken } from "./client-portal.routes";
+import { serverError } from "../lib/monitoring";
 
 const router = Router();
 
@@ -39,7 +40,7 @@ router.get("/", async (req, res) => {
     res.json(customers);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to fetch customers" });
+    return serverError(res, error, "Failed to fetch customers");
   }
 });
 
@@ -78,7 +79,7 @@ router.get("/:id", async (req, res) => {
     res.json(details);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to fetch customer" });
+    return serverError(res, error, "Failed to fetch customer");
   }
 });
 
@@ -129,7 +130,7 @@ router.post("/", async (req, res) => {
     res.status(201).json(customer);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to create customer" });
+    return serverError(res, error, "Failed to create customer");
   }
 });
 
@@ -206,7 +207,7 @@ router.post("/:id/erasure", async (req, res) => {
     });
   } catch (error) {
     console.error("Customer erasure error:", error);
-    res.status(500).json({ error: "Failed to process customer erasure request" });
+    return serverError(res, error, "Failed to process customer erasure request");
   }
 });
 
@@ -249,7 +250,7 @@ router.get("/:id/export", async (req, res) => {
     });
   } catch (error) {
     console.error("Customer export error:", error);
-    res.status(500).json({ error: "Failed to export customer data" });
+    return serverError(res, error, "Failed to export customer data");
   }
 });
 

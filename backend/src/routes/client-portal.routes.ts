@@ -3,6 +3,7 @@ import crypto from "crypto";
 import prisma from "../lib/prisma";
 import { JWT_SECRET } from "../lib/config";
 import { getOrgSettings } from "../lib/orgSettings";
+import { serverError } from "../lib/monitoring";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -60,7 +61,7 @@ router.get("/:customerId/:token", async (req: Request, res: Response): Promise<v
     });
   } catch (e) {
     console.error("client portal error", e);
-    res.status(500).json({ error: "Could not load this page." });
+    return serverError(res, e, "Could not load this page.");
   }
 });
 

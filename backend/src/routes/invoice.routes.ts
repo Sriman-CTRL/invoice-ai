@@ -7,6 +7,7 @@ import { emailEnabled } from "../lib/mailer";
 import { deliveryGuard, findSuppression, sendReminderEmail } from "../services/reminderService";
 import { computeTotals, parseDetails, saveDetails } from "../lib/invoiceDetails";
 import { getOrgSettings } from "../lib/orgSettings";
+import { serverError } from "../lib/monitoring";
 
 
 const router = Router();
@@ -164,7 +165,7 @@ router.post("/bulk-import", async (req, res) => {
         });
     } catch (error) {
         console.error("Bulk import error:", error);
-        return res.status(500).json({ error: "Failed to process bulk import" });
+        return serverError(res, error, "Failed to process bulk import");
     }
 });
 
@@ -248,7 +249,7 @@ router.post("/", async (req, res) => {
         res.status(201).json(invoice);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: "Failed to create invoice" });
+        return serverError(res, error, "Failed to create invoice");
     }
 });
 
@@ -279,7 +280,7 @@ router.get("/", async (req, res) => {
         res.json(invoices);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: "Failed to fetch invoices" });
+        return serverError(res, error, "Failed to fetch invoices");
     }
 });
 
@@ -315,9 +316,7 @@ router.get("/:id", async (req, res) => {
     } catch (error) {
         console.error(error);
 
-        res.status(500).json({
-            error: "Failed to fetch invoice",
-        });
+        return serverError(res, error, "Failed to fetch invoice");
     }
 });
 
@@ -356,7 +355,7 @@ router.get("/meta/activity", async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: "Failed to load activity" });
+        return serverError(res, error, "Failed to load activity");
     }
 });
 
@@ -539,7 +538,7 @@ A friendly reminder that invoice ${invoice.invoice_number} is outstanding.`,
         });
     } catch (error) {
         console.error("Error sending reminder:", error);
-        return res.status(500).json({ error: "Failed to send reminder" });
+        return serverError(res, error, "Failed to send reminder");
     }
 });
 

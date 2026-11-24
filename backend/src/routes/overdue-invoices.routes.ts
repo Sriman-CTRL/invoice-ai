@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { processOverdueInvoices } from "../services/overdueInvoiceEngine";
+import { serverError } from "../lib/monitoring";
 
 const router = Router();
 
@@ -21,7 +22,7 @@ router.post("/process", async (req: Request, res: Response): Promise<void> => {
         res.json(result);
     } catch (error) {
         console.error("Error processing overdue invoices:", error);
-        res.status(500).json({ error: "Internal server error" });
+        return serverError(res, error, "Internal server error");
     }
 });
 

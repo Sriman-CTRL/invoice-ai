@@ -1,6 +1,7 @@
 import { Request, Response, Router } from "express";
 import prisma from "../lib/prisma";
 import { ensureExtraSchema } from "../lib/extraSchema";
+import { serverError } from "../lib/monitoring";
 
 const router = Router();
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -54,7 +55,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     console.error("leads error:", error);
-    res.status(500).json({ error: "Something went wrong. Please try again." });
+    return serverError(res, error, "Something went wrong. Please try again.");
   }
 });
 

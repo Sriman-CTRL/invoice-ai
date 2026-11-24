@@ -2,6 +2,7 @@ import { emailEnabled } from "../lib/mailer";
 import { Router } from "express";
 import prisma from "../lib/prisma";
 import { ensureOrgSettingsSchema, getOrgSettings, updateOrgSettings, validateSettingsPatch } from "../lib/orgSettings";
+import { serverError } from "../lib/monitoring";
 
 const router = Router();
 
@@ -30,7 +31,7 @@ router.get("/me", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to fetch organization" });
+    return serverError(res, error, "Failed to fetch organization");
   }
 });
 
@@ -73,7 +74,7 @@ router.patch("/me", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to update organization" });
+    return serverError(res, error, "Failed to update organization");
   }
 });
 
@@ -83,7 +84,7 @@ router.get("/settings", async (req, res) => {
     res.json(await getOrgSettings(req.user!.organization_id));
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to load settings" });
+    return serverError(res, error, "Failed to load settings");
   }
 });
 
@@ -103,7 +104,7 @@ router.put("/settings", async (req, res) => {
     res.json(await updateOrgSettings(req.user!.organization_id, checked.data));
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to save settings" });
+    return serverError(res, error, "Failed to save settings");
   }
 });
 
@@ -122,7 +123,7 @@ router.post("/upgrade-request", async (req, res) => {
     res.status(201).json({ success: true, message: "Payment proof received. Your plan activates once verified, usually within a few hours." });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to submit upgrade request" });
+    return serverError(res, error, "Failed to submit upgrade request");
   }
 });
 

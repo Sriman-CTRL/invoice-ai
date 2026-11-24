@@ -1,6 +1,7 @@
 import { Router } from "express";
 import prisma from "../lib/prisma";
 import { getConversationDetails } from "../services/conversationService";
+import { serverError } from "../lib/monitoring";
 
 const router = Router();
 
@@ -93,7 +94,7 @@ router.post("/resolve", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Failed to resolve conversation" });
+    return serverError(res, error, "Failed to resolve conversation");
   }
 });
 
@@ -131,7 +132,7 @@ router.post("/", async (req, res) => {
     return res.status(201).json(conversation);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Failed to create conversation" });
+    return serverError(res, error, "Failed to create conversation");
   }
 });
 
@@ -162,7 +163,7 @@ router.get("/", async (req, res) => {
     return res.json(conversations);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Failed to fetch conversations" });
+    return serverError(res, error, "Failed to fetch conversations");
   }
 });
 
@@ -191,7 +192,7 @@ router.get("/:id", async (req, res) => {
     return res.json(details);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Failed to fetch conversation" });
+    return serverError(res, error, "Failed to fetch conversation");
   }
 });
 

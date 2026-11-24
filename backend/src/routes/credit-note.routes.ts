@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { auditLogger } from "../lib/auditLogger";
+import { serverError } from "../lib/monitoring";
 
 const router = Router();
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -137,7 +138,7 @@ router.post("/", async (req: Request, res: Response) => {
       }
     }
     console.error("Credit note issue error:", error);
-    res.status(500).json({ error: "Failed to issue credit note" });
+    return serverError(res, error, "Failed to issue credit note");
   }
 });
 
@@ -170,7 +171,7 @@ router.get("/", async (req: Request, res: Response) => {
     res.json(creditNotes);
   } catch (error) {
     console.error("Fetch credit notes error:", error);
-    res.status(500).json({ error: "Failed to fetch credit notes" });
+    return serverError(res, error, "Failed to fetch credit notes");
   }
 });
 
