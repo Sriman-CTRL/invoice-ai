@@ -52,7 +52,7 @@
     "esbuild": "^0.28.2",
     "postcss": "^8.5.33",
     "prisma": "^7.10.1",
-    "tailwindcss": "^3.4.17",
+    "tailwindcss": "^4.3.5",
     "typescript": "^7.0.2"
   }
 }
