@@ -103,11 +103,10 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
   preview would put an env-less build live. Release steps, from a clean checkout of `main` (never your working folder, which
   has a local `.env`): `npm ci` (root and `backend/`), `npx prisma generate` in `backend/`, `npm run build`, then
   `vercel deploy --prod --skip-domain` (builds with the production env, does not touch paivo.in), `vercel inspect <url>`
-  must list `λ api/index` (about 2.5-2.7 MB), check `vercel curl /health --deployment <url>` (200, database connected),
+  must list `λ api/index` (about 4.5 MB since Sentry was added; 2.5-2.7 MB means a pre-Sentry or incomplete build), check `vercel curl /health --deployment <url>` (200, database connected),
   a random login (401) and a random `/api/public/invoices/<uuid>` (JSON 404), then `vercel promote <url>`. Rollback:
   `vercel rollback <previous production url> --yes`. In Git Bash set `MSYS_NO_PATHCONV=1` before `vercel curl /path`.
-- **Releases are run by the owner with `.
-elease.ps1`** (add `-Migrate` when `enable-rls.cjs` changed; `-DryRun` prints every vercel and
+- **Releases are run by the owner with `.\release.ps1`** (add `-Migrate` when `enable-rls.cjs` changed; `-DryRun` prints every vercel and
   database command instead of running it). It builds `origin/main` in a temp worktree, deploys with `--skip-domain`, probes the
   deployment, asks before promoting, checks paivo.in and rolls back on failure; logs go to `release-logs/` (git-ignored).
   **Claude Code never runs `vercel` or touches the production database.** The manual steps above are what the script automates.
