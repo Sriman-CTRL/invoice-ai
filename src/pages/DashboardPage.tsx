@@ -233,6 +233,29 @@ export function DashboardPage() {
 
       <div className="mt-7"><CashFlowForecast /></div>
 
+      {(data.other_currencies?.length ?? 0) > 0 && (
+        <section className="panel mt-5 p-5">
+          <h2 className="text-sm font-bold text-slate-900">Other currencies</h2>
+          <p className="mb-3 text-xs text-slate-500">The figures above are INR only. Each other currency is totalled on its own and never added to INR.</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead><tr className="text-left text-xs uppercase tracking-wider text-slate-400"><th className="py-2 pr-4">Currency</th><th className="py-2 pr-4 text-right">Invoiced</th><th className="py-2 pr-4 text-right">Collected</th><th className="py-2 pr-4 text-right">Outstanding</th><th className="py-2 text-right">Overdue</th></tr></thead>
+              <tbody className="divide-y divide-slate-100">
+                {data.other_currencies!.map((c) => (
+                  <tr key={c.currency}>
+                    <td className="py-2 pr-4 font-semibold text-slate-800">{c.currency}</td>
+                    <td className="py-2 pr-4 text-right font-mono">{money(c.total_invoiced, c.currency)}</td>
+                    <td className="py-2 pr-4 text-right font-mono">{money(c.total_paid, c.currency)}</td>
+                    <td className="py-2 pr-4 text-right font-mono">{money(c.total_outstanding, c.currency)}</td>
+                    <td className="py-2 text-right font-mono">{money(c.overdue_outstanding, c.currency)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
       {/* Middle Section: Distribution + Automation Pipeline */}
       <div className="mt-7 grid gap-6 xl:grid-cols-[1.3fr_0.7fr] xl:items-start">
         {/* Receivables Aging & Status */}

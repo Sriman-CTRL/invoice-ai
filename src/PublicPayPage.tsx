@@ -603,6 +603,17 @@ export function PublicPayPage() {
                     {T.bankIntro}
                   </p>
 
+                  {data.payment?.payment_link && (
+                    <a href={data.payment.payment_link} target="_blank" rel="noopener noreferrer" className="block rounded-xl border border-brand-400/40 bg-brand-500/10 p-3 text-center text-xs font-bold text-brand-200 hover:bg-brand-500/20">
+                      Pay another way (opens the seller's own payment link)
+                    </a>
+                  )}
+                  {data.export && (data.export.lut_number || data.export.declaration) && (
+                    <div className="rounded-xl border border-white/5 bg-white/5 p-3 text-[11px] leading-relaxed text-slate-300">
+                      {data.export.lut_number && <p><span className="font-bold text-slate-400">LUT number: </span>{data.export.lut_number}</p>}
+                      {data.export.declaration && <p className="mt-1">{data.export.declaration}</p>}
+                    </div>
+                  )}
                   {!data.payment?.bank && <NotConfigured what={T.notSetUp(T.whatBank)} hint={T.notSetUpHint} />}
                   {(data.payment?.bank
                     ? [
@@ -610,6 +621,7 @@ export function PublicPayPage() {
                         { label: T.accountNumber, value: data.payment.bank.account_number },
                         { label: T.ifsc, value: data.payment.bank.ifsc },
                         ...(data.payment.bank.bank_name ? [{ label: T.bankName, value: data.payment.bank.bank_name }] : []),
+                        ...(data.payment.bank.swift_code ? [{ label: "SWIFT / BIC", value: data.payment.bank.swift_code }] : []),
                       ]
                     : []
                   ).map((field) => (

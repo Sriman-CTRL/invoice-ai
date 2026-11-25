@@ -81,6 +81,9 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
   snapshot**; the seller pulls current details into one unpaid invoice with `POST /api/invoices/:id/update-payment-details`. The client portal
   header is account-level (live) and its rows carry only number/amount/status. New seller or client fields must be added to the snapshot, to the
   backfill in `enable-rls.cjs` and to the PDF. There is no seller address field yet, so none is captured.
+- **Export invoices:** supported currencies live in `SUPPORTED_CURRENCIES` (`invoice.routes.ts`). Org columns `swift_code`, `payment_link`, `lut_number`, `export_declaration`
+  (added in `enable-rls.cjs`) show only on non-INR invoices. Paivo ships **no** export-declaration wording (could not be verified from an official source; see
+  `docs/legal/EXPORT-INVOICES.md`). Analytics and the dashboard summary never add currencies together: INR is the headline, other currencies are listed separately (`other_currencies`).
 - **Deliverable link is stored in `invoices.external_invoice_id` with a `vault:` prefix.** Only plain http(s) URLs are
   shown (`safeDeliverableUrl` in `public-invoice.routes.ts`).
 - **CORS**: allowed = `CORS_ORIGIN` env + hard-coded `paivo.in`/`www.paivo.in` + this project's Vercel preview URLs

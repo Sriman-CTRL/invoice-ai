@@ -12,6 +12,11 @@ export interface OrgSettings {
   bank_account_number: string | null;
   bank_ifsc: string | null;
   bank_name: string | null;
+  /** For clients outside India: the bank's SWIFT/BIC code, another way to pay (PayPal, Wise...), the LUT number and the seller's own export wording. */
+  swift_code: string | null;
+  payment_link: string | null;
+  lut_number: string | null;
+  export_declaration: string | null;
   gstin: string | null;
   brand_color: string | null;
   logo_data: string | null;
@@ -20,7 +25,7 @@ export interface OrgSettings {
   auto_reminders: boolean;
 }
 
-export const SETTING_FIELDS = ["upi_id", "payee_name", "bank_account_name", "bank_account_number", "bank_ifsc", "bank_name", "gstin", "brand_color", "logo_data"] as const;
+export const SETTING_FIELDS = ["upi_id", "payee_name", "bank_account_name", "bank_account_number", "bank_ifsc", "bank_name", "gstin", "brand_color", "logo_data", "swift_code", "payment_link", "lut_number", "export_declaration"] as const;
 type Field = (typeof SETTING_FIELDS)[number];
 
 let ready: Promise<void> | null = null;
@@ -29,6 +34,9 @@ export function ensureOrgSettingsSchema(): Promise<void> {
     ready = (async () => {
       for (const col of ["upi_id", "payee_name", "bank_account_name", "bank_account_number", "bank_ifsc", "bank_name", "gstin"]) {
         await prisma.$executeRawUnsafe(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS ${col} VARCHAR(255)`);
+      }
+      for (const [col, type] of [["swift_code", "VARCHAR(11)"], ["payment_link", "VARCHAR(500)"], ["lut_number", "VARCHAR(50)"], ["export_declaration", "VARCHAR(600)"]]) {
+        await prisma.$executeRawUnsafe(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS ${col} ${type}`);
       }
       await prisma.$executeRawUnsafe(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS plan VARCHAR(20) NOT NULL DEFAULT 'FREE'`);
       await prisma.$executeRawUnsafe(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS auto_reminders BOOLEAN NOT NULL DEFAULT false`);
@@ -51,12 +59,12 @@ export function ensureOrgSettingsSchema(): Promise<void> {
 
 const EMPTY: OrgSettings = {
   upi_id: null, payee_name: null, bank_account_name: null, bank_account_number: null,
-  bank_ifsc: null, bank_name: null, gstin: null, brand_color: null, logo_data: null, plan: "FREE", auto_reminders: false,
+  bank_ifsc: null, bank_name: null, swift_code: null, payment_link: null, lut_number: null, export_declaration: null, gstin: null, brand_color: null, logo_data: null, plan: "FREE", auto_reminders: false,
 };
 
 export async function getOrgSettings(organizationId: string): Promise<OrgSettings> {
   await ensureOrgSettingsSchema();
-  const base = "upi_id, payee_name, bank_account_name, bank_account_number, bank_ifsc, bank_name, gstin, brand_color, logo_data, plan";
+  const base = "upi_id, payee_name, bank_account_name, bank_account_number, bank_ifsc, bank_name, swift_code, payment_link, lut_number, export_declaration, gstin, brand_color, logo_data, plan";
   let rows: OrgSettings[];
   try {
     rows = await prisma.$queryRawUnsafe<OrgSettings[]>(`SELECT ${base}, auto_reminders FROM organizations WHERE id = $1::uuid`, organizationId);
@@ -100,7 +108,7 @@ export function validateSettingsPatch(body: Record<string, unknown>, existing: P
     if (raw === null || raw === "") { data[field] = null; continue; }
     if (typeof raw !== "string") return { error: `${field} must be text` };
     if (field === "logo_data") { const bad = logoProblem(raw); if (bad) return { error: bad }; data[field] = raw; continue; }
-    let v = raw.trim().slice(0, 255);
+    let v = raw.trim().slice(0, field === "export_declaration" ? 600 : 255);
     if (field === "brand_color") { v = v.toLowerCase(); if (!/^#[0-9a-f]{6}$/.test(v)) return { error: "Pick a valid colour." }; }
     if (field === "upi_id") { v = v.toLowerCase(); if (!UPI_RE.test(v)) return { error: "Enter a valid UPI ID, e.g. yourname@okhdfcbank" }; }
     if (field === "bank_ifsc") { v = v.toUpperCase(); const bad = ifscProblem(v); if (bad) return { error: bad }; }
@@ -111,6 +119,9 @@ export function validateSettingsPatch(body: Record<string, unknown>, existing: P
       const bad = unchanged ? (/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(v) ? null : gstinProblem(v)) : gstinProblem(v);
       if (bad) return { error: bad };
     }
+    if (field === "swift_code") { v = v.toUpperCase().replace(/\s+/g, ""); if (!/^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(v)) return { error: "SWIFT/BIC code is 8 or 11 letters and digits, e.g. HDFCINBB" }; }
+    if (field === "payment_link") { if (v.length > 500 || !/^https:\/\/[^\s<>"']+$/.test(v)) return { error: "The payment link must be a normal https:// web address." }; }
+    if (field === "lut_number") { if (!/^[A-Za-z0-9 \/.-]{3,50}$/.test(v)) return { error: "LUT number can use letters, digits, spaces, / . and -." }; }
     if (field === "bank_account_number") { v = v.replace(/\s+/g, ""); if (!ACCT_RE.test(v)) return { error: "Account number must be 6-20 digits" }; }
     data[field] = v;
   }

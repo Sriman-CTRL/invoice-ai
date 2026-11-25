@@ -76,6 +76,7 @@ Last updated: 25 Nov 2026.
 | 24 Nov | `feat/logo` (PR open, not deployed): Paivo logo kit in `brand/` (open-loop P, closed "paid" state) and wired into the site: favicon set + manifest, new link-preview image, header/footer/sidebar/auth/legal/portal logos, "Powered by Paivo" on the pay page and invoice PDF, one-time open→closed animation next to the paid state. |
 | 25 Nov | `fix/tds-settlement` (PR open, NOT merged: needs a production `enable-rls.cjs` run first): TDS the client deducts now settles an invoice. New `payments.tds_amount` / `tds_section`; settled = cash + TDS + credit notes everywhere (status, pay page, UPI amount, PDF, portal, credit notes, reminders, files unlock). The client's TDS claim on the proof form is only a claim until the seller confirms it. "TDS to claim" per financial year on the analytics page. |
 | 25 Nov | `feat/invoice-snapshots` (PR open, NOT merged, needs `-Migrate`): issued invoices keep the seller, client and line items they were issued with (`invoice_snapshots`, backfilled in `enable-rls.cjs`). Pay page, PDF and GST report read the snapshot; drafts stay live; UPI/bank follow the snapshot unless the seller clicks "Update payment details on this invoice". |
+| 25 Nov | `feat/export-invoices` (PR open, NOT merged, needs `-Migrate`): invoices in USD/EUR/GBP/AUD/CAD/SGD/AED with SWIFT, an optional other payment link, LUT number and a seller-written export declaration (no default wording: could not be verified officially); analytics totalled per currency. |
 
 ## 3. Key decisions (and why)
 

@@ -194,6 +194,28 @@ export function AnalyticsPage() {
         </section>
       )}
 
+      {(r.data.other_currencies?.length ?? 0) > 0 && (
+        <section className="panel mt-6 p-6">
+          <h2 className="text-base font-bold text-slate-900">Other currencies</h2>
+          <p className="mb-4 text-xs text-slate-500">Each currency is totalled on its own. The figures above are INR only; amounts in different currencies are never added together.</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead><tr className="text-left text-xs uppercase tracking-wider text-slate-400"><th className="py-2 pr-4">Currency</th><th className="py-2 pr-4 text-right">Invoiced</th><th className="py-2 pr-4 text-right">Received</th><th className="py-2 text-right">Still to collect</th></tr></thead>
+              <tbody className="divide-y divide-slate-100">
+                {r.data.other_currencies!.map((c) => (
+                  <tr key={c.currency}>
+                    <td className="py-2 pr-4 font-semibold text-slate-800">{c.currency} <span className="text-xs font-normal text-slate-400">{c.invoices} invoice{c.invoices === 1 ? "" : "s"}</span></td>
+                    <td className="py-2 pr-4 text-right font-mono">{money(c.invoiced, c.currency)}</td>
+                    <td className="py-2 pr-4 text-right font-mono">{money(c.received, c.currency)}</td>
+                    <td className="py-2 text-right font-mono">{money(c.outstanding, c.currency)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
       <div className="mt-6"><GstExport /></div>
     </>
   );

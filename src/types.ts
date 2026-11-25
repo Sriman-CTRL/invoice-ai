@@ -5,7 +5,7 @@ export type Payment = { id: string; invoice_id: string; amount: number | string;
 export type Conversation = { id: string; customer_id: string; invoice_id: string | null; channel: string; status: string; created_at: string; updated_at: string };
 export type Message = { id: string; direction: "INBOUND" | "OUTBOUND"; channel: string; sender: string | null; recipient: string | null; subject: string | null; body: string | null; ai_intent: string | null; ai_confidence: number | string | null; created_at: string };
 export type CollectionAction = { id: string; customer_id: string | null; invoice_id: string | null; conversation_id: string | null; action_type: string; status: string; scheduled_at: string | null; executed_at: string | null; created_at: string; metadata?: Record<string, unknown>; customers?: Customer; invoices?: Invoice };
-export type Dashboard = { invoice_summary: Record<string, number>; financial_summary: { total_invoiced: number; total_paid: number; total_outstanding: number; overdue_outstanding: number; currency: string }; customer_summary: { total_customers: number; customers_with_outstanding: number; customers_with_overdue: number }; collection_summary: Record<string, number>; recent_activity: { invoices: Invoice[]; payments: Payment[]; collection_actions: CollectionAction[] } };
+export type Dashboard = { invoice_summary: Record<string, number>; financial_summary: { total_invoiced: number; total_paid: number; total_outstanding: number; overdue_outstanding: number; currency: string }; other_currencies?: Array<{ currency: string; total_invoiced: number; total_paid: number; total_outstanding: number; overdue_outstanding: number }>; customer_summary: { total_customers: number; customers_with_outstanding: number; customers_with_overdue: number }; collection_summary: Record<string, number>; recent_activity: { invoices: Invoice[]; payments: Payment[]; collection_actions: CollectionAction[] } };
 export type InvoiceDetail = { invoice: Invoice; customer: Customer; financial_summary: { invoice_amount: number; paid_amount: number; tds_amount?: number; credited_amount?: number; settled_by_credit?: boolean; outstanding_amount: number; currency: string }; payments: Payment[]; conversation: Conversation | null; conversations: Conversation[]; collection_actions: CollectionAction[]; details: InvoiceExtras | null; snapshot?: { seller: Partial<OrgSettings> & { name?: string | null }; client: { name: string; company_name: string | null; email: string; phone: string | null } } | null; payment_details_changed?: boolean; views: { count: number; last_viewed_at: string | null } };
 export type InvoiceLine = { description: string; quantity: number; rate: number; amount: number };
 export type InvoiceTotals = { subtotal: number; discount: number; taxable: number; tax: number; cgst: number; sgst: number; igst: number; total: number };
@@ -35,8 +35,11 @@ export type PublicInvoiceDetail = {
   payment: {
     upi_id: string | null;
     payee_name: string;
-    bank: { account_name: string; account_number: string; ifsc: string; bank_name: string | null } | null;
+    bank: { account_name: string; account_number: string; ifsc: string; bank_name: string | null; swift_code?: string | null } | null;
+    payment_link?: string | null;
   };
+  /** Only on non-INR invoices, and only when the seller entered them. */
+  export?: { lut_number: string | null; declaration: string | null } | null;
   has_deliverable: boolean;
   deliverable_url: string | null;
   deliverable_locked: boolean;
@@ -51,6 +54,10 @@ export type OrgSettings = {
   bank_account_number: string | null;
   bank_ifsc: string | null;
   bank_name: string | null;
+  swift_code?: string | null;
+  payment_link?: string | null;
+  lut_number?: string | null;
+  export_declaration?: string | null;
   gstin: string | null;
   brand_color?: string | null;
   logo_data?: string | null;

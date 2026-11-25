@@ -14,12 +14,13 @@ import { useToast } from "../toast";
 import type { OrgSettings } from "../types";
 import { useResource } from "./shared";
 
-type Form = Record<"upi_id" | "payee_name" | "bank_account_name" | "bank_account_number" | "bank_ifsc" | "bank_name" | "gstin", string>;
-const EMPTY: Form = { upi_id: "", payee_name: "", bank_account_name: "", bank_account_number: "", bank_ifsc: "", bank_name: "", gstin: "" };
+type Form = Record<"upi_id" | "payee_name" | "bank_account_name" | "bank_account_number" | "bank_ifsc" | "bank_name" | "gstin" | "swift_code" | "payment_link" | "lut_number" | "export_declaration", string>;
+const EMPTY: Form = { upi_id: "", payee_name: "", bank_account_name: "", bank_account_number: "", bank_ifsc: "", bank_name: "", gstin: "", swift_code: "", payment_link: "", lut_number: "", export_declaration: "" };
 
 const toForm = (s: OrgSettings): Form => ({
   upi_id: s.upi_id ?? "", payee_name: s.payee_name ?? "", bank_account_name: s.bank_account_name ?? "",
   bank_account_number: s.bank_account_number ?? "", bank_ifsc: s.bank_ifsc ?? "", bank_name: s.bank_name ?? "", gstin: s.gstin ?? "",
+  swift_code: s.swift_code ?? "", payment_link: s.payment_link ?? "", lut_number: s.lut_number ?? "", export_declaration: s.export_declaration ?? "",
 });
 
 function Field({ label, hint, value, onChange, placeholder, mono, problem }: { label: string; hint?: string; value: string; onChange: (v: string) => void; placeholder?: string; mono?: boolean; problem?: string | null }) {
@@ -319,6 +320,21 @@ export function SettingsPage() {
               <Field label="Account number" value={form.bank_account_number} onChange={set("bank_account_number")} mono />
               <Field label="IFSC" value={form.bank_ifsc} onChange={set("bank_ifsc")} placeholder="HDFC0001234" mono problem={form.bank_ifsc.trim() ? ifscProblem(form.bank_ifsc.trim().toUpperCase()) : null} />
               <Field label="Bank name" value={form.bank_name} onChange={set("bank_name")} placeholder="HDFC Bank" />
+            </div>
+          </section>
+
+          <section>
+            <h2 className="mb-1 text-base font-bold text-slate-900">Clients outside India (optional)</h2>
+            <p className="mb-4 text-xs text-slate-500">Shown only on invoices in USD, EUR, GBP, AUD, CAD, SGD or AED. There is no UPI QR on those invoices.</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="SWIFT / BIC code" value={form.swift_code} onChange={set("swift_code")} placeholder="HDFCINBB" mono hint="Your bank's SWIFT code, shown with your bank details." />
+              <Field label="Other payment link" value={form.payment_link} onChange={set("payment_link")} placeholder="https://..." hint="For example your PayPal or Wise payment link. Must start with https://." />
+              <Field label="LUT number" value={form.lut_number} onChange={set("lut_number")} placeholder="Your Letter of Undertaking number" mono />
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-slate-700">Export declaration on the invoice</label>
+                <textarea value={form.export_declaration} maxLength={600} rows={3} onChange={(e) => set("export_declaration")(e.target.value)} className="input mt-1 w-full text-sm" placeholder="Leave empty unless you want a line printed on export invoices." />
+                <p className="mt-1 text-[11px] text-slate-400">Paivo does not fill this in for you: the exact wording depends on whether you export under a LUT or pay IGST. Ask your accountant or check the CBIC rules, then type the line you need. It is printed as you write it.</p>
+              </div>
             </div>
           </section>
 

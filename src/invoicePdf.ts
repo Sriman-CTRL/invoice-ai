@@ -239,12 +239,12 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
     doc.text(paid ? (fin.settled_by_credit ? "SETTLED" : "PAID") : "Pay via link", M + 25, qy + 27, { align: "center" });
   }
   const px = M + 52;
-  label(paid ? (fin.settled_by_credit ? "Settled by credit note" : "Payment received") : "Scan to pay with any UPI app", px, qy + 10);
+  label(paid ? (fin.settled_by_credit ? "Settled by credit note" : "Payment received") : currency === "INR" ? "Scan to pay with any UPI app" : "Pay by bank transfer or the link below", px, qy + 10);
   doc.setFont("helvetica", "normal"); doc.setFontSize(9); set(MUTED);
   doc.text(paid ? "Thank you. This invoice is settled in full." : upiId && currency === "INR" ? `UPI: ${upiId} (zero fees)` : "Use the link below to pay.", px, qy + 16);
   if (!paid && st?.bank_account_number && st.bank_ifsc) {
     doc.setFontSize(8);
-    doc.text(`Bank: ${st.bank_account_name || org} | A/C ${st.bank_account_number} | IFSC ${st.bank_ifsc}`, px, qy + 21);
+    doc.text(`Bank: ${st.bank_account_name || org} | A/C ${st.bank_account_number} | IFSC ${st.bank_ifsc}${currency !== "INR" && st.swift_code ? ` | SWIFT ${st.swift_code}` : ""}`, px, qy + 21);
   }
   label("Pay online / submit UTR", px, qy + 27);
   doc.setFont("helvetica", "bold"); doc.setFontSize(9); set(BRAND);
@@ -260,6 +260,17 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
     doc.roundedRect(bx, by, 78, 8, 4, 4, "F");
     doc.setFont("helvetica", "bold"); doc.setFontSize(8); set(paid ? GREEN : AMBER);
     doc.text(paid ? "FINAL FILES: UNLOCKED" : "FINAL FILES: LOCKED UNTIL PAID", bx + 39, by + 5.2, { align: "center" });
+  }
+
+  // Export details (clients outside India): the other payment link, the LUT number and the seller's own declaration text.
+  // Nothing is printed unless the seller entered it in Settings; Paivo does not supply tax wording.
+  if (currency !== "INR" && !paid && (st?.payment_link || st?.lut_number || st?.export_declaration)) {
+    let ey = qy + 58;
+    if (ey + 24 > doc.internal.pageSize.getHeight() - 24) { doc.addPage(); ey = 24; }
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); set(INK);
+    if (st?.payment_link) { doc.text("Other way to pay:", M, ey); set(BRAND); doc.textWithLink(st.payment_link.slice(0, 90), M + 28, ey, { url: st.payment_link }); set(INK); ey += 5; }
+    if (st?.lut_number) { doc.text(`LUT number: ${st.lut_number}`, M, ey); ey += 5; }
+    if (st?.export_declaration) { doc.text(doc.splitTextToSize(st.export_declaration, W - 2 * M).slice(0, 5), M, ey); }
   }
 
   // Footer
