@@ -92,7 +92,7 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
   timestamps and time-sensitive tests fail ("AUTO: a failed send is retried" did). The Docker `paivo-pg` container is UTC. `auto-reminders.test.ts`
   pins its own connections to UTC with `PGOPTIONS`; never put `options`/timezone into `lib/prisma.ts` (Neon's pooler rejects startup options).
 - **Tests can hang CI** on lingering connections — `--test-force-exit` and per-test timeouts are deliberate.
-  CI sets `AUTH_RATE_LIMIT_MAX=1000`; prod default is 20/min.
+  CI sets `AUTH_RATE_LIMIT_MAX=1000` (prod default 20/min) and `PUBLIC_RATE_LIMIT_MAX=1000` (public pay/portal pages, prod default 60/min per IP).
 - **Root `package.json` duplicates backend deps** because Vercel bundles the API from the root. Add backend
   runtime deps to both `package.json` files.
 - **`DEPLOYMENT_SECURITY.md` is an aspirational blueprint**, partly written before the code (mentions AWS, Postmark,
@@ -138,7 +138,7 @@ Backend: `DATABASE_URL` (owner), `DATABASE_URL_APP` (restricted `app_user`; turn
 `OLLAMA_*`, `AI_CONFIDENCE_THRESHOLD` (default 0.75 → below goes to MANUAL_REVIEW), `INBOUND_WEBHOOK_SECRET`,
 `INBOUND_DOMAIN`, `RESEND_API_KEY`, `MAIL_FROM_ADDRESS` (default `reminders@paivo.in`), `REMINDER_DAILY_CAP`,
 `CRON_TIME_BUDGET_MS` (default 8000), `AUTO_REMINDER_RUN_CAP` (default 200), `AUTO_REMINDERS_DRY_RUN` (`1` = log, don't send),
-`GOOGLE_CLIENT_ID` (enables `POST /api/auth/google`; 503 while unset), `SENTRY_DSN` (server error reporting; off while unset), `SENTRY_ENVIRONMENT`, `TURNSTILE_SECRET`, `CRON_SECRET`, `PLATFORM_ADMIN_EMAILS`, `AUTH_RATE_LIMIT_MAX`, `INTEGRATION_TESTS`.
+`GOOGLE_CLIENT_ID` (enables `POST /api/auth/google`; 503 while unset), `SENTRY_DSN` (server error reporting; off while unset), `SENTRY_ENVIRONMENT`, `TURNSTILE_SECRET`, `CRON_SECRET`, `PLATFORM_ADMIN_EMAILS`, `AUTH_RATE_LIMIT_MAX`, `PUBLIC_RATE_LIMIT_MAX`, `INTEGRATION_TESTS`.
 
 Frontend (Vite): `VITE_API_BASE_URL`, `VITE_PAYMENTS_OPEN`, `VITE_PLATFORM_UPI_ID`, `VITE_SUPPORT_EMAIL`, `VITE_TURNSTILE_SITE_KEY`, `VITE_GOOGLE_CLIENT_ID` (shows the Google button), `VITE_SENTRY_DSN` (browser error reporting; off while unset), build-time `SENTRY_AUTH_TOKEN` + `SENTRY_ORG` + `SENTRY_PROJECT_WEB` (source map upload to project `paivo-web`; inert without the token), `VITE_FEATURE_HINGLISH_PAY` (`true` = English/Hinglish switch on the pay page explainer; off by default, needs native-speaker review first).
 
