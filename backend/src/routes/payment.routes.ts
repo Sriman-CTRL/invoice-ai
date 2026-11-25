@@ -1,4 +1,4 @@
-import { creditedTotal } from "../lib/invoiceBalance";
+import { creditedTotal, settledTotals } from "../lib/invoiceBalance";
 import { Router } from "express";
 import prisma from "../lib/prisma";
 import { auditLogger } from "../lib/auditLogger";
@@ -26,6 +26,8 @@ router.post("/", async (req, res) => {
       invoice_id,
       external_payment_id,
       amount,
+      tds_amount,
+      tds_section,
       currency,
       status,
       paid_at,
@@ -46,6 +48,17 @@ router.post("/", async (req, res) => {
     if (!Number.isFinite(paymentAmount) || paymentAmount <= 0) {
       return res.status(400).json({ error: "amount must be a positive number" });
     }
+
+    // TDS the client deducted before paying. It settles the invoice like cash, but it is not money received.
+    const tdsAmount = tds_amount === undefined || tds_amount === null || tds_amount === "" ? 0 : Number(tds_amount);
+    if (!Number.isFinite(tdsAmount) || tdsAmount < 0) {
+      return res.status(400).json({ error: "tds_amount must be zero or a positive number" });
+    }
+    const tdsSection = tds_section === undefined || tds_section === null || tds_section === "" ? null : String(tds_section).trim().toUpperCase();
+    if (tdsSection !== null && !/^[0-9A-Z]{2,10}$/.test(tdsSection)) {
+      return res.status(400).json({ error: "tds_section must be a short code such as 194J" });
+    }
+    const tdsRounded = Math.round(tdsAmount * 100) / 100;
 
     const paymentStatus = status ? String(status).toUpperCase() : "SUCCEEDED";
     if (!ALLOWED_STATUSES.includes(paymentStatus as (typeof ALLOWED_STATUSES)[number])) {
@@ -69,16 +82,14 @@ router.post("/", async (req, res) => {
       if (invoice.status === "PAID") throw new Error("INVOICE_ALREADY_PAID");
 
       // Only SUCCEEDED payments count toward the balance.
-      const settled = await tx.payments.aggregate({
-        where: { invoice_id, organization_id, status: "SUCCEEDED" },
-        _sum: { amount: true },
-      });
-      const alreadyPaid = Number(settled._sum.amount ?? 0);
+      // What already settled the invoice: cash received plus TDS the client deducted.
+      const alreadyPaid = (await settledTotals(tx, organization_id, invoice_id)).settled;
       // Credit notes already reduced what is owed, so they count toward the balance like payments do.
       const credited = await creditedTotal(tx, organization_id, invoice_id);
       const invoiceAmount = Number(invoice.amount);
 
-      if (alreadyPaid + credited + paymentAmount > invoiceAmount + 0.001) {
+      const thisSettles = paymentAmount + tdsRounded;
+      if (alreadyPaid + credited + thisSettles > invoiceAmount + 0.001) {
         throw new Error("PAYMENT_EXCEEDS_INVOICE");
       }
 
@@ -88,6 +99,8 @@ router.post("/", async (req, res) => {
           invoice_id,
           external_payment_id: external_payment_id || null,
           amount: paymentAmount,
+          tds_amount: tdsRounded,
+          tds_section: tdsRounded > 0 ? tdsSection : null,
           currency: currency || invoice.currency,
           status: paymentStatus,
           paid_at: paid_at ? new Date(paid_at) : new Date(),
@@ -97,7 +110,7 @@ router.post("/", async (req, res) => {
       // Invoice status only moves for money that actually settled.
       let newInvoiceStatus = invoice.status;
       if (paymentStatus === "SUCCEEDED") {
-        const newPaidAmount = alreadyPaid + credited + paymentAmount;
+        const newPaidAmount = alreadyPaid + credited + thisSettles;
         if (newPaidAmount >= invoiceAmount) {
           newInvoiceStatus = "PAID";
         } else if (newPaidAmount > 0) {
@@ -113,7 +126,7 @@ router.post("/", async (req, res) => {
       return {
         payment,
         invoice: updatedInvoice,
-        totalPaid: alreadyPaid + (paymentStatus === "SUCCEEDED" ? paymentAmount : 0),
+        totalPaid: alreadyPaid + (paymentStatus === "SUCCEEDED" ? thisSettles : 0),
       };
     });
 
@@ -128,6 +141,7 @@ router.post("/", async (req, res) => {
       metadata: {
         payment_id: result.payment.id,
         amount: paymentAmount,
+        tds_amount: tdsRounded,
         currency: result.payment.currency,
         new_invoice_status: result.invoice.status,
       },

@@ -64,9 +64,9 @@ router.get("/analytics", async (req: Request, res: Response): Promise<void> => {
         const kpi = await prisma.$queryRawUnsafe<any[]>(
             `SELECT
                 COALESCE((SELECT sum(amount) FROM payments WHERE organization_id = $1::uuid AND status = 'SUCCEEDED'), 0)::float8 AS lifetime_received,
-                COALESCE((SELECT sum(i.amount - COALESCE((SELECT sum(p.amount) FROM payments p WHERE p.invoice_id = i.id AND p.status = 'SUCCEEDED'), 0))
+                COALESCE((SELECT sum(i.amount - COALESCE((SELECT sum(p.amount + p.tds_amount) FROM payments p WHERE p.invoice_id = i.id AND p.status = 'SUCCEEDED'), 0))
                            FROM invoices i WHERE i.organization_id = $1::uuid AND i.status IN ('OPEN','PARTIALLY_PAID')), 0)::float8 AS outstanding,
-                COALESCE((SELECT sum(i.amount - COALESCE((SELECT sum(p.amount) FROM payments p WHERE p.invoice_id = i.id AND p.status = 'SUCCEEDED'), 0))
+                COALESCE((SELECT sum(i.amount - COALESCE((SELECT sum(p.amount + p.tds_amount) FROM payments p WHERE p.invoice_id = i.id AND p.status = 'SUCCEEDED'), 0))
                            FROM invoices i WHERE i.organization_id = $1::uuid AND i.status IN ('OPEN','PARTIALLY_PAID') AND i.due_at < now()), 0)::float8 AS overdue,
                 (SELECT round(avg(EXTRACT(EPOCH FROM (COALESCE(p.paid_at, p.created_at) - COALESCE(i.issued_at, i.created_at))) / 86400)::numeric, 1)::float8
                    FROM invoices i JOIN payments p ON p.invoice_id = i.id AND p.status = 'SUCCEEDED'
@@ -75,7 +75,19 @@ router.get("/analytics", async (req: Request, res: Response): Promise<void> => {
                 (SELECT count(*)::int FROM invoices WHERE organization_id = $1::uuid AND status NOT IN ('DRAFT','CANCELLED')) AS sent_count`,
             org,
         );
-        res.json({ months, top_clients: top, kpi: kpi[0] });
+        // TDS the clients deducted (a claim against the seller's income tax; check Form 26AS / AIS), by Indian financial year (Apr-Mar).
+        const tdsByYear = await prisma.$queryRawUnsafe<any[]>(
+            `SELECT fy_start::int AS fy_start, sum(tds_amount)::float8 AS tds, count(*)::int AS payments
+               FROM (SELECT tds_amount,
+                            CASE WHEN extract(month FROM COALESCE(paid_at, created_at)) >= 4
+                                 THEN extract(year FROM COALESCE(paid_at, created_at))
+                                 ELSE extract(year FROM COALESCE(paid_at, created_at)) - 1 END AS fy_start
+                       FROM payments WHERE organization_id = $1::uuid AND status = 'SUCCEEDED' AND tds_amount > 0) t
+              GROUP BY fy_start ORDER BY fy_start DESC LIMIT 5`,
+            org,
+        );
+        const tds_by_year = tdsByYear.map((r) => ({ fy: `${r.fy_start}-${String((r.fy_start + 1) % 100).padStart(2, "0")}`, tds: r.tds, payments: r.payments }));
+        res.json({ months, top_clients: top, kpi: kpi[0], tds_by_year });
     } catch (error) {
         console.error(error);
         return serverError(res, error, "Failed to load analytics");

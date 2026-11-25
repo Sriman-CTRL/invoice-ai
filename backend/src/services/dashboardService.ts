@@ -94,11 +94,13 @@ export async function getDashboardData(organization_id: string): Promise<Dashboa
 
     const successfulPayments = await prisma.payments.aggregate({
         where: { organization_id, status: "SUCCEEDED" },
-        _sum: { amount: true },
+        _sum: { amount: true, tds_amount: true },
     });
     
+    // total_paid is cash received; TDS the clients deducted also settles invoices, so it leaves the outstanding total.
     const total_paid = Number(successfulPayments._sum.amount ?? 0);
-    const total_outstanding = Math.max(0, total_invoiced - total_paid);
+    const total_tds = Number(successfulPayments._sum.tds_amount ?? 0);
+    const total_outstanding = Math.max(0, total_invoiced - total_paid - total_tds);
 
     // Overdue Outstanding
     const overdueInvoices = await prisma.invoices.findMany({
@@ -122,11 +124,11 @@ export async function getDashboardData(organization_id: string): Promise<Dashboa
                 invoice_id: { in: overdueInvoiceIds },
                 status: "SUCCEEDED"
             },
-            _sum: { amount: true }
+            _sum: { amount: true, tds_amount: true }
         });
         
         const totalOverdueInvoiced = overdueInvoices.reduce((sum, inv) => sum + Number(inv.amount), 0);
-        const totalOverduePaid = Number(overduePayments._sum.amount ?? 0);
+        const totalOverduePaid = Number(overduePayments._sum.amount ?? 0) + Number(overduePayments._sum.tds_amount ?? 0);
         overdue_outstanding = Math.max(0, totalOverdueInvoiced - totalOverduePaid);
     }
 

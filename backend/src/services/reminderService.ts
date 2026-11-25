@@ -254,7 +254,7 @@ export async function runAutoReminders(opts: AutoReminderOptions = {}): Promise<
     const owner = await prisma.users.findFirst({ where: { organization_id: organizationId }, orderBy: { created_at: "asc" }, select: { email: true } });
     const invoices = await prisma.invoices.findMany({
       where: { organization_id: organizationId, status: { in: ["OPEN", "PARTIALLY_PAID"] }, due_at: { lt: new Date(now.getTime() - AUTO_REMINDER_STEPS[0] * DAY_MS + 1) } },
-      include: { customers: true, organizations: true, payments: { where: { status: "SUCCEEDED" }, select: { amount: true } } },
+      include: { customers: true, organizations: true, payments: { where: { status: "SUCCEEDED" }, select: { amount: true, tds_amount: true } } },
       orderBy: { due_at: "asc" },
       take: 500,
     });
@@ -289,7 +289,7 @@ export async function runAutoReminders(opts: AutoReminderOptions = {}): Promise<
       const blocked = await deliveryGuard({ organizationId, invoice, settings, strict: true, emailChecked: true });
       if (blocked) { skip(blocked.code.toLowerCase()); continue; }
 
-      const paid = invoice.payments.reduce((s, p) => s + Number(p.amount), 0);
+      const paid = invoice.payments.reduce((s, p) => s + Number(p.amount) + Number(p.tds_amount), 0);
       const outstanding = Math.max(0, Number(invoice.amount) - paid);
       if (outstanding <= 0) { skip("nothing_outstanding"); continue; }
       const mail = buildAutoReminder({

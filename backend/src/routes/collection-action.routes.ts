@@ -1,4 +1,4 @@
-import { creditedTotal, outstandingOf } from "../lib/invoiceBalance";
+import { creditedTotal, outstandingOf, settledTotals } from "../lib/invoiceBalance";
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { serverError } from "../lib/monitoring";
@@ -428,11 +428,7 @@ router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<vo
         });
       } else {
         // Calculate remaining due
-        const settled = await tx.payments.aggregate({
-          where: { invoice_id: invoiceId, organization_id, status: "SUCCEEDED" },
-          _sum: { amount: true },
-        });
-        const alreadyPaid = Number(settled._sum?.amount ?? 0);
+        const alreadyPaid = (await settledTotals(tx, organization_id, invoiceId)).settled;
         const credited = await creditedTotal(tx, organization_id, invoiceId);
         const outstanding = outstandingOf(Number(inv.amount), alreadyPaid, credited);
         // Nothing left to pay: never invent a payment for an invoice that is already settled.
@@ -455,11 +451,8 @@ router.post("/:id/verify-proof", async (req: Request, res: Response): Promise<vo
       }
 
       // Mark PAID only when the invoice is fully settled; a partial proof must not unlock deliverables.
-      const settledNow = await tx.payments.aggregate({
-        where: { invoice_id: invoiceId, organization_id, status: "SUCCEEDED" },
-        _sum: { amount: true },
-      });
-      const totalPaid = Number(settledNow._sum?.amount ?? 0);
+      // Cash received plus any TDS the client deducted (both settle the invoice).
+      const totalPaid = (await settledTotals(tx, organization_id, invoiceId)).settled;
       const creditedNow = await creditedTotal(tx, organization_id, invoiceId);
       const fullyPaid = totalPaid + creditedNow + 0.01 >= Number(inv.amount);
       const updatedInvoice = await tx.invoices.update({
