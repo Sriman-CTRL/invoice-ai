@@ -40,6 +40,8 @@ export type AnalyticsData = {
   months: Array<{ month: string; received: number; invoiced: number }>;
   top_clients: Array<{ id: string; name: string; company_name: string | null; paid: number; invoices: number }>;
   kpi: { lifetime_received: number; outstanding: number; overdue: number; avg_days_to_pay: number | null; paid_count: number; sent_count: number };
+  /** TDS clients deducted, by Indian financial year (April to March). */
+  tds_by_year?: Array<{ fy: string; tds: number; payments: number }>;
 };
 export type GstRow = { invoice_number: string; date: string; customer: string; currency: string; status: string; taxable: number; cgst: number; sgst: number; igst: number; total: number; gst_rate: number };
 export const analyticsApi = {
@@ -102,7 +104,7 @@ export const customersApi = {
 export const conversationsApi = { list: () => request<Conversation[]>("/conversations"), detail: (id: string) => request<ConversationDetail>(`/conversations/${id}`) };
 export const paymentsApi = {
   list: (invoiceId?: string) => request<Payment[]>(`/payments${invoiceId ? `?invoice_id=${encodeURIComponent(invoiceId)}` : ""}`),
-  create: (data: { invoice_id: string; amount: number; paid_at?: string; external_payment_id?: string }) =>
+  create: (data: { invoice_id: string; amount: number; tds_amount?: number; tds_section?: string; paid_at?: string; external_payment_id?: string }) =>
     request<Payment>("/payments", { method: "POST", body: JSON.stringify(data) }),
 };
 export const creditNotesApi = {
@@ -169,7 +171,7 @@ export const publicApi = {
   clientPortal: (customerId: string, token: string) =>
     request<{ organization: { name: string; brand_color: string | null; logo_data: string | null }; customer: { name: string; company_name: string | null }; invoices: Array<{ id: string; invoice_number: string; amount: number; currency: string; status: string; issued_at: string | null; due_at: string | null; outstanding: number }>; outstanding_total: number }>(`/public/client/${customerId}/${token}`),
   getInvoice: (invoiceNumber: string) => request<PublicInvoiceDetail>(`/public/invoices/${encodeURIComponent(invoiceNumber)}`),
-  submitProof: (invoiceNumber: string, data: { utr: string; amount?: number; notes?: string; screenshot?: string; turnstile_token?: string }) =>
+  submitProof: (invoiceNumber: string, data: { utr: string; amount?: number; tds_amount?: number; tds_section?: string; notes?: string; screenshot?: string; turnstile_token?: string }) =>
     request<{ success: boolean; message: string; payment_id: string }>(`/public/invoices/${encodeURIComponent(invoiceNumber)}/submit-proof`, {
       method: "POST",
       body: JSON.stringify(data),

@@ -39,6 +39,9 @@ const TENANT_TABLES = ["invoice_details", "invoice_views", "recurring_invoices",
   await run(`CREATE TABLE IF NOT EXISTS leads (id BIGSERIAL PRIMARY KEY, at TIMESTAMPTZ NOT NULL DEFAULT now(), kind VARCHAR(20) NOT NULL, email VARCHAR(255), plan VARCHAR(20), message VARCHAR(1000))`);
   await run(`CREATE TABLE IF NOT EXISTS payment_proof_images (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), organization_id UUID NOT NULL, payment_id UUID NOT NULL, mime VARCHAR(20) NOT NULL, data TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
   await run(`CREATE INDEX IF NOT EXISTS payment_proof_images_payment ON payment_proof_images (payment_id)`);
+  // TDS the client deducted before paying: it settles the invoice like cash (amount + tds_amount) but is not money received.
+  await run(`ALTER TABLE payments ADD COLUMN IF NOT EXISTS tds_amount NUMERIC(14,2) NOT NULL DEFAULT 0`);
+  await run(`ALTER TABLE payments ADD COLUMN IF NOT EXISTS tds_section VARCHAR(16)`);
 
   // Seller + client + line items frozen when an invoice leaves DRAFT, so later edits to settings or the client never rewrite an issued invoice.
   await run(`CREATE TABLE IF NOT EXISTS invoice_snapshots (

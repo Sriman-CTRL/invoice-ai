@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
+import { settledTotals } from "../lib/invoiceBalance";
 import { auditLogger } from "../lib/auditLogger";
 import { serverError } from "../lib/monitoring";
 
@@ -51,11 +52,8 @@ router.post("/", async (req: Request, res: Response) => {
       }
 
       // 2. Compute settled payments and existing credit notes
-      const settledPayments = await tx.payments.aggregate({
-        where: { invoice_id, organization_id, status: "SUCCEEDED" },
-        _sum: { amount: true },
-      });
-      const totalPaid = Number(settledPayments._sum.amount ?? 0);
+      // Cash + TDS deducted by the client: both settle part of the invoice.
+      const totalPaid = (await settledTotals(tx, organization_id, invoice_id)).settled;
 
       const existingCredits = await tx.credit_notes.aggregate({
         where: { invoice_id, organization_id },

@@ -52,8 +52,8 @@ export function LandingPage() {
           <Zap className="h-3.5 w-3.5" /> For freelancers, studios and small businesses in India
         </span>
         <h1 className="mt-7 text-4xl font-black leading-[1.08] tracking-tight text-white sm:text-6xl">
-          Get paid for your work.<br />
-          <span className="bg-gradient-to-r from-indigo-300 via-violet-300 to-emerald-300 bg-clip-text text-transparent">Every time, without chasing.</span>
+          Your client pays by UPI.<br />
+          <span className="bg-gradient-to-r from-indigo-300 via-violet-300 to-emerald-300 bg-clip-text text-transparent">Your files unlock when they do.</span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-400">
           Send an invoice, your client pays by UPI straight to your bank, and your final files unlock only after they've paid. Paivo keeps track of who owes you, and helps you chase politely.

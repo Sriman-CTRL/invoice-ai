@@ -9,6 +9,7 @@ export interface InvoiceDetails {
     financial_summary: {
         invoice_amount: number;
         paid_amount: number;
+        tds_amount: number;
         credited_amount: number;
         settled_by_credit: boolean;
         outstanding_amount: number;
@@ -74,16 +75,19 @@ export async function getInvoiceDetails(organization_id: string, invoice_id: str
         orderBy: { created_at: "desc" }
     });
 
+    // paid_amount is cash received; tds_amount is tax the client deducted. Both settle the invoice.
     let paid_amount = 0;
+    let tds_amount = 0;
     for (const p of payments) {
         if (p.status === "SUCCEEDED") {
             paid_amount += Number(p.amount);
+            tds_amount += Number(p.tds_amount);
         }
     }
 
     const invoice_amount = Number(invoice.amount);
     const credited_amount = await creditedTotal(prisma, organization_id, invoice_id);
-    const outstanding_amount = outstandingOf(invoice_amount, paid_amount, credited_amount);
+    const outstanding_amount = outstandingOf(invoice_amount, paid_amount + tds_amount, credited_amount);
 
     const snap = await snapshotFor({ id: invoice.id, organization_id, status: String(invoice.status) });
     const details = snap?.details ? withTotals(snap.details) : await getDetails(invoice_id);
@@ -102,8 +106,9 @@ export async function getInvoiceDetails(organization_id: string, invoice_id: str
         financial_summary: {
             invoice_amount,
             paid_amount,
+            tds_amount,
             credited_amount,
-            settled_by_credit: settledByCredit(String(invoice.status), invoice_amount, paid_amount, credited_amount),
+            settled_by_credit: settledByCredit(String(invoice.status), invoice_amount, paid_amount + tds_amount, credited_amount),
             outstanding_amount,
             currency: invoice.currency
         },

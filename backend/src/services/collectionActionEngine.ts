@@ -199,10 +199,11 @@ async function handlePaymentConfirmed(
     // Aggregate ACTUAL successful payments from the payments table
     const agg = await prisma.payments.aggregate({
         where: { invoice_id, organization_id, status: "SUCCEEDED" },
-        _sum: { amount: true },
+        _sum: { amount: true, tds_amount: true },
     });
 
-    const totalPaid = Number(agg._sum.amount ?? 0);
+    // Cash plus TDS the client deducted: both settle the invoice.
+    const totalPaid = Number(agg._sum.amount ?? 0) + Number(agg._sum.tds_amount ?? 0);
     const invoiceAmount = Number(invoice.amount);
     const remaining = invoiceAmount - totalPaid;
 

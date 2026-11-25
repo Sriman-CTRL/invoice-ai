@@ -4,6 +4,12 @@ import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
 import { AUTO_REMINDER_STEPS, buildAutoReminder, selectDueStep } from "../services/reminderService";
 
+// These tests backdate rows with SQL (`now() - interval '1 day'`) and read them back through Prisma. When the Postgres server's
+// TimeZone is not UTC (for example a Windows install set to Asia/Calcutta) the Prisma pg adapter returns shifted timestamps and
+// "retried next day" fails, although CI and Neon (UTC) are fine. Pin the test connections to UTC. Test-only: never set this in
+// lib/prisma.ts, because Neon's pooler rejects startup `options`. Read when the first connection is opened, so setting it here is early enough.
+process.env.PGOPTIONS = [process.env.PGOPTIONS, "-c timezone=UTC"].filter(Boolean).join(" ");
+
 /**
  * Automatic reminders. The mailer is always an injected fake: no test ever sends real email.
  * Integration parts need a LOCAL database (same switch as the other integration tests).

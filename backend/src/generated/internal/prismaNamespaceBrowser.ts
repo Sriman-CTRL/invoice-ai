@@ -203,6 +203,8 @@ export const PaymentsScalarFieldEnum = {
   invoice_id: 'invoice_id',
   external_payment_id: 'external_payment_id',
   amount: 'amount',
+  tds_amount: 'tds_amount',
+  tds_section: 'tds_section',
   currency: 'currency',
   status: 'status',
   paid_at: 'paid_at',

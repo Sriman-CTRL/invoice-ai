@@ -36,7 +36,7 @@ router.get("/:customerId/:token", async (req: Request, res: Response): Promise<v
     const settings = await getOrgSettings(customer.organization_id);
     const rows = await prisma.$queryRawUnsafe<any[]>(
       `SELECT i.id, i.invoice_number, i.amount::float8 AS amount, i.currency, i.status, i.issued_at, i.due_at,
-              COALESCE((SELECT sum(p.amount) FROM payments p WHERE p.invoice_id = i.id AND p.status = 'SUCCEEDED'), 0)::float8 AS paid,
+              COALESCE((SELECT sum(p.amount + p.tds_amount) FROM payments p WHERE p.invoice_id = i.id AND p.status = 'SUCCEEDED'), 0)::float8 AS paid,
               COALESCE((SELECT sum(c.amount) FROM credit_notes c WHERE c.invoice_id = i.id), 0)::float8 AS credited
          FROM invoices i
         WHERE i.customer_id = $1::uuid AND i.status NOT IN ('DRAFT', 'CANCELLED')
