@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
 import type { InvoiceDetail, OrgSettings } from "./types";
 import { amountInWords } from "./amountInWords";
+import { recordedTdsLines } from "./pdfTds";
 import { PAIVO_BADGE_PNG, PAIVO_BADGE_RATIO } from "./lib/paivoBadgePng";
 
 export const PUBLIC_BASE_URL = "https://paivo.in";
@@ -26,9 +27,6 @@ const fmtDate = (v: string | null | undefined) =>
 
 export interface InvoicePdfOptions {
   organizationName?: string;
-  /** Optional TDS rate (percent) to preview in the TDS summary, e.g. 1, 2, 10. */
-  tdsRate?: number;
-  tdsSection?: string;
   /** The seller's own payment details (UPI ID, bank, GSTIN). */
   settings?: OrgSettings | null;
 }
@@ -207,20 +205,18 @@ export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptio
     y += 5 + Math.min(noteLines.length, 5) * 4.4;
   }
 
-  // TDS summary
-  const rate = opts.tdsRate ?? 10;
-  const section = opts.tdsSection ?? "194J";
-  const base = Number(dt ? dt.taxable : fin.invoice_amount); // TDS applies to the amount before GST
-  const tds = +(base * (rate / 100)).toFixed(2);
-  y += 4;
-  doc.setFillColor(238, 242, 255);
-  doc.roundedRect(M, y, 98, 28, 2, 2, "F");
-  label("TDS deduction summary", M + 4, y + 6);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(9); set(INK);
-  doc.text(`Section ${section} @ ${rate}%`, M + 4, y + 12.5);
-  doc.text(`TDS to be withheld: ${inr(tds, currency)}`, M + 4, y + 18);
-  doc.setFont("helvetica", "bold");
-  doc.text(`Net bank deposit: ${inr(base - tds, currency)}`, M + 4, y + 23.5);
+  // TDS deducted by the client: shown ONLY when TDS was recorded on this invoice (amount and section as recorded).
+  const tdsLines = recordedTdsLines(data.payments);
+  if (tdsLines.length) {
+    y += 4;
+    const boxH = 11 + tdsLines.length * 5.5;
+    doc.setFillColor(238, 242, 255);
+    doc.roundedRect(M, y, 98, boxH, 2, 2, "F");
+    label("TDS deducted by client (as recorded)", M + 4, y + 6);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9); set(INK);
+    tdsLines.forEach((l, i) => doc.text(`${l.section ? `Section ${l.section}: ` : ""}${inr(l.amount, currency)}`, M + 4, y + 12 + i * 5.5));
+    y += boxH - 28; // the layout below assumes a 28 mm box
+  }
 
   // UPI QR + pay link
   let qy = Math.max(y + 36, 170);

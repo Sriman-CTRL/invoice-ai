@@ -24,7 +24,11 @@ SECURITY-TODO.md
 api/index.js
 
 .claude/settings.local.json
+.claude/skills/
 night-logs/
 
 test-results/
 playwright-report/
+
+# release script logs
+release-logs/
