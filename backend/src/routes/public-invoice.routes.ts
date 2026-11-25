@@ -1,4 +1,5 @@
 import { outstandingOf, settledByCredit } from "../lib/invoiceBalance";
+import { snapshotFor, withTotals } from "../lib/invoiceSnapshot";
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { getOrgSettings } from "../lib/orgSettings";
@@ -84,8 +85,14 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
             orderBy: { created_at: "desc" },
         });
 
-        const settings = await getOrgSettings(invoice.organization_id);
-        const details = await getDetails(invoice.id);
+        // An issued invoice shows what was frozen when it was issued (seller, client, items, payment details); drafts stay live.
+        const snap = await snapshotFor(invoice);
+        const live = await getOrgSettings(invoice.organization_id);
+        const settings = snap ? { ...live, ...snap.seller } : live;
+        const sellerName = snap?.seller.name ?? invoice.organizations.name;
+        const clientName = snap?.client.name ?? invoice.customers.name;
+        const clientCompany = snap ? snap.client.company_name : invoice.customers.company_name;
+        const details = snap?.details ? withTotals(snap.details) : await getDetails(invoice.id);
 
         // Record a view, but not for link-preview bots (WhatsApp, Slack, crawlers) and at most once per 30 minutes.
         const ua = String(req.headers["user-agent"] || "");
@@ -114,13 +121,13 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
             due_at: invoice.due_at,
             status: invoice.status,
             customer: {
-                name: invoice.customers.name,
-                company_name: invoice.customers.company_name,
+                name: clientName,
+                company_name: clientCompany,
                 email: null,
                 phone: null,
             },
             organization: {
-                name: invoice.organizations.name,
+                name: sellerName,
                 slug: invoice.organizations.slug,
                 brand_color: settings.brand_color,
                 logo_data: settings.logo_data,
@@ -129,10 +136,10 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
             details: details ? { items: details.items, notes: details.notes, tax_mode: details.tax_mode, tax_percent: details.tax_percent, totals: details.totals } : null,
             payment: {
                 upi_id: settings.upi_id,
-                payee_name: settings.payee_name || invoice.organizations.name,
+                payee_name: settings.payee_name || sellerName,
                 bank: hasBank
                     ? {
-                          account_name: settings.bank_account_name || settings.payee_name || invoice.organizations.name,
+                          account_name: settings.bank_account_name || settings.payee_name || sellerName,
                           account_number: settings.bank_account_number,
                           ifsc: settings.bank_ifsc,
                           bank_name: settings.bank_name,

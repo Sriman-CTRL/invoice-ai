@@ -1,6 +1,7 @@
 import { creditedTotal, outstandingOf, settledByCredit } from "../lib/invoiceBalance";
 import prisma from "../lib/prisma";
 import { getDetails } from "../lib/invoiceDetails";
+import { paymentDetailsChanged, snapshotFor, withTotals, type InvoiceSnapshot } from "../lib/invoiceSnapshot";
 
 export interface InvoiceDetails {
     invoice: any;
@@ -20,6 +21,10 @@ export interface InvoiceDetails {
     collection_actions: any[];
     details: any | null;
     views: { count: number; last_viewed_at: string | null };
+    /** Seller, client and line items frozen when the invoice was issued (null for a draft, which follows live data). */
+    snapshot: Pick<InvoiceSnapshot, "seller" | "client"> | null;
+    /** The business's current payment details differ from the ones frozen on this invoice. */
+    payment_details_changed: boolean;
 }
 
 export async function getInvoiceDetails(organization_id: string, invoice_id: string): Promise<InvoiceDetails | null> {
@@ -84,7 +89,8 @@ export async function getInvoiceDetails(organization_id: string, invoice_id: str
     const credited_amount = await creditedTotal(prisma, organization_id, invoice_id);
     const outstanding_amount = outstandingOf(invoice_amount, paid_amount + tds_amount, credited_amount);
 
-    const details = await getDetails(invoice_id);
+    const snap = await snapshotFor({ id: invoice.id, organization_id, status: String(invoice.status) });
+    const details = snap?.details ? withTotals(snap.details) : await getDetails(invoice_id);
     const viewRows = await prisma.$queryRawUnsafe<{ n: number; last: Date | null }[]>(
         `SELECT count(*)::int AS n, max(viewed_at) AS last FROM invoice_views WHERE invoice_id = $1::uuid`,
         invoice_id,
@@ -92,6 +98,8 @@ export async function getInvoiceDetails(organization_id: string, invoice_id: str
 
     return {
         details,
+        snapshot: snap ? { seller: snap.seller, client: snap.client } : null,
+        payment_details_changed: await paymentDetailsChanged(organization_id, snap),
         views: { count: viewRows[0]?.n ?? 0, last_viewed_at: viewRows[0]?.last ? new Date(viewRows[0].last).toISOString() : null },
         invoice: invoiceData,
         customer,

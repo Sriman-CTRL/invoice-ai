@@ -66,6 +66,7 @@ jobs:
           DATABASE_URL_APP: "postgresql://app_user:ci_throwaway_role_password_not_a_secret@localhost:5432/invoice_ai"
           JWT_SECRET: "test_secret_for_ci_pipeline_verification_32chars"
           AUTH_RATE_LIMIT_MAX: "1000" # tests sign in many times a minute; production keeps the default of 20
+          PUBLIC_RATE_LIMIT_MAX: "1000" # the suites open public pay pages from one IP in parallel; production keeps 60/min
         run: |
           set -o pipefail
           npm test 2>&1 | tee test.log

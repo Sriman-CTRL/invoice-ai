@@ -33,9 +33,12 @@ export interface InvoicePdfOptions {
 
 /** Builds a branded A4 invoice PDF entirely in the browser. Returns the jsPDF doc. */
 export async function buildInvoicePdf(data: InvoiceDetail, opts: InvoicePdfOptions = {}): Promise<jsPDF> {
-  const { invoice: inv, customer, financial_summary: fin } = data;
-  const st = opts.settings || null;
-  const org = opts.organizationName || "Your Company";
+  const { invoice: inv, financial_summary: fin } = data;
+  // An issued invoice is drawn from what was frozen when it was issued (seller, client); a draft uses live data.
+  const snap = data.snapshot || null;
+  const customer = snap ? { ...data.customer, ...snap.client } : data.customer;
+  const st = (snap ? { ...(opts.settings || {}), ...snap.seller } : opts.settings || null) as OrgSettings | null;
+  const org = (snap?.seller.name as string | undefined) || opts.organizationName || "Your Company";
   const currency = fin.currency || inv.currency || "INR";
   const paid = inv.status === "PAID";
   const payUrl = `${PUBLIC_BASE_URL}/pay/${inv.id}`;
