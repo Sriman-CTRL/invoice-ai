@@ -42,6 +42,7 @@ export function MarketingFooter() {
         <Link to="/terms" className="hover:text-slate-300">Terms of Service</Link>
         <Link to="/login" className="hover:text-slate-300">Sign in</Link>
       </div>
+      <p className="mx-auto mt-3 max-w-2xl font-semibold text-slate-400">Get paid on UPI. Files unlock after payment.</p>
       <p className="mx-auto mt-3 max-w-2xl">
         Paivo is invoicing software. Your clients pay you directly by UPI or bank transfer; we never hold or move your money.
       </p>
