@@ -64,9 +64,9 @@ router.get("/analytics", async (req: Request, res: Response): Promise<void> => {
         const kpi = await prisma.$queryRawUnsafe<any[]>(
             `SELECT
                 COALESCE((SELECT sum(amount) FROM payments WHERE organization_id = $1::uuid AND status = 'SUCCEEDED' AND currency = 'INR'), 0)::float8 AS lifetime_received,
-                COALESCE((SELECT sum(i.amount - COALESCE((SELECT sum(p.amount) FROM payments p WHERE p.invoice_id = i.id AND p.status = 'SUCCEEDED'), 0))
+                COALESCE((SELECT sum(i.amount - COALESCE((SELECT sum(p.amount + p.tds_amount) FROM payments p WHERE p.invoice_id = i.id AND p.status = 'SUCCEEDED'), 0))
                            FROM invoices i WHERE i.organization_id = $1::uuid AND i.currency = 'INR' AND i.status IN ('OPEN','PARTIALLY_PAID')), 0)::float8 AS outstanding,
-                COALESCE((SELECT sum(i.amount - COALESCE((SELECT sum(p.amount) FROM payments p WHERE p.invoice_id = i.id AND p.status = 'SUCCEEDED'), 0))
+                COALESCE((SELECT sum(i.amount - COALESCE((SELECT sum(p.amount + p.tds_amount) FROM payments p WHERE p.invoice_id = i.id AND p.status = 'SUCCEEDED'), 0))
                            FROM invoices i WHERE i.organization_id = $1::uuid AND i.currency = 'INR' AND i.status IN ('OPEN','PARTIALLY_PAID') AND i.due_at < now()), 0)::float8 AS overdue,
                 (SELECT round(avg(EXTRACT(EPOCH FROM (COALESCE(p.paid_at, p.created_at) - COALESCE(i.issued_at, i.created_at))) / 86400)::numeric, 1)::float8
                    FROM invoices i JOIN payments p ON p.invoice_id = i.id AND p.status = 'SUCCEEDED'
@@ -81,15 +81,27 @@ router.get("/analytics", async (req: Request, res: Response): Promise<void> => {
             `SELECT i.currency,
                     COALESCE(sum(i.amount) FILTER (WHERE i.status NOT IN ('DRAFT','CANCELLED')), 0)::float8 AS invoiced,
                     COALESCE(sum(pp.paid) FILTER (WHERE i.status NOT IN ('DRAFT','CANCELLED')), 0)::float8 AS received,
-                    COALESCE(sum(i.amount - COALESCE(pp.paid, 0)) FILTER (WHERE i.status IN ('OPEN','PARTIALLY_PAID')), 0)::float8 AS outstanding,
+                    COALESCE(sum(i.amount - COALESCE(pp.settled, 0)) FILTER (WHERE i.status IN ('OPEN','PARTIALLY_PAID')), 0)::float8 AS outstanding,
                     count(*) FILTER (WHERE i.status NOT IN ('DRAFT','CANCELLED'))::int AS invoices
                FROM invoices i
-               LEFT JOIN (SELECT invoice_id, sum(amount) AS paid FROM payments WHERE status = 'SUCCEEDED' GROUP BY invoice_id) pp ON pp.invoice_id = i.id
+               LEFT JOIN (SELECT invoice_id, sum(amount) AS paid, sum(amount + tds_amount) AS settled FROM payments WHERE status = 'SUCCEEDED' GROUP BY invoice_id) pp ON pp.invoice_id = i.id
               WHERE i.organization_id = $1::uuid AND i.currency <> 'INR'
               GROUP BY i.currency ORDER BY i.currency`,
             org,
         );
-        res.json({ months, top_clients: top, kpi: kpi[0], other_currencies: other.filter((r) => r.invoices > 0) });
+                // TDS the clients deducted (a claim against the seller's income tax; check Form 26AS / AIS), by Indian financial year (Apr-Mar).
+        const tdsByYear = await prisma.$queryRawUnsafe<any[]>(
+            `SELECT fy_start::int AS fy_start, sum(tds_amount)::float8 AS tds, count(*)::int AS payments
+               FROM (SELECT tds_amount,
+                            CASE WHEN extract(month FROM COALESCE(paid_at, created_at)) >= 4
+                                 THEN extract(year FROM COALESCE(paid_at, created_at))
+                                 ELSE extract(year FROM COALESCE(paid_at, created_at)) - 1 END AS fy_start
+                       FROM payments WHERE organization_id = $1::uuid AND status = 'SUCCEEDED' AND currency = 'INR' AND tds_amount > 0) t
+              GROUP BY fy_start ORDER BY fy_start DESC LIMIT 5`,
+            org,
+        );
+        const tds_by_year = tdsByYear.map((r) => ({ fy: `${r.fy_start}-${String((r.fy_start + 1) % 100).padStart(2, "0")}`, tds: r.tds, payments: r.payments }));
+        res.json({ months, top_clients: top, kpi: kpi[0], tds_by_year, other_currencies: other.filter((r) => r.invoices > 0) });
     } catch (error) {
         console.error(error);
         return serverError(res, error, "Failed to load analytics");
@@ -98,7 +110,8 @@ router.get("/analytics", async (req: Request, res: Response): Promise<void> => {
 
 /**
  * GET /api/dashboard/gst-report?from=YYYY-MM-DD&to=YYYY-MM-DD
- * One row per issued invoice with its taxable value and GST split, ready for an accountant.
+ * One row per issued invoice with its taxable value and GST split, ready for an accountant. Client name and line items come from the
+ * snapshot frozen at issue, so later edits to a client never change a past report.
  */
 router.get("/gst-report", async (req: Request, res: Response): Promise<void> => {
     try {
@@ -108,11 +121,18 @@ router.get("/gst-report", async (req: Request, res: Response): Promise<void> => 
         const to = String(req.query.to || "");
         if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) { res.status(400).json({ error: "from and to must be dates (YYYY-MM-DD)" }); return; }
         const rows = await prisma.$queryRawUnsafe<any[]>(
-            `SELECT i.invoice_number, to_char(COALESCE(i.issued_at, i.created_at), 'YYYY-MM-DD') AS date, c.name AS customer, c.company_name, i.currency, i.status,
-                    i.amount::float8 AS total, d.items, d.discount::float8 AS discount, d.tax_percent::float8 AS tax_percent, d.tax_mode
+            `SELECT i.invoice_number, to_char(COALESCE(i.issued_at, i.created_at), 'YYYY-MM-DD') AS date,
+                    CASE WHEN s.invoice_id IS NOT NULL THEN s.client->>'name' ELSE c.name END AS customer,
+                    CASE WHEN s.invoice_id IS NOT NULL THEN s.client->>'company_name' ELSE c.company_name END AS company_name,
+                    i.currency, i.status, i.amount::float8 AS total,
+                    CASE WHEN s.details IS NOT NULL THEN s.details->'items' ELSE d.items END AS items,
+                    CASE WHEN s.details IS NOT NULL THEN (s.details->>'discount')::float8 ELSE d.discount::float8 END AS discount,
+                    CASE WHEN s.details IS NOT NULL THEN (s.details->>'tax_percent')::float8 ELSE d.tax_percent::float8 END AS tax_percent,
+                    CASE WHEN s.details IS NOT NULL THEN s.details->>'tax_mode' ELSE d.tax_mode END AS tax_mode
                FROM invoices i
                JOIN customers c ON c.id = i.customer_id
                LEFT JOIN invoice_details d ON d.invoice_id = i.id
+               LEFT JOIN invoice_snapshots s ON s.invoice_id = i.id
               WHERE i.organization_id = $1::uuid AND i.status NOT IN ('DRAFT','CANCELLED')
                 AND COALESCE(i.issued_at, i.created_at)::date BETWEEN $2::date AND $3::date
               ORDER BY COALESCE(i.issued_at, i.created_at), i.invoice_number`,

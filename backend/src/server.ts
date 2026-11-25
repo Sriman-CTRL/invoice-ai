@@ -108,15 +108,18 @@ app.use("/api/leads", systemContext, rateLimit({ windowMs: 60_000, max: 8, messa
 // 2. Inbound webhook endpoint
 app.use("/api/inbound", systemContext, inboundRoutes);
 
+// Public pages share one per-IP limit (60/min in production). The test suites call them from one IP in parallel, so CI raises it, like AUTH_RATE_LIMIT_MAX.
+const PUBLIC_RATE_LIMIT_MAX = Number(process.env.PUBLIC_RATE_LIMIT_MAX || 60);
+
 // Public customer invoice payment portal (no auth required)
 app.use(
   "/api/public/invoices",
   systemContext,
-  rateLimit({ windowMs: 60_000, max: 60, message: "Too many requests. Please wait a moment.", shared: true }),
+  rateLimit({ windowMs: 60_000, max: PUBLIC_RATE_LIMIT_MAX, message: "Too many requests. Please wait a moment.", shared: true }),
   publicInvoiceRoutes,
 );
 
-app.use("/api/public/client", systemContext, rateLimit({ windowMs: 60_000, max: 60, message: "Too many requests. Please wait a moment.", shared: true }), clientPortalRoutes);
+app.use("/api/public/client", systemContext, rateLimit({ windowMs: 60_000, max: PUBLIC_RATE_LIMIT_MAX, message: "Too many requests. Please wait a moment.", shared: true }), clientPortalRoutes);
 
 // 3. Authenticated routes with fine-grained rate limits
 app.use("/api/invoices", authMiddleware, invoiceRoutes);

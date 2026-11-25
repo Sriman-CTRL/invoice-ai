@@ -71,9 +71,19 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
   `auth_failures`, `analytics_events`, `leads`, `rate_limits`), but `enable-rls.cjs` is what applies changes in
   production (the app role has no DDL). Every new table or column must be added to **both**. Existing code still reads the
   extra tables with raw SQL (see `lib/orgSettings.ts`); regenerate the client with `npx prisma generate` after schema edits.
+- **TDS settles like cash, but is not cash.** `payments.tds_amount` (+ `tds_section`) is part of what settles an invoice: settled =
+  `amount + tds_amount` (use `settledTotals` / `outstandingOf` in `lib/invoiceBalance.ts`; raw SQL needs `p.amount + p.tds_amount`).
+  Money-received figures (analytics `received`, `lifetime_received`) stay cash only. A client's TDS claim on the proof form lives on the
+  PENDING payment and counts only after the seller confirms it (rule 1). Never hard-code TDS rates or sections as facts.
+- **Issued invoices are frozen in `invoice_snapshots`** (seller name/GSTIN/logo/brand/UPI/bank, client, line items), taken when an invoice leaves
+  DRAFT (`lib/invoiceSnapshot.ts`: create-as-issued, bulk import, approve; `snapshotFor` heals an issued invoice that has none). The pay page,
+  the detail API (so the PDF) and the GST report read the snapshot; drafts stay live. **The pay page's UPI ID and bank details follow the
+  snapshot**; the seller pulls current details into one unpaid invoice with `POST /api/invoices/:id/update-payment-details`. The client portal
+  header is account-level (live) and its rows carry only number/amount/status. New seller or client fields must be added to the snapshot, to the
+  backfill in `enable-rls.cjs` and to the PDF. There is no seller address field yet, so none is captured.
 - **Export invoices:** supported currencies live in `SUPPORTED_CURRENCIES` (`invoice.routes.ts`). Org columns `swift_code`, `payment_link`, `lut_number`, `export_declaration`
   (added in `enable-rls.cjs`) show only on non-INR invoices. Paivo ships **no** export-declaration wording (could not be verified from an official source; see
-  `docs/legal/EXPORT-INVOICES.md`). Analytics never add currencies together; the dashboard summary still does.
+  `docs/legal/EXPORT-INVOICES.md`). Analytics and the dashboard summary never add currencies together: INR is the headline, other currencies are listed separately (`other_currencies`).
 - **Deliverable link is stored in `invoices.external_invoice_id` with a `vault:` prefix.** Only plain http(s) URLs are
   shown (`safeDeliverableUrl` in `public-invoice.routes.ts`).
 - **CORS**: allowed = `CORS_ORIGIN` env + hard-coded `paivo.in`/`www.paivo.in` + this project's Vercel preview URLs
@@ -81,8 +91,11 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
 - **Neon cold starts** take seconds; Prisma transaction timeouts are raised in `lib/prisma.ts` — don't lower them.
 - **CSP in `vercel.json`** only allows self + `challenges.cloudflare.com` + the Google Identity Services endpoints (`accounts.google.com/gsi/*`). Any new third-party script/font/API
   must be added there or it silently fails in production. Fonts are self-hosted (`@fontsource`).
+- **Run a UTC Postgres locally.** With a non-UTC server TimeZone (a Windows Postgres on Asia/Calcutta) the Prisma pg adapter returns shifted
+  timestamps and time-sensitive tests fail ("AUTO: a failed send is retried" did). The Docker `paivo-pg` container is UTC. `auto-reminders.test.ts`
+  pins its own connections to UTC with `PGOPTIONS`; never put `options`/timezone into `lib/prisma.ts` (Neon's pooler rejects startup options).
 - **Tests can hang CI** on lingering connections — `--test-force-exit` and per-test timeouts are deliberate.
-  CI sets `AUTH_RATE_LIMIT_MAX=1000`; prod default is 20/min.
+  CI sets `AUTH_RATE_LIMIT_MAX=1000` (prod default 20/min) and `PUBLIC_RATE_LIMIT_MAX=1000` (public pay/portal pages, prod default 60/min per IP).
 - **Root `package.json` duplicates backend deps** because Vercel bundles the API from the root. Add backend
   runtime deps to both `package.json` files.
 - **`DEPLOYMENT_SECURITY.md` is an aspirational blueprint**, partly written before the code (mentions AWS, Postmark,
@@ -103,11 +116,10 @@ CI (`.github/workflows/ci.yml`) runs: prisma db push → enable-rls.cjs → `npm
   preview would put an env-less build live. Release steps, from a clean checkout of `main` (never your working folder, which
   has a local `.env`): `npm ci` (root and `backend/`), `npx prisma generate` in `backend/`, `npm run build`, then
   `vercel deploy --prod --skip-domain` (builds with the production env, does not touch paivo.in), `vercel inspect <url>`
-  must list `λ api/index` (about 2.5-2.7 MB), check `vercel curl /health --deployment <url>` (200, database connected),
+  must list `λ api/index` (about 4.5 MB since Sentry was added; 2.5-2.7 MB means a pre-Sentry or incomplete build), check `vercel curl /health --deployment <url>` (200, database connected),
   a random login (401) and a random `/api/public/invoices/<uuid>` (JSON 404), then `vercel promote <url>`. Rollback:
   `vercel rollback <previous production url> --yes`. In Git Bash set `MSYS_NO_PATHCONV=1` before `vercel curl /path`.
-- **Releases are run by the owner with `.
-elease.ps1`** (add `-Migrate` when `enable-rls.cjs` changed; `-DryRun` prints every vercel and
+- **Releases are run by the owner with `.\release.ps1`** (add `-Migrate` when `enable-rls.cjs` changed; `-DryRun` prints every vercel and
   database command instead of running it). It builds `origin/main` in a temp worktree, deploys with `--skip-domain`, probes the
   deployment, asks before promoting, checks paivo.in and rolls back on failure; logs go to `release-logs/` (git-ignored).
   **Claude Code never runs `vercel` or touches the production database.** The manual steps above are what the script automates.
@@ -129,7 +141,7 @@ Backend: `DATABASE_URL` (owner), `DATABASE_URL_APP` (restricted `app_user`; turn
 `OLLAMA_*`, `AI_CONFIDENCE_THRESHOLD` (default 0.75 → below goes to MANUAL_REVIEW), `INBOUND_WEBHOOK_SECRET`,
 `INBOUND_DOMAIN`, `RESEND_API_KEY`, `MAIL_FROM_ADDRESS` (default `reminders@paivo.in`), `REMINDER_DAILY_CAP`,
 `CRON_TIME_BUDGET_MS` (default 8000), `AUTO_REMINDER_RUN_CAP` (default 200), `AUTO_REMINDERS_DRY_RUN` (`1` = log, don't send),
-`GOOGLE_CLIENT_ID` (enables `POST /api/auth/google`; 503 while unset), `SENTRY_DSN` (server error reporting; off while unset), `SENTRY_ENVIRONMENT`, `TURNSTILE_SECRET`, `CRON_SECRET`, `PLATFORM_ADMIN_EMAILS`, `AUTH_RATE_LIMIT_MAX`, `INTEGRATION_TESTS`.
+`GOOGLE_CLIENT_ID` (enables `POST /api/auth/google`; 503 while unset), `SENTRY_DSN` (server error reporting; off while unset), `SENTRY_ENVIRONMENT`, `TURNSTILE_SECRET`, `CRON_SECRET`, `PLATFORM_ADMIN_EMAILS`, `AUTH_RATE_LIMIT_MAX`, `PUBLIC_RATE_LIMIT_MAX`, `INTEGRATION_TESTS`.
 
 Frontend (Vite): `VITE_API_BASE_URL`, `VITE_PAYMENTS_OPEN`, `VITE_PLATFORM_UPI_ID`, `VITE_SUPPORT_EMAIL`, `VITE_TURNSTILE_SITE_KEY`, `VITE_GOOGLE_CLIENT_ID` (shows the Google button), `VITE_SENTRY_DSN` (browser error reporting; off while unset), build-time `SENTRY_AUTH_TOKEN` + `SENTRY_ORG` + `SENTRY_PROJECT_WEB` (source map upload to project `paivo-web`; inert without the token), `VITE_FEATURE_HINGLISH_PAY` (`true` = English/Hinglish switch on the pay page explainer; off by default, needs native-speaker review first).
 

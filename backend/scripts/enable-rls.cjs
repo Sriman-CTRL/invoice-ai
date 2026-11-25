@@ -13,7 +13,7 @@
 require("dotenv").config();
 const { Client } = require("pg");
 
-const TENANT_TABLES = ["invoice_details", "invoice_views", "recurring_invoices", "payment_proof_images", "collection_actions", "conversations", "credit_notes", "customers", "invoices", "messages", "payments", "suppressions", "users", "auto_reminder_claims"];
+const TENANT_TABLES = ["invoice_details", "invoice_views", "recurring_invoices", "payment_proof_images", "collection_actions", "conversations", "credit_notes", "customers", "invoices", "messages", "payments", "suppressions", "users", "auto_reminder_claims", "invoice_snapshots"];
 
 (async () => {
   const url = process.env.DATABASE_URL;
@@ -39,6 +39,20 @@ const TENANT_TABLES = ["invoice_details", "invoice_views", "recurring_invoices",
   await run(`CREATE TABLE IF NOT EXISTS leads (id BIGSERIAL PRIMARY KEY, at TIMESTAMPTZ NOT NULL DEFAULT now(), kind VARCHAR(20) NOT NULL, email VARCHAR(255), plan VARCHAR(20), message VARCHAR(1000))`);
   await run(`CREATE TABLE IF NOT EXISTS payment_proof_images (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), organization_id UUID NOT NULL, payment_id UUID NOT NULL, mime VARCHAR(20) NOT NULL, data TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
   await run(`CREATE INDEX IF NOT EXISTS payment_proof_images_payment ON payment_proof_images (payment_id)`);
+  // TDS the client deducted before paying: it settles the invoice like cash (amount + tds_amount) but is not money received.
+  await run(`ALTER TABLE payments ADD COLUMN IF NOT EXISTS tds_amount NUMERIC(14,2) NOT NULL DEFAULT 0`);
+  await run(`ALTER TABLE payments ADD COLUMN IF NOT EXISTS tds_section VARCHAR(16)`);
+
+  // Seller + client + line items frozen when an invoice leaves DRAFT, so later edits to settings or the client never rewrite an issued invoice.
+  await run(`CREATE TABLE IF NOT EXISTS invoice_snapshots (
+    invoice_id UUID PRIMARY KEY,
+    organization_id UUID NOT NULL,
+    seller JSONB NOT NULL,
+    client JSONB NOT NULL,
+    details JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`);
+  await run(`CREATE INDEX IF NOT EXISTS invoice_snapshots_org ON invoice_snapshots (organization_id)`);
 
   // Branding on the organisation (logo is a small compressed data URL, validated by the API).
   await run(`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS brand_color VARCHAR(9)`);
@@ -126,6 +140,22 @@ const TENANT_TABLES = ["invoice_details", "invoice_views", "recurring_invoices",
   await run(`GRANT EXECUTE ON FUNCTION app_current_org_id(), app_is_system() TO app_user`);
   await run(`ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_user`);
   await run(`ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO app_user`);
+
+  // Backfill: issued invoices that have no snapshot get one from the CURRENT data (idempotent: existing snapshots are never touched).
+  await run(`INSERT INTO invoice_snapshots (invoice_id, organization_id, seller, client, details)
+    SELECT i.id, i.organization_id,
+           jsonb_build_object('name', o.name, 'payee_name', o.payee_name, 'gstin', o.gstin, 'logo_data', o.logo_data, 'brand_color', o.brand_color,
+                              'upi_id', o.upi_id, 'bank_account_name', o.bank_account_name, 'bank_account_number', o.bank_account_number,
+                              'bank_ifsc', o.bank_ifsc, 'bank_name', o.bank_name),
+           jsonb_build_object('name', c.name, 'company_name', c.company_name, 'email', c.email, 'phone', c.phone),
+           CASE WHEN d.invoice_id IS NULL THEN NULL
+                ELSE jsonb_build_object('items', d.items, 'discount', d.discount, 'tax_percent', d.tax_percent, 'tax_mode', d.tax_mode, 'notes', d.notes) END
+      FROM invoices i
+      JOIN organizations o ON o.id = i.organization_id
+      JOIN customers c ON c.id = i.customer_id
+      LEFT JOIN invoice_details d ON d.invoice_id = i.id
+     WHERE i.status <> 'DRAFT'
+    ON CONFLICT (invoice_id) DO NOTHING`);
 
   for (const t of TENANT_TABLES) {
     await run(`ALTER TABLE ${t} ENABLE ROW LEVEL SECURITY`);

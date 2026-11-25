@@ -222,6 +222,11 @@ export function ActionsPage() {
                                 UTR: {meta.utr} {meta.amount ? `· ₹${meta.amount}` : ""}
                               </p>
                             ) : null}
+                            {isProof && Number(meta.tds_amount) > 0 ? (
+                              <p className="mt-0.5 max-w-md text-[11px] leading-snug text-amber-700">
+                                Client says ₹{meta.tds_amount} TDS deducted{meta.tds_section ? ` (section ${meta.tds_section})` : ""}. Only cash ₹{meta.amount} should reach your bank. Check Form 26AS / AIS later; confirming counts the TDS toward this invoice.
+                              </p>
+                            ) : null}
                             {isSuggestion && (
                               <p className="mt-0.5 max-w-md text-[11px] leading-snug text-slate-500">
                                 <b>{meta.match === "STRONG" ? "Strong match" : "Possible match"}</b> from a bank alert you forwarded. {String(meta.evidence || "")}{String(meta.evidence || "").includes("Emails can be faked") ? "" : " Check your bank app or statement before confirming. Emails can be faked."}

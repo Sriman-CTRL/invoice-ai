@@ -75,7 +75,7 @@ _vw, _vh = WORD_X1 - WORD_X0 + 8, WORD_Y1 - WORD_Y0 + 8
 _sc = 740 / _vw
 _og = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630"><rect width="1200" height="630" fill="{DARK}"/>'
        f'<g transform="translate({600 - _vw*_sc/2 - (WORD_X0-4)*_sc:.1f} {250 - _vh*_sc/2 - (WORD_Y0-4)*_sc:.1f}) scale({_sc:.4f})">{_inner("paivo-wordmark-dark.svg")}</g>'
-       f'<text x="600" y="470" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="36" fill="#A9B0C6">Get paid for your work, without chasing.</text></svg>')
+       f'<text x="600" y="470" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="32" fill="#A9B0C6">Your client pays by UPI. Your files unlock when they do.</text></svg>')
 (OUT.parent/"social"/"og-image.svg").write_text(_og, encoding="utf-8")
 
 # --- social: "Powered by Paivo" badge for light backgrounds (invoice PDFs, emails) ---

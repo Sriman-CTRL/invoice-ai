@@ -178,6 +178,22 @@ export function AnalyticsPage() {
         </section>
       </div>
 
+      {(r.data.tds_by_year?.length ?? 0) > 0 && (
+        <section className="panel mt-6 p-6">
+          <h2 className="text-base font-bold text-slate-900">TDS to claim</h2>
+          <p className="mb-4 text-xs text-slate-500">Tax your clients deducted before paying you, by financial year (April to March). It is not money in your bank.</p>
+          <ul className="divide-y divide-slate-100">
+            {r.data.tds_by_year!.map((y) => (
+              <li key={y.fy} className="flex items-baseline justify-between gap-3 py-2 text-sm">
+                <span className="font-semibold text-slate-800">FY {y.fy} <span className="text-xs font-normal text-slate-400">{y.payments} payment{y.payments === 1 ? "" : "s"}</span></span>
+                <span className="font-mono text-sm font-bold text-slate-900">{money(y.tds, "INR")}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-[11px] text-slate-400">Match these with Form 26AS / AIS before you claim them. Not tax advice; check with your accountant.</p>
+        </section>
+      )}
+
       {(r.data.other_currencies?.length ?? 0) > 0 && (
         <section className="panel mt-6 p-6">
           <h2 className="text-base font-bold text-slate-900">Other currencies</h2>

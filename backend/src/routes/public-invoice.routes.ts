@@ -1,4 +1,5 @@
 import { outstandingOf, settledByCredit } from "../lib/invoiceBalance";
+import { snapshotFor, withTotals } from "../lib/invoiceSnapshot";
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { getOrgSettings } from "../lib/orgSettings";
@@ -56,10 +57,11 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
         }
 
         const paidAmount = invoice.payments.reduce((acc, p) => acc + Number(p.amount), 0);
+        const tdsAmount = invoice.payments.reduce((acc, p) => acc + Number(p.tds_amount), 0);
         const invoiceAmount = Number(invoice.amount);
         const creditedAmount = invoice.credit_notes.reduce((acc, c) => acc + Number(c.amount), 0);
-        // Credit notes reduce what is owed, so the client is never asked for more than they owe.
-        const outstandingAmount = outstandingOf(invoiceAmount, paidAmount, creditedAmount);
+        // Credit notes and TDS the client deducted both reduce what is owed, so the client is never asked for more than they owe.
+        const outstandingAmount = outstandingOf(invoiceAmount, paidAmount + tdsAmount, creditedAmount);
 
         // Check for deliverable vault URL in external_invoice_id
         let deliverableUrl: string | null = null;
@@ -83,8 +85,14 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
             orderBy: { created_at: "desc" },
         });
 
-        const settings = await getOrgSettings(invoice.organization_id);
-        const details = await getDetails(invoice.id);
+        // An issued invoice shows what was frozen when it was issued (seller, client, items, payment details); drafts stay live.
+        const snap = await snapshotFor(invoice);
+        const live = await getOrgSettings(invoice.organization_id);
+        const settings = snap ? { ...live, ...snap.seller } : live;
+        const sellerName = snap?.seller.name ?? invoice.organizations.name;
+        const clientName = snap?.client.name ?? invoice.customers.name;
+        const clientCompany = snap ? snap.client.company_name : invoice.customers.company_name;
+        const details = snap?.details ? withTotals(snap.details) : await getDetails(invoice.id);
 
         // Record a view, but not for link-preview bots (WhatsApp, Slack, crawlers) and at most once per 30 minutes.
         const ua = String(req.headers["user-agent"] || "");
@@ -104,21 +112,22 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
             invoice_number: invoice.invoice_number,
             amount: invoiceAmount,
             paid_amount: paidAmount,
+            tds_amount: tdsAmount,
             credited_amount: creditedAmount,
-            settled_by_credit: settledByCredit(invoice.status, invoiceAmount, paidAmount, creditedAmount),
+            settled_by_credit: settledByCredit(invoice.status, invoiceAmount, paidAmount + tdsAmount, creditedAmount),
             outstanding_amount: outstandingAmount,
             currency: invoice.currency,
             issued_at: invoice.issued_at,
             due_at: invoice.due_at,
             status: invoice.status,
             customer: {
-                name: invoice.customers.name,
-                company_name: invoice.customers.company_name,
+                name: clientName,
+                company_name: clientCompany,
                 email: null,
                 phone: null,
             },
             organization: {
-                name: invoice.organizations.name,
+                name: sellerName,
                 slug: invoice.organizations.slug,
                 brand_color: settings.brand_color,
                 logo_data: settings.logo_data,
@@ -127,10 +136,10 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
             details: details ? { items: details.items, notes: details.notes, tax_mode: details.tax_mode, tax_percent: details.tax_percent, totals: details.totals } : null,
             payment: {
                 upi_id: settings.upi_id,
-                payee_name: settings.payee_name || invoice.organizations.name,
+                payee_name: settings.payee_name || sellerName,
                 bank: hasBank
                     ? {
-                          account_name: settings.bank_account_name || settings.payee_name || invoice.organizations.name,
+                          account_name: settings.bank_account_name || settings.payee_name || sellerName,
                           account_number: settings.bank_account_number,
                           ifsc: settings.bank_ifsc,
                           bank_name: settings.bank_name,
@@ -164,7 +173,7 @@ router.get("/:invoice_number", async (req: Request, res: Response): Promise<void
 router.post("/:invoice_number/submit-proof", turnstileGuard, async (req: Request, res: Response): Promise<void> => {
     try {
         const invoiceId = publicInvoiceId(req.params.invoice_number);
-        const { utr, amount, notes, paid_at } = req.body ?? {};
+        const { utr, amount, notes, paid_at, tds_amount, tds_section } = req.body ?? {};
         const screenshot = parseScreenshot(req.body?.screenshot);
         if (screenshot && "error" in screenshot) {
             res.status(400).json({ error: screenshot.error });
@@ -205,16 +214,30 @@ router.post("/:invoice_number/submit-proof", turnstileGuard, async (req: Request
             return;
         }
 
-        const paidAmount = invoice.payments.reduce((acc, p) => acc + Number(p.amount), 0);
+        const paidAmount = invoice.payments.reduce((acc, p) => acc + Number(p.amount) + Number(p.tds_amount), 0);
         const creditedAmount = invoice.credit_notes.reduce((acc, c) => acc + Number(c.amount), 0);
         const outstandingAmount = outstandingOf(Number(invoice.amount), paidAmount, creditedAmount);
         if (invoice.status === "PAID" || invoice.status === "CANCELLED" || outstandingAmount <= 0) {
             res.status(409).json({ error: "This invoice is already settled." });
             return;
         }
-        const reportedAmount = amount === undefined || amount === null || amount === "" ? outstandingAmount : Number(amount);
-        if (!Number.isFinite(reportedAmount) || reportedAmount <= 0 || reportedAmount > outstandingAmount + 0.01) {
-            res.status(400).json({ error: `Amount must be between 1 and the outstanding ${outstandingAmount}.` });
+        // Optional claim that the client deducted TDS before paying. It is only a claim: it stays on the PENDING payment
+        // and counts toward the invoice only after the seller confirms the proof.
+        const claimedTds = tds_amount === undefined || tds_amount === null || tds_amount === "" ? 0 : Number(tds_amount);
+        if (!Number.isFinite(claimedTds) || claimedTds < 0 || claimedTds >= outstandingAmount) {
+            res.status(400).json({ error: "TDS deducted must be a number that is less than the amount due." });
+            return;
+        }
+        const claimedSection = tds_section === undefined || tds_section === null || tds_section === "" ? null : String(tds_section).trim().toUpperCase();
+        if (claimedSection !== null && !/^[0-9A-Z]{2,10}$/.test(claimedSection)) {
+            res.status(400).json({ error: "TDS section looks wrong. Use something like 194J or 194C." });
+            return;
+        }
+        const tdsClaim = Math.round(claimedTds * 100) / 100;
+        const cashDue = Math.round((outstandingAmount - tdsClaim) * 100) / 100;
+        const reportedAmount = amount === undefined || amount === null || amount === "" ? cashDue : Number(amount);
+        if (!Number.isFinite(reportedAmount) || reportedAmount <= 0 || reportedAmount + tdsClaim > outstandingAmount + 0.01) {
+            res.status(400).json({ error: `Amount must be between 1 and ${cashDue}${tdsClaim > 0 ? " (the amount due after the TDS you deducted)" : ""}.` });
             return;
         }
         // Anti-spam: cap unverified proofs per invoice, and reject duplicate UTRs.
@@ -237,6 +260,8 @@ router.post("/:invoice_number/submit-proof", turnstileGuard, async (req: Request
                 organization_id: invoice.organization_id,
                 invoice_id: invoice.id,
                 amount: reportedAmount,
+                tds_amount: tdsClaim,
+                tds_section: tdsClaim > 0 ? claimedSection : null,
                 currency: invoice.currency,
                 status: "PENDING",
                 external_payment_id: cleanUtr,
@@ -283,7 +308,7 @@ router.post("/:invoice_number/submit-proof", turnstileGuard, async (req: Request
                 sender: invoice.customers.email,
                 recipient: `billing@${invoice.organizations.slug}.com`,
                 subject: `Payment Submitted: UTR ${cleanUtr}`,
-                body: `Customer submitted payment proof via checkout portal:\n- Amount: ${invoice.currency} ${reportedAmount}\n- UTR / Ref: ${cleanUtr}${notes ? `\n- Customer Notes: ${notes}` : ""}\n\nPlease verify your bank statement to confirm settlement.`,
+                body: `Customer submitted payment proof via checkout portal:\n- Amount: ${invoice.currency} ${reportedAmount}${tdsClaim > 0 ? `\n- TDS the customer says they deducted: ${invoice.currency} ${tdsClaim}${claimedSection ? ` (section ${claimedSection})` : ""}. Check Form 26AS / AIS later.` : ""}\n- UTR / Ref: ${cleanUtr}${notes ? `\n- Customer Notes: ${notes}` : ""}\n\nPlease verify your bank statement to confirm settlement.`,
                 ai_intent: "PAYMENT_PROMISED",
                 ai_confidence: 1.0,
             },
@@ -303,6 +328,8 @@ router.post("/:invoice_number/submit-proof", turnstileGuard, async (req: Request
                     payment_id: payment.id,
                     utr: cleanUtr,
                     amount: reportedAmount,
+                    tds_amount: tdsClaim,
+                    tds_section: tdsClaim > 0 ? claimedSection : null,
                     customer_notes: notes || null,
                     has_screenshot: Boolean(screenshot),
                 },

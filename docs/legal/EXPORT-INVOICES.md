@@ -12,4 +12,4 @@ To finish this properly: read Rule 46 of the CGST Rules 2017 on an official CBIC
 
 ## Analytics
 
-Amounts in different currencies are never added together. The analytics page totals (money in by month, best clients, received, still to collect, overdue) are INR only, and every other currency appears in its own row under "Other currencies". The main dashboard summary (`dashboardService`) still sums across currencies and is not changed in this PR.
+Amounts in different currencies are never added together. The analytics page totals (money in by month, best clients, received, still to collect, overdue) are INR only, and every other currency appears in its own row under "Other currencies". The main dashboard summary follows the same rule: INR headline, other currencies listed separately (`other_currencies`).

@@ -16,8 +16,11 @@ export interface DashboardData {
         total_paid: number;
         total_outstanding: number;
         overdue_outstanding: number;
+        /** The headline figures above are INR only. */
         currency: string;
     };
+    /** Every other currency, totalled on its own. Amounts in different currencies are never added together. */
+    other_currencies: Array<{ currency: string; total_invoiced: number; total_paid: number; total_outstanding: number; overdue_outstanding: number }>;
     customer_summary: {
         total_customers: number;
         customers_with_outstanding: number;
@@ -81,69 +84,43 @@ export async function getDashboardData(organization_id: string): Promise<Dashboa
 
     // 2. Financial Summary
     // We only count invoiced amounts for non-DRAFT and non-CANCELLED perhaps?
-    // Let's count all or maybe OPEN + PARTIALLY_PAID + PAID
-    const validInvoices = await prisma.invoices.aggregate({
-        where: { 
-            organization_id,
-            status: { in: ["OPEN", "PARTIALLY_PAID", "PAID"] } // Generally invoices that are active
-        },
+    // Money is totalled per currency and never added across currencies: INR is the headline, the rest are listed separately.
+    const now_ = now;
+    const invoicedBy = await prisma.invoices.groupBy({
+        by: ["currency"],
+        where: { organization_id, status: { in: ["OPEN", "PARTIALLY_PAID", "PAID"] } },
         _sum: { amount: true },
     });
-
-    const total_invoiced = Number(validInvoices._sum.amount ?? 0);
-
-    const successfulPayments = await prisma.payments.aggregate({
+    const paidBy = await prisma.payments.groupBy({
+        by: ["currency"],
         where: { organization_id, status: "SUCCEEDED" },
-        _sum: { amount: true },
+        _sum: { amount: true, tds_amount: true },
     });
-    
-    const total_paid = Number(successfulPayments._sum.amount ?? 0);
-    const total_outstanding = Math.max(0, total_invoiced - total_paid);
-
-    // Overdue Outstanding
-    const overdueInvoices = await prisma.invoices.findMany({
-        where: {
-            organization_id,
-            status: { in: ["OPEN", "PARTIALLY_PAID"] },
-            due_at: { lt: now },
-        },
-        select: {
-            id: true,
-            amount: true,
-        }
+    const overdueRows = await prisma.$queryRawUnsafe<Array<{ currency: string; overdue: number }>>(
+        `SELECT i.currency, COALESCE(sum(GREATEST(i.amount - COALESCE(pp.settled, 0), 0)), 0)::float8 AS overdue
+           FROM invoices i
+           LEFT JOIN (SELECT invoice_id, sum(amount + tds_amount) AS settled FROM payments WHERE status = 'SUCCEEDED' GROUP BY invoice_id) pp ON pp.invoice_id = i.id
+          WHERE i.organization_id = $1::uuid AND i.status IN ('OPEN', 'PARTIALLY_PAID') AND i.due_at < $2
+          GROUP BY i.currency`,
+        organization_id, now_,
+    );
+    const currencies = new Set<string>(["INR", ...invoicedBy.map((r) => r.currency), ...paidBy.map((r) => r.currency), ...overdueRows.map((r) => r.currency)]);
+    const totals = [...currencies].sort().map((cur) => {
+        const total_invoiced = Number(invoicedBy.find((r) => r.currency === cur)?._sum.amount ?? 0);
+        const p = paidBy.find((r) => r.currency === cur);
+        // total_paid is cash received; TDS the client deducted also settles invoices, so it leaves the outstanding total.
+        const total_paid = Number(p?._sum.amount ?? 0);
+        const total_tds = Number(p?._sum.tds_amount ?? 0);
+        return {
+            currency: cur,
+            total_invoiced,
+            total_paid,
+            total_outstanding: Math.max(0, total_invoiced - total_paid - total_tds),
+            overdue_outstanding: Number(overdueRows.find((r) => r.currency === cur)?.overdue ?? 0),
+        };
     });
-
-    let overdue_outstanding = 0;
-    if (overdueInvoices.length > 0) {
-        const overdueInvoiceIds = overdueInvoices.map(inv => inv.id);
-        const overduePayments = await prisma.payments.aggregate({
-            where: {
-                organization_id,
-                invoice_id: { in: overdueInvoiceIds },
-                status: "SUCCEEDED"
-            },
-            _sum: { amount: true }
-        });
-        
-        const totalOverdueInvoiced = overdueInvoices.reduce((sum, inv) => sum + Number(inv.amount), 0);
-        const totalOverduePaid = Number(overduePayments._sum.amount ?? 0);
-        overdue_outstanding = Math.max(0, totalOverdueInvoiced - totalOverduePaid);
-    }
-
-    // Determine primary currency (just picking the first invoice's currency or defaulting to INR)
-    const firstInvoice = await prisma.invoices.findFirst({
-        where: { organization_id },
-        select: { currency: true },
-    });
-    const currency = firstInvoice?.currency || "INR";
-
-    const financial_summary = {
-        total_invoiced,
-        total_paid,
-        total_outstanding,
-        overdue_outstanding,
-        currency,
-    };
+    const financial_summary = totals.find((t_) => t_.currency === "INR")!;
+    const other_currencies = totals.filter((t_) => t_.currency !== "INR" && (t_.total_invoiced > 0 || t_.total_paid > 0 || t_.overdue_outstanding > 0));
 
     // 3. Customer Summary
     const total_customers = await prisma.customers.count({ where: { organization_id } });
@@ -224,6 +201,7 @@ export async function getDashboardData(organization_id: string): Promise<Dashboa
     return {
         invoice_summary,
         financial_summary,
+        other_currencies,
         customer_summary,
         collection_summary,
         recent_activity,

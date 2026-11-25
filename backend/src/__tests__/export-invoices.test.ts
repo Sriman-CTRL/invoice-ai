@@ -130,3 +130,34 @@ test("EXPORT: analytics never add USD to INR; other currencies are totalled sepa
   assert.equal(by.EUR.invoiced, 50);
   assert.ok(!by.INR);
 });
+
+test("EXPORT: the main dashboard summary is INR only; other currencies are listed separately and never added", opts, async () => {
+  const t = await makeTenant("dash");
+  const inr = await invoice(t, "INR", 1000);
+  const usd = await invoice(t, "USD", 200);
+  await invoice(t, "EUR", 50);
+  assert.equal((await call("POST", "/api/payments", { invoice_id: inr.json.id, amount: 1000 }, t.token)).status, 201);
+  assert.equal((await call("POST", "/api/payments", { invoice_id: usd.json.id, amount: 50 }, t.token)).status, 201);
+  const res = await call("GET", "/api/dashboard", undefined, t.token);
+  assert.equal(res.status, 200);
+  const f = res.json.financial_summary;
+  assert.equal(f.currency, "INR");
+  assert.equal(f.total_invoiced, 1000, "USD and EUR invoices are not added to the INR headline");
+  assert.equal(f.total_paid, 1000, "a USD payment is not added to INR collected");
+  assert.equal(f.total_outstanding, 0);
+  const by = Object.fromEntries(res.json.other_currencies.map((c: any) => [c.currency, c]));
+  assert.equal(by.USD.total_invoiced, 200);
+  assert.equal(by.USD.total_paid, 50);
+  assert.equal(by.USD.total_outstanding, 150);
+  assert.equal(by.EUR.total_invoiced, 50);
+  assert.equal(by.EUR.total_outstanding, 50);
+  assert.ok(!by.INR, "INR is the headline, not in the list");
+
+  // An account with only foreign invoices has a zero INR headline, not a made-up one.
+  const t2 = await makeTenant("dash2");
+  await invoice(t2, "GBP", 300);
+  const r2 = (await call("GET", "/api/dashboard", undefined, t2.token)).json;
+  assert.equal(r2.financial_summary.currency, "INR");
+  assert.equal(r2.financial_summary.total_invoiced, 0);
+  assert.equal(r2.other_currencies.find((c: any) => c.currency === "GBP").total_invoiced, 300);
+});

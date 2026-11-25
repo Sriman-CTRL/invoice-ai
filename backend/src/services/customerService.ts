@@ -68,6 +68,7 @@ export async function getCustomerDetails(organization_id: string, customer_id: s
     const total_invoices = invoices.length;
     let total_invoiced = 0;
     let total_paid = 0;
+    let total_tds = 0;
     let overdue_amount = 0;
 
     for (const inv of invoices) {
@@ -79,10 +80,12 @@ export async function getCustomerDetails(organization_id: string, customer_id: s
     for (const pay of payments) {
         if (pay.status === "SUCCEEDED") {
             total_paid += Number(pay.amount);
+            total_tds += Number(pay.tds_amount);
         }
     }
 
-    const total_outstanding = Math.max(0, total_invoiced - total_paid);
+    // TDS the customer deducted settles invoices too, so it leaves the outstanding total (total_paid stays cash).
+    const total_outstanding = Math.max(0, total_invoiced - total_paid - total_tds);
 
     // Overdue amount
     const overdueInvoices = invoices.filter(inv => 
@@ -93,7 +96,7 @@ export async function getCustomerDetails(organization_id: string, customer_id: s
     for (const overdueInv of overdueInvoices) {
         const invAmount = Number(overdueInv.amount);
         const invPayments = payments.filter(p => p.invoice_id === overdueInv.id && p.status === "SUCCEEDED");
-        const invPaid = invPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+        const invPaid = invPayments.reduce((sum, p) => sum + Number(p.amount) + Number(p.tds_amount), 0);
         overdue_amount += Math.max(0, invAmount - invPaid);
     }
 

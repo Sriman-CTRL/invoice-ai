@@ -64,6 +64,7 @@ export const ModelName = {
   analytics_events: 'analytics_events',
   auth_failures: 'auth_failures',
   invoice_details: 'invoice_details',
+  invoice_snapshots: 'invoice_snapshots',
   auto_reminder_claims: 'auto_reminder_claims',
   invoice_views: 'invoice_views',
   leads: 'leads',
@@ -206,6 +207,8 @@ export const PaymentsScalarFieldEnum = {
   invoice_id: 'invoice_id',
   external_payment_id: 'external_payment_id',
   amount: 'amount',
+  tds_amount: 'tds_amount',
+  tds_section: 'tds_section',
   currency: 'currency',
   status: 'status',
   paid_at: 'paid_at',
@@ -292,6 +295,18 @@ export const Invoice_detailsScalarFieldEnum = {
 } as const
 
 export type Invoice_detailsScalarFieldEnum = (typeof Invoice_detailsScalarFieldEnum)[keyof typeof Invoice_detailsScalarFieldEnum]
+
+
+export const Invoice_snapshotsScalarFieldEnum = {
+  invoice_id: 'invoice_id',
+  organization_id: 'organization_id',
+  seller: 'seller',
+  client: 'client',
+  details: 'details',
+  created_at: 'created_at'
+} as const
+
+export type Invoice_snapshotsScalarFieldEnum = (typeof Invoice_snapshotsScalarFieldEnum)[keyof typeof Invoice_snapshotsScalarFieldEnum]
 
 
 export const Auto_reminder_claimsScalarFieldEnum = {
@@ -391,6 +406,14 @@ export const JsonNullValueInput = {
 } as const
 
 export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const QueryMode = {

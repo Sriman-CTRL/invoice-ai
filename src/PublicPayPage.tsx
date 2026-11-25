@@ -70,6 +70,8 @@ export function PublicPayPage() {
   // UTR submission state
   const [utr, setUtr] = useState("");
   const [proofAmount, setProofAmount] = useState("");
+  const [proofTds, setProofTds] = useState("");
+  const [proofTdsSection, setProofTdsSection] = useState("");
   const [notes, setNotes] = useState("");
   const [submittingProof, setSubmittingProof] = useState(false);
   const [screenshot, setScreenshot] = useState<string | null>(null);
@@ -139,6 +141,7 @@ export function PublicPayPage() {
       const res = await publicApi.submitProof(invoiceNumber, {
         utr: utr.trim(),
         amount: parseFloat(proofAmount) || undefined,
+        ...(parseFloat(proofTds) > 0 ? { tds_amount: parseFloat(proofTds), tds_section: proofTdsSection.trim() || undefined } : {}),
         notes: notes.trim() || undefined,
         screenshot: screenshot || undefined,
         turnstile_token: humanToken || undefined,
@@ -146,6 +149,8 @@ export function PublicPayPage() {
       setProofSuccess(res.message);
       setUtr("");
       setNotes("");
+      setProofTds("");
+      setProofTdsSection("");
       setScreenshot(null);
       fetchInvoice();
     } catch (err: any) {
@@ -192,7 +197,8 @@ export function PublicPayPage() {
   const isPaid = data.status === "PAID" || data.outstanding_amount <= 0;
   const isPartiallyPaid = data.status === "PARTIALLY_PAID" && data.outstanding_amount > 0;
   const totalAmount = data.amount;
-  const paidAmount = data.paid_amount;
+  // Cash received plus TDS the client deducted: both settle the invoice.
+  const paidAmount = data.paid_amount + (data.tds_amount ?? 0);
   const outstanding = data.outstanding_amount;
   const progressPct = Math.min(100, Math.round((paidAmount / (totalAmount || 1)) * 100));
 
@@ -701,6 +707,36 @@ export function PublicPayPage() {
                       onChange={(e) => setProofAmount(e.target.value)}
                       className="input w-full bg-slate-950 border-white/10 text-white font-mono text-xs font-bold"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                      {T.tdsLabel(data.currency)}
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0"
+                        value={proofTds}
+                        onChange={(e) => {
+                          setProofTds(e.target.value);
+                          const t = Math.max(0, parseFloat(e.target.value) || 0);
+                          setProofAmount(String(Math.max(0, Math.round((data.outstanding_amount - t) * 100) / 100)));
+                        }}
+                        className="input w-full bg-slate-950 border-white/10 text-white font-mono text-xs"
+                      />
+                      <input
+                        type="text"
+                        maxLength={10}
+                        placeholder={T.tdsSectionLabel}
+                        value={proofTdsSection}
+                        onChange={(e) => setProofTdsSection(e.target.value)}
+                        className="input w-full bg-slate-950 border-white/10 text-white font-mono text-xs"
+                      />
+                    </div>
+                    <span className="text-[10px] text-slate-500 mt-1 block">{T.tdsHint}</span>
                   </div>
 
                   <div>

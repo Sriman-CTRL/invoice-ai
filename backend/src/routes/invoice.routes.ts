@@ -8,6 +8,7 @@ import { deliveryGuard, findSuppression, sendReminderEmail } from "../services/r
 import { computeTotals, parseDetails, saveDetails } from "../lib/invoiceDetails";
 import { getOrgSettings } from "../lib/orgSettings";
 import { serverError } from "../lib/monitoring";
+import { refreshPaymentDetails, takeSnapshot } from "../lib/invoiceSnapshot";
 
 /** Currencies an invoice can be issued in. Amounts in different currencies are never added together. */
 export const SUPPORTED_CURRENCIES = ["INR", "USD", "EUR", "GBP", "AUD", "CAD", "SGD", "AED"];
@@ -140,7 +141,7 @@ router.post("/bulk-import", async (req, res) => {
                 : "OPEN";
 
             try {
-                await prisma.invoices.create({
+                const created = await prisma.invoices.create({
                     data: {
                         organization_id,
                         customer_id: customerId,
@@ -153,6 +154,7 @@ router.post("/bulk-import", async (req, res) => {
                         status: normalizedStatus,
                     },
                 });
+                if (normalizedStatus !== "DRAFT") await takeSnapshot(organization_id, created.id);
                 existingInvoiceNumbers.add(invoiceNumber.toLowerCase());
                 imported_count++;
             } catch (err) {
@@ -252,6 +254,8 @@ router.post("/", async (req, res) => {
         });
 
         if (parsedDetails) await saveDetails(organization_id, invoice.id, parsedDetails.details);
+        // Issued invoices are frozen at once; drafts keep following live data until they are approved.
+        if (normalizedStatus !== "DRAFT") await takeSnapshot(organization_id, invoice.id);
 
         res.status(201).json(invoice);
     } catch (error) {
@@ -414,7 +418,29 @@ router.post("/:id/approve", async (req, res) => {
     const org = req.user!.organization_id;
     const done = await prisma.invoices.updateMany({ where: { id, organization_id: org, status: "DRAFT" }, data: { status: "OPEN", issued_at: new Date(), updated_at: new Date() } });
     if (!done.count) return res.status(404).json({ error: "No draft invoice found." });
+    // The invoice leaves DRAFT here: freeze the seller, client and line items as they are now.
+    try { await takeSnapshot(org, id); } catch (error) { return serverError(res, error, "The invoice was approved but could not be saved in full. Please try again."); }
     res.json({ ok: true });
+});
+
+// Explicitly pull the business's CURRENT payment details (UPI ID, bank) into this unpaid invoice.
+// By default an issued invoice keeps the payment details it was issued with.
+router.post("/:id/update-payment-details", async (req, res) => {
+    try {
+        const id = req.params.id;
+        if (!UUID_REGEX.test(id)) return res.status(404).json({ error: "Invoice not found" });
+        const org = req.user!.organization_id;
+        const inv = await prisma.invoices.findFirst({ where: { id, organization_id: org } });
+        if (!inv) return res.status(404).json({ error: "Invoice not found" });
+        if (inv.status === "DRAFT") return res.status(409).json({ error: "A draft already uses your current payment details." });
+        if (inv.status === "PAID" || inv.status === "CANCELLED") return res.status(409).json({ error: "This invoice is already closed, so its payment details stay as issued." });
+        await takeSnapshot(org, id); // no-op when it exists; creates it for an old invoice that has none
+        const ok = await refreshPaymentDetails(org, id);
+        if (!ok) return res.status(404).json({ error: "Invoice not found" });
+        res.json({ ok: true });
+    } catch (error) {
+        return serverError(res, error, "Failed to update payment details");
+    }
 });
 
 // Send Official Payment Reminder
